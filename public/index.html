@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Old Bailey Stats Chart</title>
+
+    <!-- Chart.js (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+      body { font-family: system-ui, Arial; margin: 24px; }
+      .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+      label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+      input, select { padding: 8px; font-size: 14px; }
+      canvas { max-width: 100%; }
+    </style>
+  </head>
+  <body>
+    <h1>Robbery trend (guilty rate %)</h1>
+
+    <div class="row">
+      <label>
+        From
+        <input id="from" type="date" value="1740-01-01" />
+      </label>
+
+      <label>
+        To
+        <input id="to" type="date" value="1800-12-31" />
+      </label>
+
+      <label>
+        Bucket
+        <select id="bucket">
+          <option value="year" selected>year</option>
+          <option value="decade">decade</option>
+        </select>
+      </label>
+
+      <label>
+        Group
+        <input id="group" type="text" value="Robbery" />
+      </label>
+
+      <button id="reload" style="padding: 10px 14px; font-size: 14px;">
+        Reload
+      </button>
+    </div>
+    <label style="display:inline-flex;align-items:center;gap:.5rem;">
+     <input type="checkbox" id="toggle-ci" checked />
+     Show confidence intervals
+    </label>
+     <label style="display:inline-flex;align-items:center;gap:.5rem;margin-left:1rem;">
+      Bucket:
+      <select id="bucket">
+        <option value="year" selected>Year</option>
+    	<option value="decade">Decade</option>
+      </select>
+    </label>
+    <label style="display:inline-flex;align-items:center;gap:.5rem;margin-left:1rem;">
+      Confidence:
+      <select id="confidence">
+        <option value="1.645">90%</option>
+        <option value="1.96" selected>95%</option>
+        <option value="2.576">99%</option>
+      </select>
+    </label>
+
+    <canvas id="chart" height="120"></canvas>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
