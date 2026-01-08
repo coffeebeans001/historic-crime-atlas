@@ -57,3 +57,6 @@ This project is actively evolving (next steps include geospatial crime queries a
 
 **Hover Tooltips**
 ![Hover tooltip showing CI and sample size](screenshots/chart-hover-tooltip.png)
+
+> Early periods show sparse female data, resulting in wider confidence intervals.
+> This accurately reflects historical court record imbalance rather than a charting error.
