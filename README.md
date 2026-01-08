@@ -42,3 +42,18 @@ including filters and over-time guilty-rate trends with Wilson confidence interv
 ## Notes
 
 This project is actively evolving (next steps include geospatial crime queries and mapping).
+
+![Chart overview](screenshots/chart-overview.png)
+
+## 📊 Interactive Data Visualisation
+
+### Guilty Rate Trends (Robbery, 1740–1800)
+
+**Confidence Intervals Enabled (Wilson score)**
+![Chart with confidence intervals](screenshots/chart-ci-on.png)
+
+**Confidence Intervals Disabled**
+![Chart without confidence intervals](screenshots/chart-ci-off.png)
+
+**Hover Tooltips**
+![Hover tooltip showing CI and sample size](screenshots/chart-hover-tooltip.png)
