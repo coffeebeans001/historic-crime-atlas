@@ -1,7 +1,9 @@
 # Historic Crime Atlas
 
-A small API + frontend charting prototype exploring historic crime trial data (Old Bailey-inspired),
-including filters and over-time guilty-rate trends with Wilson confidence intervals.
+Historic Crime Atlas is an interactive data-visualisation project exploring historical crime trends using structured court records.
+It allows users to analyse verdict patterns over time, segmented by gender and party type, with statistically meaningful confidence intervals.
+
+The project is inspired by historical court archives (e.g. Old Bailey records) and aims to make centuries-old crime data accessible, explorable, and visually intuitive.
 
 ## Features
 
