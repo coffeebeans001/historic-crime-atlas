@@ -7,24 +7,64 @@ The project is inspired by historical court archives (e.g. Old Bailey records) a
 
 ## Features
 
-- REST API (Node/Express + MySQL)
-- Trial search with filters (date range, category, verdict, defendant, judge, gender, party type)
-- Stats endpoints:
-  - over-time guilty-rate trends
-  - Wilson confidence intervals
-  - series format output for Chart.js / D3
-- Simple Chart.js UI with:
-  - line series
-  - shaded confidence bands
-  - toggle CI on/off
-  - bucket year/decade
-  - confidence (z) selector
+📈 Interactive line charts showing guilty rate (%) over time
 
-## Tech
+📊 Wilson confidence intervals with smooth fade-in/out animation
 
-- Node.js + Express
-- MySQL
-- Chart.js (frontend)
+🎛️ Dynamic controls for:
+
+Date range
+
+Time bucket (year / decade)
+
+Confidence level (e.g. 95%)
+
+Crime category (e.g. Robbery)
+
+🧠 Hover tooltips showing:
+
+Guilty rate
+
+Confidence interval bounds
+
+Sample size (n)
+
+🎨 Automatic colour scaling per group (stable & readable)
+
+⚡ Fast API responses backed by MySQL
+
+## Architecture
+BACKEND
+
+Node.js
+
+Express
+
+MySQL
+
+REST API (/api/stats/gender-party/over-time)
+
+FRONTEND
+
+Vanilla HTML/CSS
+
+Chart.js
+
+Dynamic dataset construction
+
+Animated dataset visibility toggling (no refetch)
+
+🔬 Statistical Approach
+
+Guilty rates are calculated as percentages per time bucket
+
+Confidence intervals use the Wilson score interval, which is:
+
+More reliable for small sample sizes
+
+Commonly used in historical and social data analysis
+
+Confidence level is user-selectable (e.g. 90%, 95%)
 
 ## Run locally
 
@@ -33,17 +73,35 @@ The project is inspired by historical court archives (e.g. Old Bailey records) a
    npm install
    ```
 2. Create a `.env` file (see below)
+   DB_HOST=localhost
+   DB_USER=your_user
+   DB_PASSWORD=your_password
+   DB_NAME=your_database
+   PORT=3000
 
 3. Start the server:
    node server.js
 
 4. Open:
-   - API: http://localhost:3000
-   - UI: http://localhost:3000
+   API: http://localhost:3000/api/stats/gender-party/over-time
 
-## Notes
+   UI: http://localhost:3000
 
-This project is actively evolving (next steps include geospatial crime queries and mapping).
+🗺️ Roadmap
+
+📍 Geospatial queries (historic crimes near user location)
+
+🧭 Time-aware mapping (crime scenes layered by century)
+
+🗃️ Expanded datasets (non-violent crimes, sentencing outcomes)
+
+🌍 Public demo deployment   
+
+
+⚠️ Notes
+
+This project is actively evolving.
+Historical data is partially seeded for development and visual validation purposes.
 
 ![Chart overview](screenshots/chart-overview.png)
 
