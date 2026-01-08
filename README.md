@@ -33,7 +33,42 @@ Sample size (n)
 
 ⚡ Fast API responses backed by MySQL
 
+## 🧪 Methodology
+
+### Aggregation
+
+For each time bucket (year or decade) and group (e.g. `Male - Individual`), the API computes:
+
+- **Known verdicts (n):** trials where verdict ∈ {`Guilty`, `Not Guilty`}
+- **Guilty count (g):** trials where verdict = `Guilty`
+- **Guilty rate (%):** `100 * (g / n)` (when `n > 0`)
+
+Buckets are calculated from `trial_date` (e.g. `YEAR(trial_date)` or floor-to-decade).
+
+### Confidence intervals (Wilson score)
+
+To avoid misleading intervals with small sample sizes (common in historical datasets), the project uses the **Wilson score interval** for a binomial proportion.
+
+Given:
+
+- `p = g / n`
+- `z` = z-score for the chosen confidence level (e.g. **1.96** for 95%)
+
+Wilson interval:
+
+- `denom = 1 + z²/n`
+- `center = (p + z²/(2n)) / denom`
+- `margin = (z / denom) * sqrt( (p(1-p))/n + z²/(4n²) )`
+
+Confidence bounds are:
+
+- `low = 100 * (center - margin)`
+- `high = 100 * (center + margin)`
+
+These bounds are returned per bucket and visualised as a shaded band around the guilty-rate line.
+
 ## Architecture
+
 BACKEND
 
 Node.js
@@ -95,8 +130,7 @@ Confidence level is user-selectable (e.g. 90%, 95%)
 
 🗃️ Expanded datasets (non-violent crimes, sentencing outcomes)
 
-🌍 Public demo deployment   
-
+🌍 Public demo deployment
 
 ⚠️ Notes
 
