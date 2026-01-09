@@ -134,6 +134,9 @@ Confidence level is user-selectable (e.g. 90%, 95%)
 
 ⚠️ Notes
 
+
+
+
 This project is actively evolving.
 Historical data is partially seeded for development and visual validation purposes.
 
@@ -154,3 +157,8 @@ Historical data is partially seeded for development and visual validation purpos
 
 > Early periods show sparse female data, resulting in wider confidence intervals.
 > This accurately reflects historical court record imbalance rather than a charting error.
+
+Nearby Historic Crimes API
+
+GET /api/trials/nearby?lat=51.509865&lng=-0.118092&from=1740-01-01&to=1800-12-31&radius=2000&limit=5
+Returns the nearest historic trials within a given radius using Haversine distance.
