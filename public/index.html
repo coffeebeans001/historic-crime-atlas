@@ -15,6 +15,23 @@
       input, select { padding: 8px; font-size: 14px; }
       canvas { max-width: 100%; }
     </style>
+    
+    
+ 
+
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- MarkerCluster -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<script defer src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<!-- Your app (MUST be after the plugin) -->
+<script defer src="/app.js"></script>
+
   </head>
   <body>
     <h1>Robbery trend (guilty rate %)</h1>
@@ -51,13 +68,7 @@
      <input type="checkbox" id="toggle-ci" checked />
      Show confidence intervals
     </label>
-     <label style="display:inline-flex;align-items:center;gap:.5rem;margin-left:1rem;">
-      Bucket:
-      <select id="bucket">
-        <option value="year" selected>Year</option>
-    	<option value="decade">Decade</option>
-      </select>
-    </label>
+     
     <label style="display:inline-flex;align-items:center;gap:.5rem;margin-left:1rem;">
       Confidence:
       <select id="confidence">
@@ -66,9 +77,38 @@
         <option value="2.576">99%</option>
       </select>
     </label>
+    <hr style="margin:24px 0;" />
+
+    <h2>Nearby historic crimes</h2>
+
+    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+      <button id="use-gps" style="padding:10px 14px; font-size:14px;">
+        Use my location
+      </button>
+
+      <label style="display:inline-flex;align-items:center;gap:.5rem;">
+        Radius (m):
+        <input id="radius" type="number" value="2000" min="50" max="20000" step="50" />
+      </label>
+
+      <label style="display:inline-flex;align-items:center;gap:.5rem;">
+        Limit:
+        <input id="nearby-limit" type="number" value="5" min="1" max="50" step="1" />
+      </label>
+
+      <button id="nearby" style="padding:10px 14px; font-size:14px;">
+        Find nearby
+      </button>
+    </div>
+
+    <div id="map" style="height: 420px; margin-top: 12px; border-radius: 12px; overflow: hidden;"></div>
+
+    <div id="nearby-results" style="margin-top:12px;"></div>
 
     <canvas id="chart" height="120"></canvas>
+     
+   
 
-    <script src="./app.js"></script>
-  </body>
+</body>
 </html>
+

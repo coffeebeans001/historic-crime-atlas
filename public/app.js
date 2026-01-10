@@ -1,6 +1,9 @@
 let chart; // single chart reference
 const DEFAULT_CI_ALPHA = 0.2;
 const LINE_TENSION = 0.2;
+let map;
+let markersLayer;   // <-- IMPORTANT: shared variable
+let centerMarker;
 
 function isCiDataset(ds) {
   return ds.label.includes("CI band") || ds.label.includes("upper CI");
@@ -249,6 +252,184 @@ async function render() {
   
   chart.update("none");
 }
+
+// --------------------
+// Leaflet: Nearby crimes
+// --------------------
+
+//let map;
+//let markersLayer;
+//let centerMarker;
+
+// Default: central London (your earlier example)
+let currentCenter = { lat: 51.509865, lng: -0.118092 };
+
+function ensureMap() {
+  if (map) return;
+
+  map = L.map("map").setView([currentCenter.lat, currentCenter.lng], 13);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Create once
+  markersLayer = L.markerClusterGroup({
+    chunkedLoading: true,
+    showCoverageOnHover: false
+  });
+
+  map.addLayer(markersLayer);
+
+  centerMarker = L.marker([currentCenter.lat, currentCenter.lng], { draggable: true })
+    .addTo(map)
+    .bindPopup("Search center (drag me)")
+    .openPopup();
+
+  centerMarker.on("dragend", () => {
+    const pos = centerMarker.getLatLng();
+    currentCenter = { lat: pos.lat, lng: pos.lng };
+  });
+}
+
+function buildNearbyUrl() {
+  const from = document.getElementById("from").value;
+  const to = document.getElementById("to").value;
+  const group = document.getElementById("group").value.trim();
+  const radius = Number(document.getElementById("radius").value || 2000);
+  const limit = Number(document.getElementById("nearby-limit").value || 5);
+
+  const params = new URLSearchParams({
+    lat: String(currentCenter.lat),
+    lng: String(currentCenter.lng),
+    from,
+    to,
+    radius: String(radius),
+    limit: String(limit),
+  });
+
+  if (group) params.set("group", group);
+
+  return `/api/trials/nearby?${params.toString()}`;
+}
+
+function renderNearbyList(rows) {
+  const el = document.getElementById("nearby-results");
+  if (!rows.length) {
+    el.innerHTML = "<p>No results in this radius for the selected filters.</p>";
+    return;
+  }
+
+  const items = rows.map(r => {
+    const d = (r.distance_m == null) ? "" : `${Math.round(r.distance_m)} m`;
+    const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "";
+    const offence = r.offence_name || "(unknown offence)";
+    const who = r.defendant_name || "(unknown defendant)";
+    const verdict = r.verdict || "(unknown verdict)";
+    const where = r.trial_location || "";
+
+    return `
+      <li style="margin:8px 0;">
+        <strong>${offence}</strong> — ${who} (${verdict})<br/>
+        <span style="opacity:.8;">${date} • ${where} • ${d}</span>
+      </li>
+    `;
+  }).join("");
+
+  el.innerHTML = `<ol style="padding-left:18px;">${items}</ol>`;
+}
+
+async function fetchNearby() {
+  ensureMap();
+
+  // Clear old markers
+  markersLayer.clearLayers();
+
+  const url = buildNearbyUrl();
+  const res = await fetch(url);
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Nearby request failed (${res.status}): ${txt}`);
+  }
+  const payload = await res.json();
+  window.lastNearbyResponse = payload;
+  const rows = payload.data || [];
+
+    // Drop markers
+markersLayer.clearLayers();
+
+rows.forEach((r, i) => {
+  const baseLat = Number(r.latitude);
+  const baseLng = Number(r.longitude);
+  if (!Number.isFinite(baseLat) || !Number.isFinite(baseLng)) return;
+
+  // optional jitter if many share exact same coords (keeps them separable)
+  const jitter = (i + 1) * 0.00015;
+  const lat = baseLat + jitter;
+  const lng = baseLng + jitter;
+
+  const marker = L.marker([lat, lng]).bindPopup(`
+    <b>${r.offence_name || r.offence_group || "Offence"}</b><br/>
+    ${r.trial_date ? String(r.trial_date).slice(0,10) : ""}<br/>
+    ${r.defendant_name || ""}<br/>
+    Distance: ${Math.round(Number(r.distance_m || 0))} m
+  `);
+
+  markersLayer.addLayer(marker); // works for markerClusterGroup
+});
+
+
+
+  renderNearbyList(rows);
+
+  // Optional: fit bounds nicely if there are results
+  if (rows.length) {
+    const latLngs = rows
+      .map(r => [Number(r.latitude), Number(r.longitude)])
+      .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
+
+    if (latLngs.length) {
+      const bounds = L.latLngBounds(latLngs);
+      map.fitBounds(bounds.pad(0.25));
+    }
+  }
+}
+
+// Buttons
+document.getElementById("nearby")?.addEventListener("click", () => {
+  fetchNearby().catch(err => {
+    console.error(err);
+    alert(err.message);
+  });
+});
+
+document.getElementById("use-gps")?.addEventListener("click", () => {
+  ensureMap();
+
+  if (!navigator.geolocation) {
+    alert("Geolocation not supported in this browser.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      currentCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      map.setView([currentCenter.lat, currentCenter.lng], 14);
+      centerMarker.setLatLng([currentCenter.lat, currentCenter.lng]);
+      centerMarker.openPopup();
+    },
+    (err) => {
+      console.error(err);
+      alert("Could not get your location (permission denied or unavailable).");
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+});
+
+// Initialise map immediately (optional)
+ensureMap();
+
 
 document.getElementById("reload").addEventListener("click", () => {
   render().catch(err => {
