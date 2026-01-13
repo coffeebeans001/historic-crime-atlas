@@ -1,3 +1,15 @@
+🗺️ Roadmap
+
+📍 Geospatial queries (historic crimes near user location)
+
+🧭 Time-aware mapping (crime scenes layered by century)
+
+🗃️ Expanded datasets (non-violent crimes, sentencing outcomes)
+
+🌍 Public demo deployment
+
+⚠️ Notes
+
 # Historic Crime Atlas
 
 Historic Crime Atlas is an interactive data-visualisation project exploring historical crime trends using structured court records.
@@ -5,7 +17,7 @@ It allows users to analyse verdict patterns over time, segmented by gender and p
 
 The project is inspired by historical court archives (e.g. Old Bailey records) and aims to make centuries-old crime data accessible, explorable, and visually intuitive.
 
-## Features
+Features
 
 📈 Interactive line charts showing guilty rate (%) over time
 
@@ -33,73 +45,99 @@ Sample size (n)
 
 ⚡ Fast API responses backed by MySQL
 
-## 🧪 Methodology
+📘 Methodology
+Guilty Rate Calculation
 
-### Aggregation
+For each time bucket (year or decade), the guilty rate is calculated as:
 
-For each time bucket (year or decade) and group (e.g. `Male - Individual`), the API computes:
+Numerator: number of trials with verdict = Guilty
 
-- **Known verdicts (n):** trials where verdict ∈ {`Guilty`, `Not Guilty`}
-- **Guilty count (g):** trials where verdict = `Guilty`
-- **Guilty rate (%):** `100 * (g / n)` (when `n > 0`)
+Denominator: number of trials with known verdicts (Guilty or Not Guilty)
+This avoids bias from missing or indeterminate verdicts.
 
-Buckets are calculated from `trial_date` (e.g. `YEAR(trial_date)` or floor-to-decade).
+Wilson Score Confidence Intervals
 
-### Confidence intervals (Wilson score)
+Because historical datasets often have small sample sizes, especially when broken down by gender, offence, or time period, this project uses Wilson score intervals rather than normal (Wald) intervals.
 
-To avoid misleading intervals with small sample sizes (common in historical datasets), the project uses the **Wilson score interval** for a binomial proportion.
+Wilson intervals:
 
-Given:
+Remain valid for small n
+Never produce impossible values (<0% or >100%)
+Are widely recommended for binomial proportions
+The confidence level (90%, 95%, 99%) is selectable in the UI and is converted internally into a z-score.
 
-- `p = g / n`
-- `z` = z-score for the chosen confidence level (e.g. **1.96** for 95%)
+Why Wilson Instead of “Standard” CI?
+Method Problem
 
-Wilson interval:
+Wald (normal) Breaks down with small samples
+Wilson Stable, bounded, statistically robust ✅
 
-- `denom = 1 + z²/n`
-- `center = (p + z²/(2n)) / denom`
-- `margin = (z / denom) * sqrt( (p(1-p))/n + z²/(4n²) )`
+This choice makes the trends more trustworthy when data is sparse — common in early historical records.
 
-Confidence bounds are:
+🗺️ Spatial Analysis (Nearby Historic Crimes)
+Distance Calculation (Haversine Formula)
 
-- `low = 100 * (center - margin)`
-- `high = 100 * (center + margin)`
+To find crimes near a user’s location, the API uses the Haversine formula, which calculates great-circle distance between two latitude/longitude points on Earth.
 
-These bounds are returned per bucket and visualised as a shaded band around the guilty-rate line.
+Distance is calculated in meters
+Results are filtered by radius (50m – 20km)
+Returned results are sorted by proximity
+This allows users to explore what crimes happened near where they are standing today, even if those crimes occurred centuries ago.
 
-## Architecture
+Why Not Straight-Line (Planar) Distance?
+Because Earth is curved.
 
-BACKEND
+Haversine:
+Is accurate over city-scale distances
+Requires no GIS extensions
+Works efficiently in SQL
 
-Node.js
+🧠 UX Decisions
+Confidence Interval Bands
+CI bands are rendered as translucent fills
+Smooth fade-in / fade-out animation
+Visibility controlled independently from the main trend line
+This avoids clutter while keeping uncertainty visible when needed.
 
-Express
+Interactive Legend
+Clicking a legend item:
+Toggles the entire dataset group
+Main line
+Confidence band
+Upper CI boundary
+This keeps the chart intuitive while preserving statistical context.
 
+📍 Map Behaviour
+Marker Clustering
+When multiple crimes share similar coordinates:
+Markers are clustered automatically
+Clusters expand smoothly on zoom
+Small positional jitter prevents exact overlaps
+This ensures clarity without distorting spatial meaning.
+
+🎓 Educational Focus
+This project is designed as an educational exploration tool, not just a data viewer.
+Users can:
+Compare historical justice outcomes
+Explore uncertainty in sparse data
+Experience crime geography across centuries
+Relate modern locations to historical events
+
+🚧 Project Status
+This project is actively evolving.
+Planned enhancements include:
+Leaflet UX improvements (clustering controls, legends)
+Time sliders for spatial filtering
+Accessibility enhancements
+Internationalisation (i18n)
+Optional AR-based educational experiences
+
+🛠️ Tech Stack
+Node.js + Express
 MySQL
-
-REST API (/api/stats/gender-party/over-time)
-
-FRONTEND
-
-Vanilla HTML/CSS
-
 Chart.js
-
-Dynamic dataset construction
-
-Animated dataset visibility toggling (no refetch)
-
-🔬 Statistical Approach
-
-Guilty rates are calculated as percentages per time bucket
-
-Confidence intervals use the Wilson score interval, which is:
-
-More reliable for small sample sizes
-
-Commonly used in historical and social data analysis
-
-Confidence level is user-selectable (e.g. 90%, 95%)
+Leaflet.js + MarkerCluster
+Vanilla JS (no framework lock-in)
 
 ## Run locally
 
@@ -122,23 +160,9 @@ Confidence level is user-selectable (e.g. 90%, 95%)
 
    UI: http://localhost:3000
 
-🗺️ Roadmap
-
-📍 Geospatial queries (historic crimes near user location)
-
-🧭 Time-aware mapping (crime scenes layered by century)
-
-🗃️ Expanded datasets (non-violent crimes, sentencing outcomes)
-
-🌍 Public demo deployment
-
-⚠️ Notes
-
-
-
-
-This project is actively evolving.
 Historical data is partially seeded for development and visual validation purposes.
+Early periods show sparse female data, resulting in wider confidence intervals.
+This accurately reflects historical court record imbalance rather than a charting error.
 
 ![Chart overview](screenshots/chart-overview.png)
 
@@ -154,9 +178,6 @@ Historical data is partially seeded for development and visual validation purpos
 
 **Hover Tooltips**
 ![Hover tooltip showing CI and sample size](screenshots/chart-hover-tooltip.png)
-
-> Early periods show sparse female data, resulting in wider confidence intervals.
-> This accurately reflects historical court record imbalance rather than a charting error.
 
 Nearby Historic Crimes API
 
