@@ -1,9 +1,6 @@
 let chart; // single chart reference
 const DEFAULT_CI_ALPHA = 0.2;
 const LINE_TENSION = 0.2;
-let map;
-let markersLayer;   // <-- IMPORTANT: shared variable
-let centerMarker;
 
 function isCiDataset(ds) {
   return ds.label.includes("CI band") || ds.label.includes("upper CI");
@@ -144,18 +141,20 @@ function rgbaForLabel(label, alpha = 1) {
 
 function buildDatasets(seriesArr) {
   const datasets = [];
-  
 
   seriesArr.forEach((series) => {
-  const { rgb, rgba } = rgbaForLabel(series.label, DEFAULT_CI_ALPHA);
-
+    const { rgb, rgba } = rgbaForLabel(series.label, DEFAULT_CI_ALPHA);
 
     // upper (invisible line)
     datasets.push({
       label: `${series.label} (upper CI)`,
       data: series.data.map(p => ({ x: p.x, y: p.high })),
       borderColor: "transparent",
-      pointRadius: 0
+      backgroundColor: "transparent",
+      borderWidth: 0,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      hitRadius: 0
     });
 
     // band (filled to previous dataset)
@@ -165,24 +164,63 @@ function buildDatasets(seriesArr) {
       fill: "-1",
       backgroundColor: rgba,
       borderColor: "transparent",
-      pointRadius: 0
+      borderWidth: 0,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      hitRadius: 0
     });
 
     // main line
     datasets.push({
       label: series.label,
-      data: series.data.map(p => ({ x: p.x, y: p.y, n: p.n, low: p.low, high: p.high })),
+      data: series.data.map(p => ({
+        x: p.x,
+        y: p.y,
+        n: p.n,
+        low: p.low,
+        high: p.high
+      })),
       borderColor: rgb,
       backgroundColor: rgb,
       tension: LINE_TENSION,
-      pointRadius: 4,
-      spanGaps: true
+      spanGaps: true,
+      borderWidth: 2,
+      pointRadius: 3,
+      pointHoverRadius: 6
     });
   });
 
   return datasets;
 }
 
+
+function baseLabel(label) {
+  return label
+    .replace(/\s*\(upper CI\)\s*$/i, "")
+    .replace(/\s*\(CI band\)\s*$/i, "")
+    .trim();
+}
+
+function isMainLineDataset(ds) {
+  return !ds.label.includes("(upper CI)") && !ds.label.includes("(CI band)");
+}
+
+function setGroupHidden(chart, clickedLabel, hidden) {
+  const base = baseLabel(clickedLabel);
+
+  chart.data.datasets.forEach((ds) => {
+    if (baseLabel(ds.label) !== base) return;
+    ds.hidden = hidden;
+
+    // If hiding the group, hide all.
+    // If showing the group, keep CI visibility controlled by your checkbox:
+    if (!hidden) {
+      if (isCiDataset(ds)) {
+        ds.hidden = !document.getElementById("toggle-ci").checked;
+      }
+    }
+  });
+}
 
 
   
@@ -202,33 +240,66 @@ function ensureChart() {
         x: { type: "linear", title: { display: true, text: "Year" } },
         y: { min: 0, max: 100, title: { display: true, text: "Guilty rate (%)" } }
       },
-      plugins: {
-        legend: {
-          labels: {
-            filter: item =>
-              !item.text.includes("upper CI") &&
-              !item.text.includes("CI band")
-          }
-        },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => {
-              if (ctx.dataset.label.includes("CI")) return null;
-              const raw = ctx.raw || {};
-              const y = raw.y;
-              const n = raw.n;
-              const low = raw.low;
-              const high = raw.high;
-              const ciPart =
-                (low == null || high == null) ? "" : ` (CI ${low}%–${high}%)`;
-              return `${ctx.dataset.label}: ${Number(y).toFixed(1)}%${ciPart} (n=${n})`;
+    plugins: {
+      legend: {
+       labels: {
+      // Only show the "main line" datasets in the legend (hide CI helpers)
+         filter: (item, chartData) => {
+           const ds = chartData.datasets[item.datasetIndex];
+           return !ds.label.includes("(upper CI)") && !ds.label.includes("(CI band)");
+         },
+
+      // Nicer legend look
+         usePointStyle: true,
+         pointStyle: "line",
+         boxWidth: 32,
+         padding: 16
+       },
+
+    // Click legend item => toggle whole group (line + CI band + upper CI)
+       onClick: (e, item, legend) => {
+         const chart = legend.chart;
+         const ds = chart.data.datasets[item.datasetIndex];
+         const base = ds.label.replace(/\s*\(.*?\)\s*$/, "");
+
+         const main = chart.data.datasets.find(d =>
+           d.label === base
+         );
+         
+         const nextHidden = main ? !main.hidden : true;
+         
+         chart.data.datasets.forEach(d => {
+            if (d.label.startsWith(base)) {
+              d.hidden = nextHidden;
+              if (!nextHidden && d.label.includes("CI")) {
+                d.hidden = !document.getElementById("toggle-ci").checked;
+              }
             }
+          });   
+
+          chart.update();     
+        }
+      },
+
+       
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            if (ctx.dataset.label.includes("CI")) return null;
+            const { y, n, low, high } = ctx.raw || {};
+            const ci = (low != null && high != null)
+              ? ` (CI ${low}%–${high}%)`
+              : "";
+            return `${ctx.dataset.label}: ${Number(y).toFixed(1)}%${ci} (n=${n})`;
           }
         }
       }
     }
-  });
+  }
+});
+
 }
+
 
 async function render() {
   ensureChart();
@@ -257,11 +328,13 @@ async function render() {
 // Leaflet: Nearby crimes
 // --------------------
 
-//let map;
-//let markersLayer;
-//let centerMarker;
+
 
 // Default: central London (your earlier example)
+let map;
+let markersLayer;   // <-- IMPORTANT: shared variable
+let centerMarker;
+
 let currentCenter = { lat: 51.509865, lng: -0.118092 };
 
 function ensureMap() {
@@ -464,6 +537,4 @@ render().catch(err => {
   console.error(err);
   alert(err.message);
 });
-
-
 
