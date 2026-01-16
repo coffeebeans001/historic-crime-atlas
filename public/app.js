@@ -9,7 +9,7 @@ function isCiDataset(ds) {
 function setCiAlpha(alpha) {
   if (!chart) return;
 
-  chart.data.datasets.forEach(ds => {
+  chart.data.datasets.forEach((ds) => {
     if (!isCiDataset(ds)) return;
 
     if (ds.label.includes("CI band")) {
@@ -21,7 +21,9 @@ function setCiAlpha(alpha) {
           `rgba($1, ${alpha})`
         );
       } else if (typeof bg === "string" && bg.startsWith("rgb(")) {
-        ds.backgroundColor = bg.replace("rgb(", "rgba(").replace(")", `, ${alpha})`);
+        ds.backgroundColor = bg
+          .replace("rgb(", "rgba(")
+          .replace(")", `, ${alpha})`);
       }
     }
 
@@ -32,12 +34,17 @@ function setCiAlpha(alpha) {
 function animateCi(show, durationMs = 250) {
   if (!chart) return;
 
-  const band = chart.data.datasets.find(ds => ds.label.includes("CI band"));
-  
+  const band = chart.data.datasets.find((ds) => ds.label.includes("CI band"));
 
   let startAlpha = show ? 0 : DEFAULT_CI_ALPHA;
-  if (band && typeof band.backgroundColor === "string" && band.backgroundColor.startsWith("rgba(")) {
-    const m = band.backgroundColor.match(/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([0-9.]+)\s*\)/);
+  if (
+    band &&
+    typeof band.backgroundColor === "string" &&
+    band.backgroundColor.startsWith("rgba(")
+  ) {
+    const m = band.backgroundColor.match(
+      /rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([0-9.]+)\s*\)/
+    );
     if (m) startAlpha = Number(m[1]);
   }
 
@@ -49,11 +56,15 @@ function animateCi(show, durationMs = 250) {
     const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
     const alpha = startAlpha + (endAlpha - startAlpha) * eased;
 
-    chart.data.datasets.forEach(ds => { if (isCiDataset(ds)) ds.hidden = false; });
+    chart.data.datasets.forEach((ds) => {
+      if (isCiDataset(ds)) ds.hidden = false;
+    });
     setCiAlpha(alpha);
 
     if (t === 1) {
-      chart.data.datasets.forEach(ds => { if (isCiDataset(ds)) ds.hidden = !show; });
+      chart.data.datasets.forEach((ds) => {
+        if (isCiDataset(ds)) ds.hidden = !show;
+      });
     }
 
     chart.update("none");
@@ -75,11 +86,7 @@ function buildUrl() {
 
   return `/api/stats/gender-party/over-time?${params.toString()}`;
 }
-  
 
-
-
- 
 async function loadSeries() {
   const url = buildUrl();
   const res = await fetch(url);
@@ -102,9 +109,9 @@ function hashString(str) {
 
 function colorForLabel(label) {
   // Use HSL so colours are nicely spaced and readable
-  const h = hashString(label) % 360;     // hue 0-359
-  const s = 70;                          // saturation
-  const l = 45;                          // lightness
+  const h = hashString(label) % 360; // hue 0-359
+  const s = 70; // saturation
+  const l = 45; // lightness
   return { h, s, l };
 }
 
@@ -117,7 +124,9 @@ function hslToRgb(h, s, l) {
   const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
   const m = l - c / 2;
 
-  let r = 0, g = 0, b = 0;
+  let r = 0,
+    g = 0,
+    b = 0;
   if (h < 60) [r, g, b] = [c, x, 0];
   else if (h < 120) [r, g, b] = [x, c, 0];
   else if (h < 180) [r, g, b] = [0, c, x];
@@ -128,16 +137,18 @@ function hslToRgb(h, s, l) {
   return {
     r: Math.round((r + m) * 255),
     g: Math.round((g + m) * 255),
-    b: Math.round((b + m) * 255)
+    b: Math.round((b + m) * 255),
   };
 }
 
 function rgbaForLabel(label, alpha = 1) {
   const { h, s, l } = colorForLabel(label);
   const { r, g, b } = hslToRgb(h, s, l);
-  return { rgb: `rgb(${r}, ${g}, ${b})`, rgba: `rgba(${r}, ${g}, ${b}, ${alpha})` };
+  return {
+    rgb: `rgb(${r}, ${g}, ${b})`,
+    rgba: `rgba(${r}, ${g}, ${b}, ${alpha})`,
+  };
 }
-
 
 function buildDatasets(seriesArr) {
   const datasets = [];
@@ -148,37 +159,37 @@ function buildDatasets(seriesArr) {
     // upper (invisible line)
     datasets.push({
       label: `${series.label} (upper CI)`,
-      data: series.data.map(p => ({ x: p.x, y: p.high })),
+      data: series.data.map((p) => ({ x: p.x, y: p.high })),
       borderColor: "transparent",
       backgroundColor: "transparent",
       borderWidth: 0,
       pointRadius: 0,
       pointHoverRadius: 0,
-      hitRadius: 0
+      hitRadius: 0,
     });
 
     // band (filled to previous dataset)
     datasets.push({
       label: `${series.label} (CI band)`,
-      data: series.data.map(p => ({ x: p.x, y: p.low })),
+      data: series.data.map((p) => ({ x: p.x, y: p.low })),
       fill: "-1",
       backgroundColor: rgba,
       borderColor: "transparent",
       borderWidth: 0,
       pointRadius: 0,
       pointHoverRadius: 0,
-      hitRadius: 0
+      hitRadius: 0,
     });
 
     // main line
     datasets.push({
       label: series.label,
-      data: series.data.map(p => ({
+      data: series.data.map((p) => ({
         x: p.x,
         y: p.y,
         n: p.n,
         low: p.low,
-        high: p.high
+        high: p.high,
       })),
       borderColor: rgb,
       backgroundColor: rgb,
@@ -186,13 +197,12 @@ function buildDatasets(seriesArr) {
       spanGaps: true,
       borderWidth: 2,
       pointRadius: 3,
-      pointHoverRadius: 6
+      pointHoverRadius: 6,
     });
   });
 
   return datasets;
 }
-
 
 function baseLabel(label) {
   return label
@@ -222,83 +232,97 @@ function setGroupHidden(chart, clickedLabel, hidden) {
   });
 }
 
-
-  
-
 function ensureChart() {
   if (chart) return;
 
-  const ctx = document.getElementById("chart").getContext("2d");
+  const ctx = document.getElementById("crimeChart").getContext("2d");
 
   chart = new Chart(ctx, {
     type: "line",
     data: { datasets: [] },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       interaction: { mode: "nearest", intersect: false },
       scales: {
         x: { type: "linear", title: { display: true, text: "Year" } },
         y: { min: 0, max: 100, title: { display: true, text: "Guilty rate (%)" } }
       },
-    plugins: {
-      legend: {
-       labels: {
-      // Only show the "main line" datasets in the legend (hide CI helpers)
-         filter: (item, chartData) => {
-           const ds = chartData.datasets[item.datasetIndex];
-           return !ds.label.includes("(upper CI)") && !ds.label.includes("(CI band)");
-         },
+      plugins: {
+        legend: {
+          labels: {
+            // Only show the "main line" datasets in the legend (hide CI helpers)
+            filter: (item, chartData) => {
+              const ds = chartData.datasets[item.datasetIndex];
+              return (
+                !ds.label.includes("(upper CI)") &&
+                !ds.label.includes("(CI band)")
+              );
+            },
 
-      // Nicer legend look
-         usePointStyle: true,
-         pointStyle: "line",
-         boxWidth: 32,
-         padding: 16
-       },
+            // Nicer legend look
+            usePointStyle: true,
+            pointStyle: "line",
+            boxWidth: 32,
+            padding: 16
+          },
 
-    // Click legend item => toggle whole group (line + CI band + upper CI)
-       onClick: (e, item, legend) => {
-         const chart = legend.chart;
-         const ds = chart.data.datasets[item.datasetIndex];
-         const base = ds.label.replace(/\s*\(.*?\)\s*$/, "");
+          // Click legend item => toggle whole group (line + CI band + upper CI)
+          onClick: (e, item, legend) => {
+            const c = legend.chart;
+            const ds = c.data.datasets[item.datasetIndex];
+            const base = (ds.label || "").replace(/\s*\(.*?\)\s*$/, "");
 
-         const main = chart.data.datasets.find(d =>
-           d.label === base
-         );
-         
-         const nextHidden = main ? !main.hidden : true;
-         
-         chart.data.datasets.forEach(d => {
-            if (d.label.startsWith(base)) {
-              d.hidden = nextHidden;
-              if (!nextHidden && d.label.includes("CI")) {
-                d.hidden = !document.getElementById("toggle-ci").checked;
+            const main = c.data.datasets.find(d => (d.label || "") === base);
+            const nextHidden = main ? !main.hidden : true;
+
+            c.data.datasets.forEach(d => {
+              const lbl = d.label || "";
+              if (lbl.startsWith(base)) {
+                d.hidden = nextHidden;
+
+                // if we're showing again, CI visibility should still obey your checkbox
+                if (!nextHidden && lbl.includes("CI")) {
+                  d.hidden = !document.getElementById("toggle-ci").checked;
+                }
               }
+            });
+
+            c.update();
+          }
+        },
+
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const dsLabel = ctx.dataset.label || "";
+
+              // Hide CI helper datasets completely
+              if (dsLabel.includes("(CI")) return null;
+
+              const raw = ctx.raw || {};
+              if (raw.y == null) return null;
+
+              const y = Number(raw.y).toFixed(1);
+              const n = raw.n;
+              const low = raw.low;
+              const high = raw.high;
+
+              const ci =
+                low != null && high != null
+                  ? ` (CI ${low}%–${high}%)`
+                  : "";
+
+              return `${dsLabel}: ${y}%${ci}${n ? ` (n=${n})` : ""}`;
             }
-          });   
-
-          chart.update();     
-        }
-      },
-
-       
-      tooltip: {
-        callbacks: {
-          label: (ctx) => {
-            if (ctx.dataset.label.includes("CI")) return null;
-            const { y, n, low, high } = ctx.raw || {};
-            const ci = (low != null && high != null)
-              ? ` (CI ${low}%–${high}%)`
-              : "";
-            return `${ctx.dataset.label}: ${Number(y).toFixed(1)}%${ci} (n=${n})`;
           }
         }
       }
     }
-  }
-});
-
+  });
 }
+
+
 
 
 async function render() {
@@ -311,16 +335,19 @@ async function render() {
   const showCi = document.getElementById("toggle-ci").checked;
 
   if (!showCi) {
-    chart.data.datasets.forEach(ds => { if (isCiDataset(ds)) ds.hidden = true; });
+    chart.data.datasets.forEach((ds) => {
+      if (isCiDataset(ds)) ds.hidden = true;
+    });
     setCiAlpha(0);
   } else {
-    chart.data.datasets.forEach(ds => { if (isCiDataset(ds)) ds.hidden = false; });
+    chart.data.datasets.forEach((ds) => {
+      if (isCiDataset(ds)) ds.hidden = false;
+    });
     setCiAlpha(DEFAULT_CI_ALPHA);
   }
 
   chart.options.scales.x.title.text = bucket === "decade" ? "Decade" : "Year";
 
-  
   chart.update("none");
 }
 
@@ -328,11 +355,9 @@ async function render() {
 // Leaflet: Nearby crimes
 // --------------------
 
-
-
 // Default: central London (your earlier example)
 let map;
-let markersLayer;   // <-- IMPORTANT: shared variable
+let markersLayer; // shared variable
 let centerMarker;
 
 let currentCenter = { lat: 51.509865, lng: -0.118092 };
@@ -344,26 +369,44 @@ function ensureMap() {
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
+    attribution: "&copy; OpenStreetMap contributors",
   }).addTo(map);
 
   // Create once
   markersLayer = L.markerClusterGroup({
     chunkedLoading: true,
-    showCoverageOnHover: false
+    showCoverageOnHover: false,
+    spiderfyOnMaxZoom: true,
+    disableClusteringAtZoom: 18,
   });
 
   map.addLayer(markersLayer);
 
-  centerMarker = L.marker([currentCenter.lat, currentCenter.lng], { draggable: true })
+  // Draggable center marker
+  centerMarker = L.marker([currentCenter.lat, currentCenter.lng], {
+    draggable: true,
+  })
     .addTo(map)
     .bindPopup("Search center (drag me)")
     .openPopup();
 
+  // Drag to move search center
   centerMarker.on("dragend", () => {
     const pos = centerMarker.getLatLng();
     currentCenter = { lat: pos.lat, lng: pos.lng };
   });
+
+  // Click map to move search center
+  map.on("click", (e) => {
+    currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
+    centerMarker.setLatLng(e.latlng).openPopup();
+  });
+}
+
+try {
+  fetchNearby(); // auto-refresh nearby crimes
+} catch (e) {
+  console.error(e);
 }
 
 function buildNearbyUrl() {
@@ -394,21 +437,23 @@ function renderNearbyList(rows) {
     return;
   }
 
-  const items = rows.map(r => {
-    const d = (r.distance_m == null) ? "" : `${Math.round(r.distance_m)} m`;
-    const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "";
-    const offence = r.offence_name || "(unknown offence)";
-    const who = r.defendant_name || "(unknown defendant)";
-    const verdict = r.verdict || "(unknown verdict)";
-    const where = r.trial_location || "";
+  const items = rows
+    .map((r) => {
+      const d = r.distance_m == null ? "" : `${Math.round(r.distance_m)} m`;
+      const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "";
+      const offence = r.offence_name || "(unknown offence)";
+      const who = r.defendant_name || "(unknown defendant)";
+      const verdict = r.verdict || "(unknown verdict)";
+      const where = r.trial_location || "";
 
-    return `
+      return `
       <li style="margin:8px 0;">
         <strong>${offence}</strong> — ${who} (${verdict})<br/>
         <span style="opacity:.8;">${date} • ${where} • ${d}</span>
       </li>
     `;
-  }).join("");
+    })
+    .join("");
 
   el.innerHTML = `<ol style="padding-left:18px;">${items}</ol>`;
 }
@@ -416,62 +461,91 @@ function renderNearbyList(rows) {
 async function fetchNearby() {
   ensureMap();
 
-  // Clear old markers
-  markersLayer.clearLayers();
+  const btn = document.getElementById("nearby");
+  const prevText = btn?.textContent;
 
-  const url = buildNearbyUrl();
-  const res = await fetch(url);
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Nearby request failed (${res.status}): ${txt}`);
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Searching…";
   }
-  const payload = await res.json();
-  window.lastNearbyResponse = payload;
-  const rows = payload.data || [];
+
+  try {
+    // 🔽 EVERYTHING that used to be in fetchNearby stays here
+
+    // Clear old markers
+    markersLayer.clearLayers();
+
+    const url = buildNearbyUrl();
+    const res = await fetch(url);
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`Nearby request failed (${res.status}): ${txt}`);
+    }
+
+    const payload = await res.json();
+    const rows = payload.data || [];
 
     // Drop markers
-markersLayer.clearLayers();
-
 rows.forEach((r, i) => {
   const baseLat = Number(r.latitude);
   const baseLng = Number(r.longitude);
   if (!Number.isFinite(baseLat) || !Number.isFinite(baseLng)) return;
 
-  // optional jitter if many share exact same coords (keeps them separable)
   const jitter = (i + 1) * 0.00015;
   const lat = baseLat + jitter;
   const lng = baseLng + jitter;
 
-  const marker = L.marker([lat, lng]).bindPopup(`
-    <b>${r.offence_name || r.offence_group || "Offence"}</b><br/>
-    ${r.trial_date ? String(r.trial_date).slice(0,10) : ""}<br/>
-    ${r.defendant_name || ""}<br/>
-    Distance: ${Math.round(Number(r.distance_m || 0))} m
+  const date = r.trial_date
+    ? String(r.trial_date).slice(0, 10)
+    : "Unknown date";
+
+  const offence = r.offence_name || r.offence_group || "Offence";
+  const who = r.defendant_name || "Unknown defendant";
+  const dist =
+    r.distance_m != null
+      ? `${Math.round(Number(r.distance_m))} m`
+      : "—";
+
+  const marker = L.marker([lat, lng]);
+
+  marker.bindPopup(`
+    <div style="min-width:220px;">
+      <div style="font-weight:700; margin-bottom:6px;">
+        ${offence}
+      </div>
+      <div><b>Date:</b> ${date}</div>
+      <div><b>Defendant:</b> ${who}</div>
+      <div><b>Distance:</b> ${dist}</div>
+    </div>
   `);
 
-  markersLayer.addLayer(marker); // works for markerClusterGroup
+  markersLayer.addLayer(marker);
 });
 
 
+    renderNearbyList(rows);
 
-  renderNearbyList(rows);
+    // Auto-zoom
+    if (rows.length) {
+      const latLngs = rows
+        .map((r) => [Number(r.latitude), Number(r.longitude)])
+        .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
 
-  // Optional: fit bounds nicely if there are results
-  if (rows.length) {
-    const latLngs = rows
-      .map(r => [Number(r.latitude), Number(r.longitude)])
-      .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
-
-    if (latLngs.length) {
-      const bounds = L.latLngBounds(latLngs);
-      map.fitBounds(bounds.pad(0.25));
+      latLngs.push([currentCenter.lat, currentCenter.lng]);
+      map.fitBounds(L.latLngBounds(latLngs).pad(0.25));
+    }
+  } finally {
+    // 🔽 ALWAYS runs, even if fetch fails
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = prevText || "Find nearby";
     }
   }
 }
 
 // Buttons
 document.getElementById("nearby")?.addEventListener("click", () => {
-  fetchNearby().catch(err => {
+  fetchNearby().catch((err) => {
     console.error(err);
     alert(err.message);
   });
@@ -486,11 +560,21 @@ document.getElementById("use-gps")?.addEventListener("click", () => {
   }
 
   navigator.geolocation.getCurrentPosition(
-    (pos) => {
+    async (pos) => {
       currentCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      map.setView([currentCenter.lat, currentCenter.lng], 14);
-      centerMarker.setLatLng([currentCenter.lat, currentCenter.lng]);
-      centerMarker.openPopup();
+
+      map.setView([currentCenter.lat, currentCenter.lng], 15);
+      centerMarker
+        .setLatLng([currentCenter.lat, currentCenter.lng])
+        .openPopup();
+
+      // Auto-run nearby after locating
+      try {
+        await fetchNearby();
+      } catch (e) {
+        console.error(e);
+        alert("Nearby lookup failed. Check console.");
+      }
     },
     (err) => {
       console.error(err);
@@ -503,23 +587,22 @@ document.getElementById("use-gps")?.addEventListener("click", () => {
 // Initialise map immediately (optional)
 ensureMap();
 
-
 document.getElementById("reload").addEventListener("click", () => {
-  render().catch(err => {
+  render().catch((err) => {
     console.error(err);
     alert(err.message);
   });
 });
 
 document.getElementById("bucket").addEventListener("change", () => {
-  render().catch(err => {
+  render().catch((err) => {
     console.error(err);
     alert(err.message);
   });
 });
 
 document.getElementById("confidence").addEventListener("change", () => {
-  render().catch(err => {
+  render().catch((err) => {
     console.error(err);
     alert(err.message);
   });
@@ -533,8 +616,7 @@ document.getElementById("toggle-ci").addEventListener("change", () => {
 });
 
 // initial load
-render().catch(err => {
+render().catch((err) => {
   console.error(err);
   alert(err.message);
 });
-

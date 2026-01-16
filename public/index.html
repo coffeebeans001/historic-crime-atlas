@@ -8,13 +8,16 @@
     <!-- Chart.js (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <style>
-      body { font-family: system-ui, Arial; margin: 24px; }
-      .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-      label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
-      input, select { padding: 8px; font-size: 14px; }
-      canvas { max-width: 100%; }
-    </style>
+<style>
+  body { font-family: system-ui, Arial; margin: 24px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+  input, select { padding: 8px; font-size: 14px; }
+  canvas { max-width: 100%; }
+  #chart-wrap { width: 100%; max-width: 1100px; height: 320px; }
+  #crimeChart { width: 100% !important; height: 100% !important; display: block; }
+</style>
+
     
     
  
@@ -77,6 +80,11 @@
         <option value="2.576">99%</option>
       </select>
     </label>
+    
+    <div id="chart-wrap">
+      <canvas id="crimeChart"></canvas>
+    </div>  
+
     <hr style="margin:24px 0;" />
 
     <h2>Nearby historic crimes</h2>
@@ -105,10 +113,6 @@
 
     <div id="nearby-results" style="margin-top:12px;"></div>
 
-    <canvas id="chart" height="120"></canvas>
-     
-   
-
-</body>
+  </body>
 </html>
 
