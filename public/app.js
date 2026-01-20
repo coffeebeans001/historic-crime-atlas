@@ -359,55 +359,70 @@ async function render() {
 let map;
 let markersLayer; // shared variable
 let centerMarker;
+let radiusCircle; // shows the search radius
+let markerById = new Map();
+let radiusInputEl;
+let baseTiles;
+
+
 
 let currentCenter = { lat: 51.509865, lng: -0.118092 };
 
+let mapClickBound = false;
+
+function onMapClick(e) {
+  currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
+  centerMarker.setLatLng(e.latlng).openPopup();
+  updateRadiusCircle();
+  // fetchNearby().catch(console.error); // optional
+}
+
 function ensureMap() {
-  if (map) return;
+  if (!map) {
+    map = L.map("map").setView([currentCenter.lat, currentCenter.lng], 13);
+  }
 
-  map = L.map("map").setView([currentCenter.lat, currentCenter.lng], 13);
+  if (!baseTiles) {
+    baseTiles = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+  }
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap contributors",
-  }).addTo(map);
+  if (!markersLayer) {
+    markersLayer = L.markerClusterGroup({
+      chunkedLoading: true,
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      disableClusteringAtZoom: 18,
+    });
+    map.addLayer(markersLayer);
+  }
 
-  // Create once
-  markersLayer = L.markerClusterGroup({
-    chunkedLoading: true,
-    showCoverageOnHover: false,
-    spiderfyOnMaxZoom: true,
-    disableClusteringAtZoom: 18,
-  });
+  if (!centerMarker) {
+    centerMarker = L.marker([currentCenter.lat, currentCenter.lng], { draggable: true })
+      .addTo(map)
+      .bindPopup("Search center (drag me)")
+      .openPopup();
 
-  map.addLayer(markersLayer);
+    centerMarker.on("dragend", () => {
+      const pos = centerMarker.getLatLng();
+      currentCenter = { lat: pos.lat, lng: pos.lng };
+      updateRadiusCircle();
+    });
+  }
 
-  // Draggable center marker
-  centerMarker = L.marker([currentCenter.lat, currentCenter.lng], {
-    draggable: true,
-  })
-    .addTo(map)
-    .bindPopup("Search center (drag me)")
-    .openPopup();
+  if (!mapClickBound) {
+    map.on("click", onMapClick);
+    mapClickBound = true;
+  }
 
-  // Drag to move search center
-  centerMarker.on("dragend", () => {
-    const pos = centerMarker.getLatLng();
-    currentCenter = { lat: pos.lat, lng: pos.lng };
-  });
-
-  // Click map to move search center
-  map.on("click", (e) => {
-    currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
-    centerMarker.setLatLng(e.latlng).openPopup();
-  });
+  window.__markersLayer = markersLayer;
+  window.__centerMarker = centerMarker;
 }
 
-try {
-  fetchNearby(); // auto-refresh nearby crimes
-} catch (e) {
-  console.error(e);
-}
+
+
 
 function buildNearbyUrl() {
   const from = document.getElementById("from").value;
@@ -430,39 +445,73 @@ function buildNearbyUrl() {
   return `/api/trials/nearby?${params.toString()}`;
 }
 
-function renderNearbyList(rows) {
+
+function updateRadiusCircle() {
+  if (!map) return;
+
+  const radiusEl = document.getElementById("radius");
+  const r = Number(radiusEl && radiusEl.value ? radiusEl.value : 2000);
+
+  if (!radiusCircle) {
+    radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], {
+      radius: r
+    }).addTo(map);
+  } else {
+    radiusCircle.setLatLng([currentCenter.lat, currentCenter.lng]);
+    radiusCircle.setRadius(r);
+  }
+}
+
+function renderNearbyList(rows, markerById) {
   const el = document.getElementById("nearby-results");
-  if (!rows.length) {
+  if (!el) return;
+
+  if (!rows || !rows.length) {
     el.innerHTML = "<p>No results in this radius for the selected filters.</p>";
     return;
   }
 
-  const items = rows
-    .map((r) => {
-      const d = r.distance_m == null ? "" : `${Math.round(r.distance_m)} m`;
-      const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "";
-      const offence = r.offence_name || "(unknown offence)";
-      const who = r.defendant_name || "(unknown defendant)";
-      const verdict = r.verdict || "(unknown verdict)";
-      const where = r.trial_location || "";
+  const items = rows.map(r => {
+    const id = r.id != null ? String(r.id) : "";
+    const d = r.distance_m == null ? "" : `${Math.round(r.distance_m)} m`;
+    const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "";
+    const offence = r.offence_name || r.offence_group || "(unknown offence)";
+    const who = r.defendant_name || "(unknown defendant)";
+    const verdict = r.verdict || "(unknown verdict)";
+    const where = r.trial_location || "";
 
-      return `
+    return `
       <li style="margin:8px 0;">
-        <strong>${offence}</strong> — ${who} (${verdict})<br/>
-        <span style="opacity:.8;">${date} • ${where} • ${d}</span>
+        <button type="button" data-id="${id}" style="all:unset; cursor:pointer; display:block;">
+          <strong>${offence}</strong> — ${who} (${verdict})<br/>
+          <span style="opacity:.8;">${date} • ${where} • ${d}</span>
+        </button>
       </li>
     `;
-    })
-    .join("");
+  }).join("");
 
   el.innerHTML = `<ol style="padding-left:18px;">${items}</ol>`;
+
+  el.querySelectorAll("button[data-id]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-id");
+      if (!id) return;
+
+      const marker = markerById && markerById.get(id);
+      if (!marker) return;
+
+     markersLayer.zoomToShowLayer(marker, () => marker.openPopup());
+    });
+  });
 }
+
 
 async function fetchNearby() {
   ensureMap();
+  updateRadiusCircle();
 
   const btn = document.getElementById("nearby");
-  const prevText = btn?.textContent;
+  const prevText = btn ? btn.textContent : "";
 
   if (btn) {
     btn.disabled = true;
@@ -470,12 +519,11 @@ async function fetchNearby() {
   }
 
   try {
-    // 🔽 EVERYTHING that used to be in fetchNearby stays here
-
-    // Clear old markers
     markersLayer.clearLayers();
 
     const url = buildNearbyUrl();
+    console.log("nearby url:", url);
+    
     const res = await fetch(url);
     if (!res.ok) {
       const txt = await res.text();
@@ -483,9 +531,15 @@ async function fetchNearby() {
     }
 
     const payload = await res.json();
+    window.lastNearbyResponse = payload;
+    
     const rows = payload.data || [];
+    console.log("payload rows:", rows.length, rows[0]);
 
-    // Drop markers
+    // Reset marker lookup ONCE
+markerById = new Map();
+
+// Drop markers ONCE
 rows.forEach((r, i) => {
   const baseLat = Number(r.latitude);
   const baseLng = Number(r.longitude);
@@ -495,47 +549,40 @@ rows.forEach((r, i) => {
   const lat = baseLat + jitter;
   const lng = baseLng + jitter;
 
-  const date = r.trial_date
-    ? String(r.trial_date).slice(0, 10)
-    : "Unknown date";
-
+  const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "Unknown date";
   const offence = r.offence_name || r.offence_group || "Offence";
   const who = r.defendant_name || "Unknown defendant";
-  const dist =
-    r.distance_m != null
-      ? `${Math.round(Number(r.distance_m))} m`
-      : "—";
+  const verdict = r.verdict || "Unknown verdict";
+  const dist = r.distance_m != null ? `${Math.round(Number(r.distance_m))} m` : "—";
 
   const marker = L.marker([lat, lng]);
 
-  marker.bindPopup(`
+  const popupHTML = `
     <div style="min-width:220px;">
-      <div style="font-weight:700; margin-bottom:6px;">
-        ${offence}
-      </div>
+      <div style="font-weight:700; margin-bottom:6px;">${offence}</div>
       <div><b>Date:</b> ${date}</div>
-      <div><b>Defendant:</b> ${who}</div>
+      <div><b>Defendant:</b> ${who} (${verdict})</div>
       <div><b>Distance:</b> ${dist}</div>
     </div>
-  `);
+  `;
+
+  marker.bindPopup(popupHTML);
+
+  if (r.id != null) markerById.set(String(r.id), marker);
 
   markersLayer.addLayer(marker);
 });
+console.log("cluster after add:", markersLayer.getLayers().length);
 
 
-    renderNearbyList(rows);
+// ✅ AFTER the loop ends:
+renderNearbyList(rows, markerById);
+console.log(
+  "list html len:",
+  (document.getElementById("nearby-results")?.innerHTML || "").length
+);
 
-    // Auto-zoom
-    if (rows.length) {
-      const latLngs = rows
-        .map((r) => [Number(r.latitude), Number(r.longitude)])
-        .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
-
-      latLngs.push([currentCenter.lat, currentCenter.lng]);
-      map.fitBounds(L.latLngBounds(latLngs).pad(0.25));
-    }
   } finally {
-    // 🔽 ALWAYS runs, even if fetch fails
     if (btn) {
       btn.disabled = false;
       btn.textContent = prevText || "Find nearby";
@@ -543,15 +590,9 @@ rows.forEach((r, i) => {
   }
 }
 
-// Buttons
-document.getElementById("nearby")?.addEventListener("click", () => {
-  fetchNearby().catch((err) => {
-    console.error(err);
-    alert(err.message);
-  });
-});
 
-document.getElementById("use-gps")?.addEventListener("click", () => {
+ const useGpsBtn = document.getElementById("use-gps");
+if (useGpsBtn) useGpsBtn.addEventListener("click", () => {
   ensureMap();
 
   if (!navigator.geolocation) {
@@ -568,6 +609,8 @@ document.getElementById("use-gps")?.addEventListener("click", () => {
         .setLatLng([currentCenter.lat, currentCenter.lng])
         .openPopup();
 
+      updateRadiusCircle();
+
       // Auto-run nearby after locating
       try {
         await fetchNearby();
@@ -583,6 +626,7 @@ document.getElementById("use-gps")?.addEventListener("click", () => {
     { enableHighAccuracy: true, timeout: 10000 }
   );
 });
+
 
 // Initialise map immediately (optional)
 ensureMap();
@@ -615,8 +659,52 @@ document.getElementById("toggle-ci").addEventListener("change", () => {
   animateCi(show, 250);
 });
 
-// initial load
-render().catch((err) => {
-  console.error(err);
-  alert(err.message);
+const radiusInput = document.getElementById("radius");
+if (radiusInput) radiusInput.addEventListener("change", () => {
+
+  updateRadiusCircle();
 });
+
+// Buttons: Nearby
+const nearbyBtn = document.getElementById("nearby");
+if (nearbyBtn) {
+  nearbyBtn.addEventListener("click", () => {
+    fetchNearby().catch(err => {
+      console.error(err);
+      alert(err.message);
+    });
+  });
+}
+
+const radiusEl = document.getElementById("radius");
+if (radiusEl) {
+  radiusEl.addEventListener("change", () => {
+    updateRadiusCircle();
+  });
+}
+
+
+
+function init() {
+  // Chart
+  render().catch(console.error);
+
+  // Map base + center + radius
+  ensureMap();
+  updateRadiusCircle();
+
+  // Populate markers + list on page load
+  fetchNearby().catch(console.error);
+
+  // DevTools helpers (optional but useful)
+  window.__markersLayer = markersLayer;
+  window.__centerMarker = centerMarker;
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+
+
