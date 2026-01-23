@@ -244,10 +244,22 @@ function ensureChart() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "nearest", intersect: false },
-      scales: {
-        x: { type: "linear", title: { display: true, text: "Year" } },
-        y: { min: 0, max: 100, title: { display: true, text: "Guilty rate (%)" } }
-      },
+      layout: {
+    padding: { top: 12, bottom: 12 }
+  },
+
+  scales: {
+    x: {
+      type: "linear",
+      title: { display: true, text: "Year" }
+    },
+    y: {
+      min: 0,
+      max: 100,
+      grace: "6%",
+      title: { display: true, text: "Guilty rate (%)" }
+    }
+  },
       plugins: {
         legend: {
           labels: {
@@ -363,7 +375,52 @@ let radiusCircle; // shows the search radius
 let markerById = new Map();
 let radiusInputEl;
 let baseTiles;
+let mapHandlersBound = false; // ✅ ADD THIS
+let activeListBtn = null;        // currently “sticky” selected list item
+let activeMarker = null;         // currently selected marker
 
+function setActive(marker, btn) {
+  // clear previous selection
+  if (activeMarker && activeMarker !== marker) activeMarker.closePopup?.();
+  if (activeListBtn && activeListBtn !== btn) activeListBtn.classList.remove("is-active");
+
+  activeMarker = marker || null;
+  activeListBtn = btn || null;
+
+  if (activeListBtn) activeListBtn.classList.add("is-active");
+}
+
+
+// --- Marker hover/highlight helpers ---
+const markerState = new WeakMap();
+
+function setMarkerHighlight(marker, on) {
+  if (!marker) return;
+
+  // store defaults once
+  if (!markerState.has(marker)) {
+    markerState.set(marker, {
+      opacity: 1,
+      z: 0
+    });
+  }
+
+  if (on) {
+    marker.setOpacity(1);
+    marker.setZIndexOffset(1000);
+
+    // optional tiny visual lift if DOM element exists
+    const el = marker.getElement && marker.getElement();
+    if (el) el.classList.add("marker-hover");
+  } else {
+    const st = markerState.get(marker) || { opacity: 1, z: 0 };
+    marker.setOpacity(st.opacity);
+    marker.setZIndexOffset(st.z);
+
+    const el = marker.getElement && marker.getElement();
+    if (el) el.classList.remove("marker-hover");
+  }
+}
 
 
 let currentCenter = { lat: 51.509865, lng: -0.118092 };
@@ -395,6 +452,7 @@ function ensureMap() {
       showCoverageOnHover: false,
       spiderfyOnMaxZoom: true,
       disableClusteringAtZoom: 18,
+      maxClusterRadius: 60,
     });
     map.addLayer(markersLayer);
   }
@@ -409,17 +467,53 @@ function ensureMap() {
       const pos = centerMarker.getLatLng();
       currentCenter = { lat: pos.lat, lng: pos.lng };
       updateRadiusCircle();
+      // optional auto-refresh:
+      // fetchNearby().catch(console.error);
     });
   }
 
-  if (!mapClickBound) {
-    map.on("click", onMapClick);
-    mapClickBound = true;
+  if (!mapHandlersBound) {
+    mapHandlersBound = true;
+
+    map.on("click", (e) => {
+      currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
+      centerMarker.setLatLng(e.latlng).openPopup();
+      updateRadiusCircle();
+
+      // Clear list/marker "active" state on map click
+      if (activeListBtn) activeListBtn.classList.remove("is-active");
+      activeListBtn = null;
+
+      if (activeMarker) activeMarker.closePopup?.();
+      activeMarker = null;
+
+      // optional auto-refresh:
+      // fetchNearby().catch(console.error);
+    });
   }
 
-  window.__markersLayer = markersLayer;
-  window.__centerMarker = centerMarker;
+  // Keep radius circle synced even on first load
+  updateRadiusCircle();
+
+  // Optional: expose for DevTools
+  // window.__markersLayer = markersLayer;
+  // window.__centerMarker = centerMarker;
 }
+
+function updateRadiusCircle() {
+  if (!map) return;
+
+  const radiusEl = document.getElementById("radius");
+  const r = Number(radiusEl && radiusEl.value ? radiusEl.value : 2000);
+
+  if (!radiusCircle) {
+    radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], { radius: r }).addTo(map);
+  } else {
+    radiusCircle.setLatLng([currentCenter.lat, currentCenter.lng]);
+    radiusCircle.setRadius(r);
+  }
+}
+
 
 
 
@@ -453,14 +547,16 @@ function updateRadiusCircle() {
   const r = Number(radiusEl && radiusEl.value ? radiusEl.value : 2000);
 
   if (!radiusCircle) {
-    radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], {
-      radius: r
-    }).addTo(map);
+    radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], { radius: r }).addTo(map);
   } else {
     radiusCircle.setLatLng([currentCenter.lat, currentCenter.lng]);
     radiusCircle.setRadius(r);
   }
 }
+
+
+
+
 
 function renderNearbyList(rows, markerById) {
   const el = document.getElementById("nearby-results");
@@ -482,7 +578,12 @@ function renderNearbyList(rows, markerById) {
 
     return `
       <li style="margin:8px 0;">
-        <button type="button" data-id="${id}" style="all:unset; cursor:pointer; display:block;">
+        <button
+          type="button"
+          data-id="${id}"
+          class="nearby-item"
+          style="all:unset; cursor:pointer; display:block; padding:8px 10px; border-radius:10px; width:100%;"
+        >
           <strong>${offence}</strong> — ${who} (${verdict})<br/>
           <span style="opacity:.8;">${date} • ${where} • ${d}</span>
         </button>
@@ -490,20 +591,76 @@ function renderNearbyList(rows, markerById) {
     `;
   }).join("");
 
-  el.innerHTML = `<ol style="padding-left:18px;">${items}</ol>`;
+  el.innerHTML = `<ol style="padding-left:18px; margin:0;">${items}</ol>`;
 
-  el.querySelectorAll("button[data-id]").forEach(btn => {
+  // Wire up hover + click
+  el.querySelectorAll("button[data-id]").forEach((btn) => {
+
+    btn.addEventListener("mouseenter", () => {
+      const id = btn.getAttribute("data-id");
+      if (!id) return;
+
+      const marker = markerById.get(id);
+      if (!marker) return;
+
+      // Close previous popup if it isn't the sticky one
+      if (activeMarker && activeMarker !== marker) {
+        activeMarker.closePopup?.();
+      }
+
+      markersLayer.zoomToShowLayer(marker, () => {
+        marker.openPopup();
+        map.panTo(marker.getLatLng(), { animate: true });
+      });
+    });
+
+    btn.addEventListener("mouseleave", () => {
+      const id = btn.getAttribute("data-id");
+      if (!id) return;
+
+      const marker = markerById.get(id);
+      if (!marker) return;
+
+      // Only close if NOT sticky-selected
+      if (activeMarker !== marker) {
+        marker.closePopup?.();
+      }
+    });
+
     btn.addEventListener("click", () => {
       const id = btn.getAttribute("data-id");
       if (!id) return;
 
-      const marker = markerById && markerById.get(id);
+      const marker = markerById.get(id);
       if (!marker) return;
 
-     markersLayer.zoomToShowLayer(marker, () => marker.openPopup());
+      // Sticky highlight
+      if (activeListBtn) activeListBtn.classList.remove("is-active");
+      activeListBtn = btn;
+      activeListBtn.classList.add("is-active");
+
+      // Close previous sticky popup
+      if (activeMarker && activeMarker !== marker) {
+        activeMarker.closePopup?.();
+      }
+      activeMarker = marker;
+
+      markersLayer.zoomToShowLayer(marker, () => {
+        marker.openPopup();
+        map.panTo(marker.getLatLng(), { animate: true });
+      });
+
+      btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
   });
 }
+
+
+
+  
+
+
+
 
 
 async function fetchNearby() {
@@ -511,19 +668,22 @@ async function fetchNearby() {
   updateRadiusCircle();
 
   const btn = document.getElementById("nearby");
-  const prevText = btn ? btn.textContent : "";
+  const prevText = btn ? btn.textContent : "Find nearby";
+  const resultsEl = document.getElementById("nearby-results");
 
   if (btn) {
     btn.disabled = true;
     btn.textContent = "Searching…";
   }
+  if (resultsEl) {
+    resultsEl.innerHTML = `<p style="opacity:.8;">Searching nearby crimes…</p>`;
+  }
 
   try {
+    // Clear old markers
     markersLayer.clearLayers();
 
     const url = buildNearbyUrl();
-    console.log("nearby url:", url);
-    
     const res = await fetch(url);
     if (!res.ok) {
       const txt = await res.text();
@@ -531,64 +691,100 @@ async function fetchNearby() {
     }
 
     const payload = await res.json();
-    window.lastNearbyResponse = payload;
-    
     const rows = payload.data || [];
-    console.log("payload rows:", rows.length, rows[0]);
 
-    // Reset marker lookup ONCE
-markerById = new Map();
+    // Reset marker lookup
+    markerById = new Map();
 
-// Drop markers ONCE
-rows.forEach((r, i) => {
-  const baseLat = Number(r.latitude);
-  const baseLng = Number(r.longitude);
-  if (!Number.isFinite(baseLat) || !Number.isFinite(baseLng)) return;
+    // Drop markers ONCE
+    rows.forEach((r, i) => {
+      const baseLat = Number(r.latitude);
+      const baseLng = Number(r.longitude);
+      if (!Number.isFinite(baseLat) || !Number.isFinite(baseLng)) return;
 
-  const jitter = (i + 1) * 0.00015;
-  const lat = baseLat + jitter;
-  const lng = baseLng + jitter;
+      const jitter = (i + 1) * 0.00015;
+      const lat = baseLat + jitter;
+      const lng = baseLng + jitter;
 
-  const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "Unknown date";
-  const offence = r.offence_name || r.offence_group || "Offence";
-  const who = r.defendant_name || "Unknown defendant";
-  const verdict = r.verdict || "Unknown verdict";
-  const dist = r.distance_m != null ? `${Math.round(Number(r.distance_m))} m` : "—";
+      const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "Unknown date";
+      const offence = r.offence_name || r.offence_group || "Offence";
+      const who = r.defendant_name || "Unknown defendant";
+      const verdict = r.verdict || "Unknown verdict";
+      const dist = r.distance_m != null ? `${Math.round(Number(r.distance_m))} m` : "—";
 
-  const marker = L.marker([lat, lng]);
+      
 
-  const popupHTML = `
-    <div style="min-width:220px;">
-      <div style="font-weight:700; margin-bottom:6px;">${offence}</div>
-      <div><b>Date:</b> ${date}</div>
-      <div><b>Defendant:</b> ${who} (${verdict})</div>
-      <div><b>Distance:</b> ${dist}</div>
-    </div>
-  `;
+      const popupHTML = `
+        <div style="min-width:220px;">
+          <div style="font-weight:700; margin-bottom:6px;">${offence}</div>
+          <div><b>Date:</b> ${date}</div>
+          <div><b>Defendant:</b> ${who} (${verdict})</div>
+          <div><b>Distance:</b> ${dist}</div>
+        </div>
+      `;
 
-  marker.bindPopup(popupHTML);
+      const marker = L.marker([lat, lng]);
 
-  if (r.id != null) markerById.set(String(r.id), marker);
+     // HOVER = preview (don't "stick")
+marker.on("mouseover", () => {
+  // close any non-sticky popup first (optional)
+  if (activeMarker && activeMarker !== marker) activeMarker.closePopup?.();
 
-  markersLayer.addLayer(marker);
+  markersLayer.zoomToShowLayer(marker, () => {
+    marker.openPopup();
+    map.panTo(marker.getLatLng(), { animate: true });
+  });
 });
-console.log("cluster after add:", markersLayer.getLayers().length);
+
+marker.on("mouseout", () => {
+  // IMPORTANT: only close if this is NOT the active (clicked) marker
+  if (activeMarker !== marker) marker.closePopup?.();
+});
+
+// CLICK = sticky select
+marker.on("click", () => {
+  setActive(marker, null);
+  markersLayer.zoomToShowLayer(marker, () => {
+    marker.openPopup();
+    map.panTo(marker.getLatLng(), { animate: true });
+  });
+});
 
 
-// ✅ AFTER the loop ends:
-renderNearbyList(rows, markerById);
-console.log(
-  "list html len:",
-  (document.getElementById("nearby-results")?.innerHTML || "").length
-);
+
+
+      marker.bindPopup(popupHTML);
+
+      if (r.id != null) markerById.set(String(r.id), marker);
+
+      // MarkerClusterGroup uses addLayer
+      markersLayer.addLayer(marker);
+    });
+
+    // Render list AFTER markers exist
+    renderNearbyList(rows, markerById);
+
+    // Auto-zoom (keep center in view too)
+    if (rows.length) {
+      const latLngs = rows
+        .map(r => [Number(r.latitude), Number(r.longitude)])
+        .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
+
+      latLngs.push([currentCenter.lat, currentCenter.lng]);
+      if (latLngs.length) map.fitBounds(L.latLngBounds(latLngs).pad(0.25));
+    }
+
+    // Optional debug (safe)
+    // console.log("cluster after add:", markersLayer.getLayers().length);
 
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = prevText || "Find nearby";
+      btn.textContent = prevText;
     }
   }
 }
+
 
 
  const useGpsBtn = document.getElementById("use-gps");
@@ -676,12 +872,14 @@ if (nearbyBtn) {
   });
 }
 
-const radiusEl = document.getElementById("radius");
-if (radiusEl) {
+ const radiusEl = document.getElementById("radius");
+ if (radiusEl) {
   radiusEl.addEventListener("change", () => {
+    ensureMap();
     updateRadiusCircle();
   });
 }
+
 
 
 
