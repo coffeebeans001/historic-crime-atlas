@@ -377,7 +377,9 @@ let radiusInputEl;
 let baseTiles;
 let mapHandlersBound = false; // ✅ ADD THIS
 let activeListBtn = null;        // currently “sticky” selected list item
-let activeMarker = null;         // currently selected marker
+let hoverMarker = null;  // last marker opened by hover
+let pinnedMarker = null;  // marker chosen by click
+
 
 function setActive(marker, btn) {
   // clear previous selection
@@ -479,6 +481,7 @@ function ensureMap() {
       currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
       centerMarker.setLatLng(e.latlng).openPopup();
       updateRadiusCircle();
+  
 
       // Clear list/marker "active" state on map click
       if (activeListBtn) activeListBtn.classList.remove("is-active");
@@ -491,6 +494,11 @@ function ensureMap() {
       // fetchNearby().catch(console.error);
     });
   }
+  
+   window.map = map;
+   window.markersLayer = markersLayer;
+   window.centerMarker = centerMarker;
+   window.radiusCircle = radiusCircle;
 
   // Keep radius circle synced even on first load
   updateRadiusCircle();
@@ -552,6 +560,10 @@ function updateRadiusCircle() {
     radiusCircle.setLatLng([currentCenter.lat, currentCenter.lng]);
     radiusCircle.setRadius(r);
   }
+window.markersLayer = markersLayer;
+window.radiusCircle = radiusCircle;
+window.centerMarker = centerMarker;
+window.map = map;
 }
 
 
@@ -582,7 +594,6 @@ function renderNearbyList(rows, markerById) {
           type="button"
           data-id="${id}"
           class="nearby-item"
-          style="all:unset; cursor:pointer; display:block; padding:8px 10px; border-radius:10px; width:100%;"
         >
           <strong>${offence}</strong> — ${who} (${verdict})<br/>
           <span style="opacity:.8;">${date} • ${where} • ${d}</span>
@@ -593,66 +604,60 @@ function renderNearbyList(rows, markerById) {
 
   el.innerHTML = `<ol style="padding-left:18px; margin:0;">${items}</ol>`;
 
-  // Wire up hover + click
-  el.querySelectorAll("button[data-id]").forEach((btn) => {
+  // --- handlers (ONE place only) ---
+ el.querySelectorAll("button.nearby-item[data-id]").forEach(btn => {
+  const id = btn.getAttribute("data-id");
+  if (!id) return;
 
-    btn.addEventListener("mouseenter", () => {
-      const id = btn.getAttribute("data-id");
-      if (!id) return;
+  const marker = markerById.get(id);
+  if (!marker) return;
 
-      const marker = markerById.get(id);
-      if (!marker) return;
+  // HOVER = preview (open + pan) but NOT sticky
+  btn.addEventListener("mouseenter", () => {
+    // don't fight the pinned one
+    if (pinnedMarker === marker) return;
 
-      // Close previous popup if it isn't the sticky one
-      if (activeMarker && activeMarker !== marker) {
-        activeMarker.closePopup?.();
-      }
+    // close previous hover marker (but never close pinned)
+    if (hoverMarker && hoverMarker !== pinnedMarker && hoverMarker !== marker) {
+      hoverMarker.closePopup?.();
+    }
+    hoverMarker = marker;
 
-      markersLayer.zoomToShowLayer(marker, () => {
-        marker.openPopup();
-        map.panTo(marker.getLatLng(), { animate: true });
-      });
-    });
-
-    btn.addEventListener("mouseleave", () => {
-      const id = btn.getAttribute("data-id");
-      if (!id) return;
-
-      const marker = markerById.get(id);
-      if (!marker) return;
-
-      // Only close if NOT sticky-selected
-      if (activeMarker !== marker) {
-        marker.closePopup?.();
-      }
-    });
-
-    btn.addEventListener("click", () => {
-      const id = btn.getAttribute("data-id");
-      if (!id) return;
-
-      const marker = markerById.get(id);
-      if (!marker) return;
-
-      // Sticky highlight
-      if (activeListBtn) activeListBtn.classList.remove("is-active");
-      activeListBtn = btn;
-      activeListBtn.classList.add("is-active");
-
-      // Close previous sticky popup
-      if (activeMarker && activeMarker !== marker) {
-        activeMarker.closePopup?.();
-      }
-      activeMarker = marker;
-
-      markersLayer.zoomToShowLayer(marker, () => {
-        marker.openPopup();
-        map.panTo(marker.getLatLng(), { animate: true });
-      });
-
-      btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    markersLayer.zoomToShowLayer(marker, () => {
+      marker.openPopup();
+      map.panTo(marker.getLatLng(), { animate: true });
     });
   });
+
+  // Leave hover = close only if it's not pinned
+  btn.addEventListener("mouseleave", () => {
+    if (marker === pinnedMarker) return;
+    marker.closePopup?.();
+    if (hoverMarker === marker) hoverMarker = null;
+  });
+
+  // CLICK = sticky select (keeps popup open)
+  btn.addEventListener("click", () => {
+    // sticky highlight
+    if (activeListBtn) activeListBtn.classList.remove("is-active");
+    activeListBtn = btn;
+    activeListBtn.classList.add("is-active");
+
+    // close previous pinned (and any hover) if switching
+    if (pinnedMarker && pinnedMarker !== marker) pinnedMarker.closePopup?.();
+    if (hoverMarker && hoverMarker !== marker) hoverMarker.closePopup?.();
+
+    pinnedMarker = marker;
+    hoverMarker = null;
+
+    markersLayer.zoomToShowLayer(marker, () => {
+      marker.openPopup();
+      map.panTo(marker.getLatLng(), { animate: true });
+    });
+
+    btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+});
 }
 
 
