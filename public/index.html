@@ -53,6 +53,17 @@
   background: rgba(0,0,0,0.10);
   outline: 2px solid rgba(0,0,0,0.12);
 }
+
+/* Let clicks pass THROUGH the popup so markers underneath remain clickable */
+.leaflet-popup {
+  pointer-events: none;
+}
+
+/* BUT keep the close (×) button clickable */
+.leaflet-popup-close-button {
+  pointer-events: auto;
+}
+
 </style>
 
     

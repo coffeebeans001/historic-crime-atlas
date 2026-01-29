@@ -18,7 +18,7 @@ function setCiAlpha(alpha) {
       if (typeof bg === "string" && bg.startsWith("rgba(")) {
         ds.backgroundColor = bg.replace(
           /rgba\((\s*\d+\s*,\s*\d+\s*,\s*\d+\s*),\s*([0-9.]+)\s*\)/,
-          `rgba($1, ${alpha})`
+          `rgba($1, ${alpha})`,
         );
       } else if (typeof bg === "string" && bg.startsWith("rgb(")) {
         ds.backgroundColor = bg
@@ -43,7 +43,7 @@ function animateCi(show, durationMs = 250) {
     band.backgroundColor.startsWith("rgba(")
   ) {
     const m = band.backgroundColor.match(
-      /rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([0-9.]+)\s*\)/
+      /rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([0-9.]+)\s*\)/,
     );
     if (m) startAlpha = Number(m[1]);
   }
@@ -245,21 +245,21 @@ function ensureChart() {
       maintainAspectRatio: false,
       interaction: { mode: "nearest", intersect: false },
       layout: {
-    padding: { top: 12, bottom: 12 }
-  },
+        padding: { top: 12, bottom: 12 },
+      },
 
-  scales: {
-    x: {
-      type: "linear",
-      title: { display: true, text: "Year" }
-    },
-    y: {
-      min: 0,
-      max: 100,
-      grace: "6%",
-      title: { display: true, text: "Guilty rate (%)" }
-    }
-  },
+      scales: {
+        x: {
+          type: "linear",
+          title: { display: true, text: "Year" },
+        },
+        y: {
+          min: 0,
+          max: 100,
+          grace: "6%",
+          title: { display: true, text: "Guilty rate (%)" },
+        },
+      },
       plugins: {
         legend: {
           labels: {
@@ -276,7 +276,7 @@ function ensureChart() {
             usePointStyle: true,
             pointStyle: "line",
             boxWidth: 32,
-            padding: 16
+            padding: 16,
           },
 
           // Click legend item => toggle whole group (line + CI band + upper CI)
@@ -285,10 +285,10 @@ function ensureChart() {
             const ds = c.data.datasets[item.datasetIndex];
             const base = (ds.label || "").replace(/\s*\(.*?\)\s*$/, "");
 
-            const main = c.data.datasets.find(d => (d.label || "") === base);
+            const main = c.data.datasets.find((d) => (d.label || "") === base);
             const nextHidden = main ? !main.hidden : true;
 
-            c.data.datasets.forEach(d => {
+            c.data.datasets.forEach((d) => {
               const lbl = d.label || "";
               if (lbl.startsWith(base)) {
                 d.hidden = nextHidden;
@@ -301,7 +301,7 @@ function ensureChart() {
             });
 
             c.update();
-          }
+          },
         },
 
         tooltip: {
@@ -321,21 +321,16 @@ function ensureChart() {
               const high = raw.high;
 
               const ci =
-                low != null && high != null
-                  ? ` (CI ${low}%–${high}%)`
-                  : "";
+                low != null && high != null ? ` (CI ${low}%–${high}%)` : "";
 
               return `${dsLabel}: ${y}%${ci}${n ? ` (n=${n})` : ""}`;
-            }
-          }
-        }
-      }
-    }
+            },
+          },
+        },
+      },
+    },
   });
 }
-
-
-
 
 async function render() {
   ensureChart();
@@ -373,25 +368,64 @@ let markersLayer; // shared variable
 let centerMarker;
 let radiusCircle; // shows the search radius
 let markerById = new Map();
-let radiusInputEl;
 let baseTiles;
 let mapHandlersBound = false; // ✅ ADD THIS
-let activeListBtn = null;        // currently “sticky” selected list item
-let hoverMarker = null;  // last marker opened by hover
-let pinnedMarker = null;  // marker chosen by click
+
+if (!window.__nearbyUI) {
+  window.__nearbyUI = {
+    pinnedMarker: null,
+    pinnedId: null,
+    activeMarker: null,
+    activeListBtn: null,
+  };
+}
+
 
 
 function setActive(marker, btn) {
-  // clear previous selection
-  if (activeMarker && activeMarker !== marker) activeMarker.closePopup?.();
-  if (activeListBtn && activeListBtn !== btn) activeListBtn.classList.remove("is-active");
-
-  activeMarker = marker || null;
-  activeListBtn = btn || null;
-
-  if (activeListBtn) activeListBtn.classList.add("is-active");
+// 1) Close previous *pinned* marker (sticky one) if switching
+const ui = window.__nearbyUI;
+if (ui.pinnedMarker && ui.pinnedMarker !== marker) {
+  ui.pinnedMarker.closePopup?.();
 }
 
+// 2) Update pinned selection (this is the sticky one)
+ui.pinnedMarker = marker;
+
+// 3) Close previous active marker if it's different
+// (optional — if you already close pinned above, this can be redundant)
+if (ui.activeMarker && ui.activeMarker !== marker) {
+  ui.activeMarker.closePopup?.();
+}
+
+// 4) Update active marker (what is currently selected/open)
+ui.activeMarker = marker;
+
+// 5) Update list highlight
+if (ui.activeListBtn && ui.activeListBtn !== btn) {
+  ui.activeListBtn.classList.remove("is-active");
+}
+ui.activeListBtn = btn;
+if (ui.activeListBtn) ui.activeListBtn.classList.add("is-active");
+}
+
+function setHover(marker) {
+  if (hoverMarker && hoverMarker !== marker && hoverMarker !== activeMarker) {
+    hoverMarker.closePopup?.();
+  }
+  hoverMarker = marker || null;
+
+  if (hoverMarker && hoverMarker !== activeMarker) {
+    hoverMarker.openPopup?.();
+  }
+}
+
+function clearHover() {
+  if (hoverMarker && hoverMarker !== activeMarker) {
+    hoverMarker.closePopup?.();
+  }
+  hoverMarker = null;
+}
 
 // --- Marker hover/highlight helpers ---
 const markerState = new WeakMap();
@@ -403,7 +437,7 @@ function setMarkerHighlight(marker, on) {
   if (!markerState.has(marker)) {
     markerState.set(marker, {
       opacity: 1,
-      z: 0
+      z: 0,
     });
   }
 
@@ -424,7 +458,6 @@ function setMarkerHighlight(marker, on) {
   }
 }
 
-
 let currentCenter = { lat: 51.509865, lng: -0.118092 };
 
 let mapClickBound = false;
@@ -442,10 +475,13 @@ function ensureMap() {
   }
 
   if (!baseTiles) {
-    baseTiles = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(map);
+    baseTiles = L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors",
+      },
+    ).addTo(map);
   }
 
   if (!markersLayer) {
@@ -460,7 +496,9 @@ function ensureMap() {
   }
 
   if (!centerMarker) {
-    centerMarker = L.marker([currentCenter.lat, currentCenter.lng], { draggable: true })
+    centerMarker = L.marker([currentCenter.lat, currentCenter.lng], {
+      draggable: true,
+    })
       .addTo(map)
       .bindPopup("Search center (drag me)")
       .openPopup();
@@ -481,24 +519,29 @@ function ensureMap() {
       currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
       centerMarker.setLatLng(e.latlng).openPopup();
       updateRadiusCircle();
-  
 
       // Clear list/marker "active" state on map click
       if (activeListBtn) activeListBtn.classList.remove("is-active");
       activeListBtn = null;
 
-      if (activeMarker) activeMarker.closePopup?.();
-      activeMarker = null;
+      if (window.__nearbyUI?.pinnedMarker)
+        window.__nearbyUI.pinnedMarker.closePopup?.();
+      window.__nearbyUI.pinnedMarker = null;
 
-      // optional auto-refresh:
-      // fetchNearby().catch(console.error);
+      if (window.__nearbyUI?.hoverMarker)
+        window.__nearbyUI.hoverMarker.closePopup?.();
+      window.__nearbyUI.hoverMarker = null;
+
+      if (window.__nearbyUI?.activeListBtn)
+        window.__nearbyUI.activeListBtn.classList.remove("is-active");
+      window.__nearbyUI.activeListBtn = null;
     });
   }
-  
-   window.map = map;
-   window.markersLayer = markersLayer;
-   window.centerMarker = centerMarker;
-   window.radiusCircle = radiusCircle;
+
+  window.map = map;
+  window.markersLayer = markersLayer;
+  window.centerMarker = centerMarker;
+  window.radiusCircle = radiusCircle;
 
   // Keep radius circle synced even on first load
   updateRadiusCircle();
@@ -515,16 +558,14 @@ function updateRadiusCircle() {
   const r = Number(radiusEl && radiusEl.value ? radiusEl.value : 2000);
 
   if (!radiusCircle) {
-    radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], { radius: r }).addTo(map);
+    radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], {
+      radius: r,
+    }).addTo(map);
   } else {
     radiusCircle.setLatLng([currentCenter.lat, currentCenter.lng]);
     radiusCircle.setRadius(r);
   }
 }
-
-
-
-
 
 function buildNearbyUrl() {
   const from = document.getElementById("from").value;
@@ -547,7 +588,6 @@ function buildNearbyUrl() {
   return `/api/trials/nearby?${params.toString()}`;
 }
 
-
 function updateRadiusCircle() {
   if (!map) return;
 
@@ -555,45 +595,47 @@ function updateRadiusCircle() {
   const r = Number(radiusEl && radiusEl.value ? radiusEl.value : 2000);
 
   if (!radiusCircle) {
-    radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], { radius: r }).addTo(map);
+    radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], {
+      radius: r,
+    }).addTo(map);
   } else {
     radiusCircle.setLatLng([currentCenter.lat, currentCenter.lng]);
     radiusCircle.setRadius(r);
   }
-window.markersLayer = markersLayer;
-window.radiusCircle = radiusCircle;
-window.centerMarker = centerMarker;
-window.map = map;
+  window.markersLayer = markersLayer;
+  window.radiusCircle = radiusCircle;
+  window.centerMarker = centerMarker;
+  window.map = map;
 }
 
-
-
-
-
 function renderNearbyList(rows, markerById) {
+  if (!window.__nearbyUI) window.__nearbyUI = {};
+  const ui = window.__nearbyUI;
+
   const el = document.getElementById("nearby-results");
   if (!el) return;
 
   if (!rows || !rows.length) {
-    el.innerHTML = "<p>No results in this radius for the selected filters.</p>";
+    el.innerHTML = "<p>No results in this radius.</p>";
     return;
   }
 
-  const items = rows.map(r => {
+  // ---------- Build list HTML ----------
+  const items = rows.map((r) => {
     const id = r.id != null ? String(r.id) : "";
-    const d = r.distance_m == null ? "" : `${Math.round(r.distance_m)} m`;
-    const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "";
-    const offence = r.offence_name || r.offence_group || "(unknown offence)";
+    const offence = r.offence_name || "(unknown offence)";
     const who = r.defendant_name || "(unknown defendant)";
     const verdict = r.verdict || "(unknown verdict)";
+    const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "";
     const where = r.trial_location || "";
+    const d = r.distance_m != null ? `${Math.round(r.distance_m)} m` : "";
 
     return `
-      <li style="margin:8px 0;">
+      <li>
         <button
           type="button"
-          data-id="${id}"
           class="nearby-item"
+          data-id="${id}"
         >
           <strong>${offence}</strong> — ${who} (${verdict})<br/>
           <span style="opacity:.8;">${date} • ${where} • ${d}</span>
@@ -602,71 +644,41 @@ function renderNearbyList(rows, markerById) {
     `;
   }).join("");
 
-  el.innerHTML = `<ol style="padding-left:18px; margin:0;">${items}</ol>`;
+  el.innerHTML = `<ol>${items}</ol>`;
 
-  // --- handlers (ONE place only) ---
- el.querySelectorAll("button.nearby-item[data-id]").forEach(btn => {
+  // ---------- Wire interactions ----------
+  el.querySelectorAll("button[data-id]").forEach((btn) => {
+   btn.addEventListener("click", () => {
   const id = btn.getAttribute("data-id");
   if (!id) return;
 
   const marker = markerById.get(id);
   if (!marker) return;
 
-  // HOVER = preview (open + pan) but NOT sticky
-  btn.addEventListener("mouseenter", () => {
-    // don't fight the pinned one
-    if (pinnedMarker === marker) return;
+  // sticky highlight
+  if (ui.activeListBtn && ui.activeListBtn !== btn) {
+    ui.activeListBtn.classList.remove("is-active");
+  }
+  ui.activeListBtn = btn;
+  ui.activeListBtn.classList.add("is-active");
 
-    // close previous hover marker (but never close pinned)
-    if (hoverMarker && hoverMarker !== pinnedMarker && hoverMarker !== marker) {
-      hoverMarker.closePopup?.();
-    }
-    hoverMarker = marker;
+  // close old pinned popup
+  if (ui.pinnedMarker && ui.pinnedMarker !== marker) {
+    ui.pinnedMarker.closePopup?.();
+  }
 
-    markersLayer.zoomToShowLayer(marker, () => {
-      marker.openPopup();
-      map.panTo(marker.getLatLng(), { animate: true });
-    });
+  ui.pinnedMarker = marker;
+  ui.pinnedId = id;
+
+  markersLayer.zoomToShowLayer(marker, () => {
+    map.setView(marker.getLatLng(), map.getZoom(), { animate: true });
+    marker.openPopup({ autoPan: false });
   });
 
-  // Leave hover = close only if it's not pinned
-  btn.addEventListener("mouseleave", () => {
-    if (marker === pinnedMarker) return;
-    marker.closePopup?.();
-    if (hoverMarker === marker) hoverMarker = null;
-  });
-
-  // CLICK = sticky select (keeps popup open)
-  btn.addEventListener("click", () => {
-    // sticky highlight
-    if (activeListBtn) activeListBtn.classList.remove("is-active");
-    activeListBtn = btn;
-    activeListBtn.classList.add("is-active");
-
-    // close previous pinned (and any hover) if switching
-    if (pinnedMarker && pinnedMarker !== marker) pinnedMarker.closePopup?.();
-    if (hoverMarker && hoverMarker !== marker) hoverMarker.closePopup?.();
-
-    pinnedMarker = marker;
-    hoverMarker = null;
-
-    markersLayer.zoomToShowLayer(marker, () => {
-      marker.openPopup();
-      map.panTo(marker.getLatLng(), { animate: true });
-    });
-
-    btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  });
+  btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
 });
 }
-
-
-
-  
-
-
-
-
 
 async function fetchNearby() {
   ensureMap();
@@ -711,13 +723,14 @@ async function fetchNearby() {
       const lat = baseLat + jitter;
       const lng = baseLng + jitter;
 
-      const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "Unknown date";
+      const date = r.trial_date
+        ? String(r.trial_date).slice(0, 10)
+        : "Unknown date";
       const offence = r.offence_name || r.offence_group || "Offence";
       const who = r.defendant_name || "Unknown defendant";
       const verdict = r.verdict || "Unknown verdict";
-      const dist = r.distance_m != null ? `${Math.round(Number(r.distance_m))} m` : "—";
-
-      
+      const dist =
+        r.distance_m != null ? `${Math.round(Number(r.distance_m))} m` : "—";
 
       const popupHTML = `
         <div style="min-width:220px;">
@@ -728,39 +741,82 @@ async function fetchNearby() {
         </div>
       `;
 
-      const marker = L.marker([lat, lng]);
+// Create marker
+const marker = L.marker([lat, lng]);
 
-     // HOVER = preview (don't "stick")
+// Popup for click/pin
+marker.bindPopup(popupHTML, {
+  autoPan: false,
+  offset: L.point(0, -25) 
+});
+
+// Tooltip for hover preview (lightweight, non-blocking)
+marker.bindTooltip(`${offence}`, {
+  direction: "top",
+  offset: [0, -8],
+  opacity: 0.9,
+  sticky: true
+});
+
+
+
+
+// Hover marker = show tooltip ONLY (no popup, no pan)
 marker.on("mouseover", () => {
-  // close any non-sticky popup first (optional)
-  if (activeMarker && activeMarker !== marker) activeMarker.closePopup?.();
-
-  markersLayer.zoomToShowLayer(marker, () => {
-    marker.openPopup();
-    map.panTo(marker.getLatLng(), { animate: true });
-  });
+  const ui = window.__nearbyUI;
+  if (ui.pinnedMarker === marker) return; // already selected
+  marker.openTooltip();
 });
 
 marker.on("mouseout", () => {
-  // IMPORTANT: only close if this is NOT the active (clicked) marker
-  if (activeMarker !== marker) marker.closePopup?.();
+  const ui = window.__nearbyUI;
+  if (ui.pinnedMarker === marker) return;
+  marker.closeTooltip();
 });
 
-// CLICK = sticky select
+/* ---------------------------
+  Click = PIN popup
+---------------------------- */
 marker.on("click", () => {
-  setActive(marker, null);
+  const ui = window.__nearbyUI;
+  // close old pinned popup
+  if (ui.pinnedMarker && ui.pinnedMarker !== marker) {
+    ui.pinnedMarker.closePopup?.();
+  }
+  ui.pinnedMarker = marker;
+
   markersLayer.zoomToShowLayer(marker, () => {
-    marker.openPopup();
-    map.panTo(marker.getLatLng(), { animate: true });
+    map.setView(marker.getLatLng(), map.getZoom(), { animate: true });
+    marker.openPopup({ autoPan: false });  
   });
 });
 
+  // restore pinned popup (key line)
+const ui = window.__nearbyUI;
 
+if (ui.pinnedMarker) {
+  markersLayer.zoomToShowLayer(ui.pinnedMarker, () => {
+    ui.pinnedMarker.openPopup();
+  });
+}
 
+      // CLICK = sticky select
+      marker.on("click", () => {
+        setActive(marker, null);
+        markersLayer.zoomToShowLayer(marker, () => {
+          marker.openPopup();
+          map.panTo(marker.getLatLng(), { animate: true });
+          
+        });
+      });
 
       marker.bindPopup(popupHTML);
 
-      if (r.id != null) markerById.set(String(r.id), marker);
+      if (r.id != null) {
+        const id = String(r.id);
+        markerById.set(id, marker);
+        
+      }
 
       // MarkerClusterGroup uses addLayer
       markersLayer.addLayer(marker);
@@ -772,7 +828,7 @@ marker.on("click", () => {
     // Auto-zoom (keep center in view too)
     if (rows.length) {
       const latLngs = rows
-        .map(r => [Number(r.latitude), Number(r.longitude)])
+        .map((r) => [Number(r.latitude), Number(r.longitude)])
         .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
 
       latLngs.push([currentCenter.lat, currentCenter.lng]);
@@ -781,7 +837,6 @@ marker.on("click", () => {
 
     // Optional debug (safe)
     // console.log("cluster after add:", markersLayer.getLayers().length);
-
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -790,44 +845,44 @@ marker.on("click", () => {
   }
 }
 
+const useGpsBtn = document.getElementById("use-gps");
+if (useGpsBtn)
+  useGpsBtn.addEventListener("click", () => {
+    ensureMap();
 
+    if (!navigator.geolocation) {
+      alert("Geolocation not supported in this browser.");
+      return;
+    }
 
- const useGpsBtn = document.getElementById("use-gps");
-if (useGpsBtn) useGpsBtn.addEventListener("click", () => {
-  ensureMap();
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        currentCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude };
 
-  if (!navigator.geolocation) {
-    alert("Geolocation not supported in this browser.");
-    return;
-  }
+        map.setView([currentCenter.lat, currentCenter.lng], 15);
+        centerMarker
+          .setLatLng([currentCenter.lat, currentCenter.lng])
+          .openPopup();
 
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      currentCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        updateRadiusCircle();
 
-      map.setView([currentCenter.lat, currentCenter.lng], 15);
-      centerMarker
-        .setLatLng([currentCenter.lat, currentCenter.lng])
-        .openPopup();
-
-      updateRadiusCircle();
-
-      // Auto-run nearby after locating
-      try {
-        await fetchNearby();
-      } catch (e) {
-        console.error(e);
-        alert("Nearby lookup failed. Check console.");
-      }
-    },
-    (err) => {
-      console.error(err);
-      alert("Could not get your location (permission denied or unavailable).");
-    },
-    { enableHighAccuracy: true, timeout: 10000 }
-  );
-});
-
+        // Auto-run nearby after locating
+        try {
+          await fetchNearby();
+        } catch (e) {
+          console.error(e);
+          alert("Nearby lookup failed. Check console.");
+        }
+      },
+      (err) => {
+        console.error(err);
+        alert(
+          "Could not get your location (permission denied or unavailable).",
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  });
 
 // Initialise map immediately (optional)
 ensureMap();
@@ -861,32 +916,29 @@ document.getElementById("toggle-ci").addEventListener("change", () => {
 });
 
 const radiusInput = document.getElementById("radius");
-if (radiusInput) radiusInput.addEventListener("change", () => {
-
-  updateRadiusCircle();
-});
+if (radiusInput)
+  radiusInput.addEventListener("change", () => {
+    updateRadiusCircle();
+  });
 
 // Buttons: Nearby
 const nearbyBtn = document.getElementById("nearby");
 if (nearbyBtn) {
   nearbyBtn.addEventListener("click", () => {
-    fetchNearby().catch(err => {
+    fetchNearby().catch((err) => {
       console.error(err);
       alert(err.message);
     });
   });
 }
 
- const radiusEl = document.getElementById("radius");
- if (radiusEl) {
+const radiusEl = document.getElementById("radius");
+if (radiusEl) {
   radiusEl.addEventListener("change", () => {
     ensureMap();
     updateRadiusCircle();
   });
 }
-
-
-
 
 function init() {
   // Chart
@@ -909,5 +961,3 @@ if (document.readyState === "loading") {
 } else {
   init();
 }
-
-
