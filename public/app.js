@@ -370,6 +370,8 @@ let radiusCircle; // shows the search radius
 let markerById = new Map();
 let baseTiles;
 let mapHandlersBound = false; // ✅ ADD THIS
+let popupFadeTimer = null;
+
 
 if (!window.__nearbyUI) {
   window.__nearbyUI = {
@@ -485,6 +487,8 @@ function onMapClick(e) {
   // fetchNearby().catch(console.error); // optional
 }
 
+
+
 function ensureMap() {
   if (!map) {
     map = L.map("map").setView([currentCenter.lat, currentCenter.lng], 13);
@@ -530,6 +534,21 @@ function ensureMap() {
 
   if (!mapHandlersBound) {
     mapHandlersBound = true;
+
+  map.on("movestart", () => {
+  document
+    .querySelectorAll(".leaflet-popup.crime-popup")
+    .forEach(p => p.style.opacity = "0.25");
+});
+
+map.on("moveend", () => {
+  clearTimeout(popupFadeTimer);
+  popupFadeTimer = setTimeout(() => {
+    document
+      .querySelectorAll(".leaflet-popup.crime-popup")
+      .forEach(p => p.style.opacity = "1");
+  }, 120);
+});
 
     map.on("click", (e) => {
       currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };

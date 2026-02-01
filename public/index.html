@@ -125,6 +125,17 @@
   to  { opacity: 1; transform: translateY(0); }
 }
 
+/* Gentle elevation without dominance */
+.leaflet-popup.crime-popup .leaflet-popup-content-wrapper{
+  box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+}
+
+/* Slightly stronger when user is interacting */
+.leaflet-popup.crime-popup.leaflet-interactive
+  .leaflet-popup-content-wrapper{
+  box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+}
+
 </style>
 
     
