@@ -373,12 +373,16 @@ let mapHandlersBound = false; // ✅ ADD THIS
 let popupFadeTimer = null;
 
 
+
+
 if (!window.__nearbyUI) {
   window.__nearbyUI = {
     pinnedMarker: null,
     pinnedId: null,
     activeMarker: null,
     activeListBtn: null,
+    markerById: new Map(),  // optional place to store it
+    btnById: new Map(),      // optional map: id -> button
   };
 }
 
