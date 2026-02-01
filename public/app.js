@@ -405,30 +405,27 @@ function safePanToMarker(marker, zoomToShow = true) {
 }
 
 function setActive(marker, btn) {
-  // 1) Close previous *pinned* marker (sticky one) if switching
   const ui = window.__nearbyUI;
-  if (ui.pinnedMarker && ui.pinnedMarker !== marker) {
-    ui.pinnedMarker.closePopup?.();
-  }
 
-  // 2) Update pinned selection (this is the sticky one)
-  ui.pinnedMarker = marker;
-
-  // 3) Close previous active marker if it's different
-  // (optional — if you already close pinned above, this can be redundant)
+  // close previous active marker popup if switching
   if (ui.activeMarker && ui.activeMarker !== marker) {
     ui.activeMarker.closePopup?.();
   }
 
-  // 4) Update active marker (what is currently selected/open)
-  ui.activeMarker = marker;
-
-  // 5) Update list highlight
+  // remove previous button highlight if switching
   if (ui.activeListBtn && ui.activeListBtn !== btn) {
     ui.activeListBtn.classList.remove("is-active");
   }
-  ui.activeListBtn = btn;
+
+  ui.activeMarker = marker || null;
+  ui.activeListBtn = btn || null;
+
   if (ui.activeListBtn) ui.activeListBtn.classList.add("is-active");
+}
+
+function pinMarker(marker) {
+  const ui = window.__nearbyUI;
+  ui.pinnedMarker = marker || null;
 }
 
 function setHover(marker) {
@@ -702,21 +699,23 @@ function renderNearbyList(rows, markerById) {
 
  // ---------- Wire interactions ----------
 el.querySelectorAll('button[data-id]').forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const id = btn.getAttribute("data-id");
-    if (!id) return;
+ btn.addEventListener("click", () => {
+const id = btn.getAttribute("data-id");
+if (!id) return;
 
-    const marker = markerById && markerById.get(id);
-    if (!marker) return;
+const marker = markerById.get(id);
+if (!marker) return;
 
-    // cluster-safe open + pan
-    markersLayer.zoomToShowLayer(marker, () => {
-      marker.openPopup();
-      map.panTo(marker.getLatLng(), { animate: true });
-    });
+setActive(marker, btn);
+pinMarker(marker);
 
-    btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  });
+markersLayer.zoomToShowLayer(marker, () => {
+  map.panTo(marker.getLatLng(), { animate: true });
+  marker.openPopup();
+});
+
+btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
 });
 }
 
@@ -809,7 +808,7 @@ async function fetchNearby() {
       marker.on("mouseout", () => {
         const ui = window.__nearbyUI;
         if (ui.pinnedMarker === marker) return;
-        marker.closeTooltip();
+        marker.closePopup?.();
       });
 
       /* ---------------------------
@@ -845,13 +844,22 @@ async function fetchNearby() {
 
       marker.bindPopup(popupHTML);
 
-     if (r.id != null) {
+   if (r.id != null) {
   const id = String(r.id);
   markerById.set(id, marker);
 
+  // marker click pins + sync list
   marker.on("click", () => {
-    // Delegate to list click (single source of truth)
-    selectListItemById(id);
+    const btn = document.querySelector(`#nearby-results button[data-id="${id}"]`);
+    setActive(marker, btn);
+    pinMarker(marker);
+
+    markersLayer.zoomToShowLayer(marker, () => {
+      map.panTo(marker.getLatLng(), { animate: true });
+      marker.openPopup();
+    });
+
+    btn?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
 }
 
