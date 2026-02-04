@@ -10,135 +10,35 @@
 
 ⚠️ Notes
 
-# Historic Crime Atlas
+# Historic Crime Atlas 🗺️📊
 
-Historic Crime Atlas is an interactive data-visualisation project exploring historical crime trends using structured court records.
-It allows users to analyse verdict patterns over time, segmented by gender and party type, with statistically meaningful confidence intervals.
+An interactive web application for exploring historic criminal trial data through time-series visualisation and geospatial search.
 
-The project is inspired by historical court archives (e.g. Old Bailey records) and aims to make centuries-old crime data accessible, explorable, and visually intuitive.
+## ✨ Features
+- Time-series chart of conviction rates with confidence intervals
+- Interactive Leaflet map with radius-based search
+- Clustered markers for dense locations
+- Fully synced map ↔ list interactions
+- Smooth UX with hover, click, and focus states
+- Built to scale from demo data to real historical datasets
 
-Features
+## 🧠 Tech Stack
+- Vanilla JavaScript
+- Chart.js
+- Leaflet + MarkerCluster
+- Node.js / Express
+- HTML / CSS
 
-📈 Interactive line charts showing guilty rate (%) over time
+## 🔍 How It Works
+1. Select a date range and offence group
+2. View conviction trends over time
+3. Search for nearby trials using the map radius
+4. Click list items or map markers to inspect individual cases
 
-📊 Wilson confidence intervals with smooth fade-in/out animation
-
-🎛️ Dynamic controls for:
-
-Date range
-
-Time bucket (year / decade)
-
-Confidence level (e.g. 95%)
-
-Crime category (e.g. Robbery)
-
-🧠 Hover tooltips showing:
-
-Guilty rate
-
-Confidence interval bounds
-
-Sample size (n)
-
-🎨 Automatic colour scaling per group (stable & readable)
-
-⚡ Fast API responses backed by MySQL
-
-📘 Methodology
-Guilty Rate Calculation
-
-For each time bucket (year or decade), the guilty rate is calculated as:
-
-Numerator: number of trials with verdict = Guilty
-
-Denominator: number of trials with known verdicts (Guilty or Not Guilty)
-This avoids bias from missing or indeterminate verdicts.
-
-Wilson Score Confidence Intervals
-
-Because historical datasets often have small sample sizes, especially when broken down by gender, offence, or time period, this project uses Wilson score intervals rather than normal (Wald) intervals.
-
-Wilson intervals:
-
-Remain valid for small n
-Never produce impossible values (<0% or >100%)
-Are widely recommended for binomial proportions
-The confidence level (90%, 95%, 99%) is selectable in the UI and is converted internally into a z-score.
-
-Why Wilson Instead of “Standard” CI?
-Method Problem
-
-Wald (normal) Breaks down with small samples
-Wilson Stable, bounded, statistically robust ✅
-
-This choice makes the trends more trustworthy when data is sparse — common in early historical records.
-
-🗺️ Spatial Analysis (Nearby Historic Crimes)
-Distance Calculation (Haversine Formula)
-
-To find crimes near a user’s location, the API uses the Haversine formula, which calculates great-circle distance between two latitude/longitude points on Earth.
-
-Distance is calculated in meters
-Results are filtered by radius (50m – 20km)
-Returned results are sorted by proximity
-This allows users to explore what crimes happened near where they are standing today, even if those crimes occurred centuries ago.
-
-Why Not Straight-Line (Planar) Distance?
-Because Earth is curved.
-
-Haversine:
-Is accurate over city-scale distances
-Requires no GIS extensions
-Works efficiently in SQL
-
-🧠 UX Decisions
-Confidence Interval Bands
-CI bands are rendered as translucent fills
-Smooth fade-in / fade-out animation
-Visibility controlled independently from the main trend line
-This avoids clutter while keeping uncertainty visible when needed.
-
-Interactive Legend
-Clicking a legend item:
-Toggles the entire dataset group
-Main line
-Confidence band
-Upper CI boundary
-This keeps the chart intuitive while preserving statistical context.
-
-📍 Map Behaviour
-Marker Clustering
-When multiple crimes share similar coordinates:
-Markers are clustered automatically
-Clusters expand smoothly on zoom
-Small positional jitter prevents exact overlaps
-This ensures clarity without distorting spatial meaning.
-
-🎓 Educational Focus
-This project is designed as an educational exploration tool, not just a data viewer.
-Users can:
-Compare historical justice outcomes
-Explore uncertainty in sparse data
-Experience crime geography across centuries
-Relate modern locations to historical events
-
-🚧 Project Status
-This project is actively evolving.
-Planned enhancements include:
-Leaflet UX improvements (clustering controls, legends)
-Time sliders for spatial filtering
-Accessibility enhancements
-Internationalisation (i18n)
-Optional AR-based educational experiences
-
-🛠️ Tech Stack
-Node.js + Express
-MySQL
-Chart.js
-Leaflet.js + MarkerCluster
-Vanilla JS (no framework lock-in)
-
+## 🚀 Getting Started (Local)
+```bash
+npm install
+npm start
 ## Run locally
 
 1. Install dependencies:
