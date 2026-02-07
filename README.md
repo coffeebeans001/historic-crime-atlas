@@ -1,3 +1,10 @@
+# Historic Crime Atlas 🗺️📊
+
+An interactive web application for exploring historic criminal trials using
+time-series visualisation and geospatial search.
+
+Built with a focus on data integrity, UX polish, and clean state management
+
 ## ✨ Features
 
 - Conviction rate trends with optional confidence intervals
