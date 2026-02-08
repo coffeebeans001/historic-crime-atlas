@@ -44,7 +44,7 @@ npm start
 Open in your browser:
 http://localhost:3000
 
-Demo
+![Map and list interaction](screenshots/map-nearby-sync.gif)
 
 
 🧠 Notes on Historical Data
@@ -73,7 +73,6 @@ The result is a platform that balances analytical accuracy with polished user ex
 This application was developed to explore how historical criminal justice data can be meaningfully re-presented using modern interactive visualisation techniques.
 
 Historic trial records are typically accessed through static archives, limiting engagement and interpretability. By transforming these records into time-series charts and geospatial queries, this project enables users to observe long-term patterns in conviction outcomes while remaining grounded in the social and legal contexts of their time.
-
 
 The application deliberately spans from the earliest available court records through to the nineteenth century, preserving temporal continuity while exposing shifts in prosecution, verdict frequency, and spatial concentration. Variations in data density—particularly across gender—are presented transparently, reflecting historical record imbalance rather than analytical distortion.
 
