@@ -52,6 +52,11 @@ http://localhost:3000
 ### Map & list interactions
 ![Map and list interaction](screenshots/map-nearby-sync.gif)
 
+### Map overview
+![Map overview showing nearby crimes](screenshots/map-overview.png)
+
+### chart Ci on
+![Chart with confidence intervals enabled](screenshots/chart-ci-on.png)
 
 🧠 Notes on Historical Data
 
