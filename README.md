@@ -47,10 +47,26 @@ http://localhost:3000
 ## 🎥 Demo
 
 ### Chart interactions
+Explore conviction rates over time with optional confidence intervals.
+The chart supports smooth hover tooltips and dynamic group toggling.
 ![Chart interaction demo](screenshots/chart-sync.gif)
 
 ### Map & list interactions
+Search for historic trials near a location using a radius filter.
+Map markers and the results list are fully synchronised:
+
+	•	Hover previews
+
+	•	Click-to-pin behaviour
+
+	•	Smooth panning and cluster expansion
 ![Map and list interaction](screenshots/map-nearby-sync.gif)
+
+
+🖼️ Static Views
+
+These images provide a quick visual reference without animation.
+Conviction trends with confidence intervals enabled
 
 ## 📊 Conviction Trends (CI Enabled)
 
