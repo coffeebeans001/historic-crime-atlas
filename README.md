@@ -44,7 +44,9 @@ npm start
 Open in your browser:
 http://localhost:3000
 
-![Map and list interaction](screenshots/map-nearby-sync.gif)
+## 🎥 Demo
+
+[![Map and list interaction](screenshots/map-nearby-sync.gif)](screenshots/map-nearby-sync.gif)
 
 
 🧠 Notes on Historical Data
