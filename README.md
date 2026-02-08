@@ -45,8 +45,12 @@ Open in your browser:
 http://localhost:3000
 
 ## 🎥 Demo
-> Demonstration of synced map ↔ list interactions with pinned historic trial locations.
-[![Map and list interaction](screenshots/map-nearby-sync.gif)](screenshots/map-nearby-sync.gif)
+
+### Chart interactions
+![Chart interaction demo](screenshots/chart-sync.gif)
+
+### Map & list interactions
+![Map and list interaction](screenshots/map-nearby-sync.gif)
 
 
 🧠 Notes on Historical Data
