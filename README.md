@@ -44,7 +44,7 @@ npm start
 Open in your browser:
 http://localhost:3000
 
-## 🎥 Demo
+## 🎥 Demo animation play best on desktop (Chrome/Firefox).
 
 ### Chart interactions
 Explore conviction rates over time with optional confidence intervals.
