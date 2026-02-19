@@ -1,18 +1,23 @@
 # Historic Crime Atlas 🗺️📊
 
-An interactive web application for exploring historic criminal trials using
-time-series visualisation and geospatial search.
+Historic Crime Atlas is an interactive research interface for exploring patterns in historic criminal trials across time and place.
 
-Built with a focus on data integrity, UX polish, and clean state management
+The project combines statistical visualisation with geospatial mapping to make archival court data understandable to modern audiences — allowing users to investigate how justice, conviction rates, and recorded behaviour changed across history.
 
-## ✨ Features
+Rather than presenting records as static documents, the atlas treats historical data as something navigable: users can move through years, locations, and individual cases to see patterns emerge directly from the evidence.
 
-- Conviction rate trends with optional confidence intervals
-- Interactive Leaflet map with radius-based search
-- Clustered historic trial locations
-- Fully synced map ↔ list interactions
-- Smooth hover and click UX states
-- Built to scale from demo data to real historical datasets
+Built as a public-history platform with a focus on transparency, interpretability, and user experience.
+
+---
+
+## Key Capabilities
+
+- Time-series conviction rate analysis with optional confidence intervals
+- Location-based discovery of nearby historic trials
+- Clustered map exploration of recorded events
+- Fully synchronised map ↔ list interaction
+- Contextual hover and click inspection of individual cases
+- Designed to scale from development samples to full archival datasets
 
 ---
 
