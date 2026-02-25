@@ -81,6 +81,8 @@ function buildUrl() {
   const group = document.getElementById("group").value.trim();
   const z = String(Number(document.getElementById("confidence").value || 1.96));
   const params = new URLSearchParams({ bucket, from, to, format: "series", z });
+  const gender = document.getElementById("gender")?.value || "all";
+  params.set("gender", gender); 
 
   if (group) params.set("group", group);
 
@@ -951,6 +953,10 @@ document.getElementById("confidence").addEventListener("change", () => {
     console.error(err);
     alert(err.message);
   });
+});
+
+document.getElementById("gender").addEventListener("change", () => {
+  render().catch(console.error);
 });
 
 // CI visibility toggle — NO refetch

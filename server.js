@@ -30,7 +30,10 @@ app.get("/health", (req, res) => res.json({ ok: true }));
 app.get("/api/trials", async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page ?? "1", 10), 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit ?? "20", 10), 1), 100);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit ?? "20", 10), 1),
+      100,
+    );
     const offset = (page - 1) * limit;
 
     const defendant = (req.query.defendant ?? "").toString().trim();
@@ -69,12 +72,10 @@ app.get("/api/trials", async (req, res) => {
       params.push(gender);
     }
 
-if (partyType) {
-  where.push("party_type = ?");
-  params.push(partyType);
-}
-
-
+    if (partyType) {
+      where.push("party_type = ?");
+      params.push(partyType);
+    }
 
     const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
@@ -82,7 +83,7 @@ if (partyType) {
       `SELECT COUNT(*) AS total
        FROM trial_summary
        ${whereSql}`,
-      params
+      params,
     );
     const total = countRows[0].total;
 
@@ -92,7 +93,7 @@ if (partyType) {
        ${whereSql}
        ORDER BY trial_date DESC
        LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      [...params, limit, offset],
     );
 
     res.json({
@@ -100,7 +101,7 @@ if (partyType) {
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      data: rows
+      data: rows,
     });
   } catch (err) {
     console.error(err);
@@ -116,7 +117,10 @@ app.get("/api/trials/nearby", async (req, res) => {
   try {
     const lat = Number(req.query.lat);
     const lng = Number(req.query.lng);
-    const radius = Math.min(Math.max(Number(req.query.radius ?? 1000), 50), 20000); // meters
+    const radius = Math.min(
+      Math.max(Number(req.query.radius ?? 1000), 50),
+      20000,
+    ); // meters
     const limit = Math.min(Math.max(Number(req.query.limit ?? 5), 1), 50);
 
     const from = (req.query.from ?? "").toString().trim().slice(0, 10);
@@ -124,12 +128,13 @@ app.get("/api/trials/nearby", async (req, res) => {
     const group = (req.query.group ?? "").toString().trim();
 
     if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      return res.status(400).json({ error: "lat and lng are required numbers" });
+      return res
+        .status(400)
+        .json({ error: "lat and lng are required numbers" });
     }
     if (from.length !== 10 || to.length !== 10) {
       return res.status(400).json({ error: "from and to must be YYYY-MM-DD" });
     }
-
 
     // Haversine distance in meters
     const sql = `
@@ -164,11 +169,14 @@ app.get("/api/trials/nearby", async (req, res) => {
     `;
 
     const params = [
-      lat, lat, lng,
-      from, to,
+      lat,
+      lat,
+      lng,
+      from,
+      to,
       ...(group ? [group] : []),
       radius,
-      limit
+      limit,
     ];
 
     const [rows] = await pool.query(sql, params);
@@ -180,14 +188,13 @@ app.get("/api/trials/nearby", async (req, res) => {
       center: { lat, lng },
       radius_m: radius,
       count: rows.length,
-      data: rows
+      data: rows,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 app.get("/api/trials/:id", async (req, res) => {
   try {
@@ -198,9 +205,9 @@ app.get("/api/trials/:id", async (req, res) => {
 
     const [rows] = await pool.query(
       "SELECT * FROM trial_summary WHERE trial_id = ?",
-      [trialId]
+      [trialId],
     );
-    
+
     if (!rows.length) {
       return res.status(404).json({ error: "Not found" });
     }
@@ -224,7 +231,10 @@ app.get("/api/judges/:judgeId/trials", async (req, res) => {
     }
 
     const page = Math.max(parseInt(req.query.page ?? "1", 10), 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit ?? "20", 10), 1), 100);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit ?? "20", 10), 1),
+      100,
+    );
     const offset = (page - 1) * limit;
 
     const [countRows] = await pool.query(
@@ -232,7 +242,7 @@ app.get("/api/judges/:judgeId/trials", async (req, res) => {
        FROM trial_summary ts
        JOIN trials t ON t.id = ts.trial_id
        WHERE t.judge_id = ?`,
-      [judgeId]
+      [judgeId],
     );
     const total = countRows[0].total;
 
@@ -243,7 +253,7 @@ app.get("/api/judges/:judgeId/trials", async (req, res) => {
        WHERE t.judge_id = ?
        ORDER BY ts.trial_date DESC
        LIMIT ? OFFSET ?`,
-      [judgeId, limit, offset]
+      [judgeId, limit, offset],
     );
 
     res.json({
@@ -252,7 +262,7 @@ app.get("/api/judges/:judgeId/trials", async (req, res) => {
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      data: rows
+      data: rows,
     });
   } catch (err) {
     console.error(err);
@@ -264,7 +274,10 @@ app.get("/api/judges/:judgeId/trials", async (req, res) => {
 app.get("/api/offences/search", async (req, res) => {
   try {
     const name = (req.query.name ?? "").toString().trim();
-    const limit = Math.min(Math.max(parseInt(req.query.limit ?? "10", 10), 1), 50);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit ?? "10", 10), 1),
+      50,
+    );
 
     if (!name) {
       return res.status(400).json({ error: "Query param 'name' is required" });
@@ -276,7 +289,7 @@ app.get("/api/offences/search", async (req, res) => {
        WHERE offence_name LIKE ?
        ORDER BY offence_name ASC
        LIMIT ?`,
-      [`%${name}%`, limit]
+      [`%${name}%`, limit],
     );
 
     res.json({ query: name, limit, total: rows.length, data: rows });
@@ -292,12 +305,12 @@ app.get("/api/offences", async (req, res) => {
     const [rows] = await pool.query(
       `SELECT offence_id, offence_name, category
        FROM offences
-       ORDER BY offence_name ASC`
+       ORDER BY offence_name ASC`,
     );
 
     res.json({
       total: rows.length,
-      data: rows
+      data: rows,
     });
   } catch (err) {
     console.error(err);
@@ -314,14 +327,17 @@ app.get("/api/offences/:offenceId/trials", async (req, res) => {
     }
 
     const page = Math.max(parseInt(req.query.page ?? "1", 10), 1);
-    const limit = Math.min(Math.max(parseInt(req.query.limit ?? "20", 10), 1), 100);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit ?? "20", 10), 1),
+      100,
+    );
     const offset = (page - 1) * limit;
 
     const [countRows] = await pool.query(
       `SELECT COUNT(*) AS total
        FROM trials
        WHERE offence_id = ?`,
-      [offenceId]
+      [offenceId],
     );
     const total = countRows[0].total;
 
@@ -332,7 +348,7 @@ app.get("/api/offences/:offenceId/trials", async (req, res) => {
        WHERE t.offence_id = ?
        ORDER BY ts.trial_date DESC
        LIMIT ? OFFSET ?`,
-      [offenceId, limit, offset]
+      [offenceId, limit, offset],
     );
 
     res.json({
@@ -341,14 +357,13 @@ app.get("/api/offences/:offenceId/trials", async (req, res) => {
       limit,
       total,
       totalPages: Math.ceil(total / limit),
-      data: rows
+      data: rows,
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 // GET /api/offences/:offenceId
 app.get("/api/offences/:offenceId", async (req, res) => {
@@ -362,7 +377,7 @@ app.get("/api/offences/:offenceId", async (req, res) => {
       `SELECT offence_id, offence_name, category
        FROM offences
        WHERE offence_id = ?`,
-      [offenceId]
+      [offenceId],
     );
 
     if (!rows.length) {
@@ -379,7 +394,10 @@ app.get("/api/offences/:offenceId", async (req, res) => {
 // GET /api/stats/offences?limit=10
 app.get("/api/stats/offences", async (req, res) => {
   try {
-    const limit = Math.min(Math.max(parseInt(req.query.limit ?? "10", 10), 1), 50);
+    const limit = Math.min(
+      Math.max(parseInt(req.query.limit ?? "10", 10), 1),
+      50,
+    );
 
     const [rows] = await pool.query(
       `SELECT
@@ -394,7 +412,7 @@ app.get("/api/stats/offences", async (req, res) => {
        GROUP BY o.offence_id, o.offence_name, o.category
        ORDER BY total_trials DESC, o.offence_name ASC
        LIMIT ?`,
-      [limit]
+      [limit],
     );
 
     res.json({ limit, total: rows.length, data: rows });
@@ -416,7 +434,9 @@ app.get("/api/stats/offences/over-time", async (req, res) => {
     const offenceText = (req.query.offence ?? "").toString().trim();
 
     if (!from || !to) {
-      return res.status(400).json({ error: "Query params 'from' and 'to' are required (YYYY-MM-DD)" });
+      return res.status(400).json({
+        error: "Query params 'from' and 'to' are required (YYYY-MM-DD)",
+      });
     }
 
     const bucketExpr =
@@ -431,7 +451,9 @@ app.get("/api/stats/offences/over-time", async (req, res) => {
     if (offenceIdRaw) {
       const offenceId = parseInt(offenceIdRaw, 10);
       if (Number.isNaN(offenceId)) {
-        return res.status(400).json({ error: "Invalid offenceId (must be a number)" });
+        return res
+          .status(400)
+          .json({ error: "Invalid offenceId (must be a number)" });
       }
       where.push("t.offence_id = ?");
       params.push(offenceId);
@@ -454,7 +476,7 @@ app.get("/api/stats/offences/over-time", async (req, res) => {
        ${whereSql}
        GROUP BY period
        ORDER BY period ASC`,
-      params
+      params,
     );
 
     res.json({
@@ -464,7 +486,7 @@ app.get("/api/stats/offences/over-time", async (req, res) => {
       offenceId: offenceIdRaw ? Number(offenceIdRaw) : null,
       offence: offenceText || null,
       total: rows.length,
-      data: rows
+      data: rows,
     });
   } catch (err) {
     console.error(err);
@@ -506,7 +528,7 @@ app.get("/api/stats/gender", async (req, res) => {
        ${whereSql}
        GROUP BY d.gender
        ORDER BY total_trials DESC, d.gender ASC`,
-      params
+      params,
     );
 
     res.json({
@@ -514,7 +536,7 @@ app.get("/api/stats/gender", async (req, res) => {
       to: from && to ? to : null,
       group: group || null,
       total: rows.length,
-      data: rows
+      data: rows,
     });
   } catch (err) {
     console.error(err);
@@ -544,8 +566,8 @@ app.get("/api/stats/party-type", async (req, res) => {
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
 
-const [rows] = await pool.query(
-  `SELECT
+    const [rows] = await pool.query(
+      `SELECT
      ${bucketExpr} AS period,
      d.party_type AS party_type,
      COUNT(*) AS total_trials,
@@ -563,41 +585,56 @@ const [rows] = await pool.query(
    ${whereSql}
    GROUP BY period, d.party_type
    ORDER BY period ASC, d.party_type ASC`,
-  params
-);
+      params,
+    );
 
-
-   
     const format = (req.query.format ?? "").toString().trim().toLowerCase();
 
-if (format === "series") {
-  // series keyed by party_type: [{ party_type, points: [{x,y,low,high,n}, ...] }]
-  const seriesMap = new Map();
+    if (format === "series") {
+      // series keyed by party_type: [{ party_type, points: [{x,y,low,high,n}, ...] }]
+      const seriesMap = new Map();
 
-  for (const r of rows) {
-    const key = r.party_type;
-    if (!seriesMap.has(key)) seriesMap.set(key, []);
+      for (const r of rows) {
+        const key = r.party_type;
+        if (!seriesMap.has(key)) seriesMap.set(key, []);
 
-    seriesMap.get(key).push({
-      x: Number(r.period),                    // year/decade
-      y: r.guilty_rate === null ? null : Number(r.guilty_rate),
-      low: r.guilty_rate_wilson_low === null ? null : Number(r.guilty_rate_wilson_low),
-      high: r.guilty_rate_wilson_high === null ? null : Number(r.guilty_rate_wilson_high),
-      n: Number(r.known_verdicts)             // confidence count
+        seriesMap.get(key).push({
+          x: Number(r.period), // year/decade
+          y: r.guilty_rate === null ? null : Number(r.guilty_rate),
+          low:
+            r.guilty_rate_wilson_low === null
+              ? null
+              : Number(r.guilty_rate_wilson_low),
+          high:
+            r.guilty_rate_wilson_high === null
+              ? null
+              : Number(r.guilty_rate_wilson_high),
+          n: Number(r.known_verdicts), // confidence count
+        });
+      }
+
+      return res.json({
+        bucket,
+        from,
+        to,
+        group: group || null,
+        z,
+        series: Array.from(seriesMap, ([party_type, points]) => ({
+          party_type,
+          points,
+        })),
+      });
+    }
+
+    res.json({
+      bucket,
+      from,
+      to,
+      group: group || null,
+      z,
+      total: rows.length,
+      data: rows,
     });
-  }
-
-  return res.json({
-    bucket,
-    from,
-    to,
-    group: group || null,
-    z,
-    series: Array.from(seriesMap, ([party_type, points]) => ({ party_type, points }))
-  });
-}
-
-    res.json({ bucket, from, to, group: group || null, z, total: rows.length, data: rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
@@ -703,9 +740,19 @@ app.get("/api/stats/gender-party", async (req, res) => {
       [
         ...params,
         // Wilson params (12 placeholders)
-        z, z, z, z, z,
-        z, z, z, z, z, z, z
-      ]
+        z,
+        z,
+        z,
+        z,
+        z,
+        z,
+        z,
+        z,
+        z,
+        z,
+        z,
+        z,
+      ],
     );
 
     res.json({
@@ -714,7 +761,7 @@ app.get("/api/stats/gender-party", async (req, res) => {
       group: group || null,
       z,
       total: rows.length,
-      data: rows
+      data: rows,
     });
   } catch (err) {
     console.error(err);
@@ -730,11 +777,11 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
     const to = (req.query.to ?? "").toString().trim();
     const group = (req.query.group ?? "").toString().trim();
     const z = Number(req.query.z ?? 1.96); // add this near other query params if not already there
-
+    const gender = (req.query.gender || "all").toLowerCase();
 
     if (!from || !to) {
       return res.status(400).json({
-        error: "Query params 'from' and 'to' are required (YYYY-MM-DD)"
+        error: "Query params 'from' and 'to' are required (YYYY-MM-DD)",
       });
     }
 
@@ -746,12 +793,17 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
     const where = [
       "d.gender IS NOT NULL",
       "d.party_type IS NOT NULL",
-      "t.trial_date BETWEEN ? AND ?"
+      "t.trial_date BETWEEN ? AND ?",
     ];
+
     const cleanFrom = from.slice(0, 10);
     const cleanTo = to.slice(0, 10);
     const params = [cleanFrom, cleanTo];
 
+    if (gender === "male" || gender === "female") {
+      where.push("d.gender = ?");
+      params.push(gender);
+    }
 
     if (group) {
       where.push("o.offence_group = ?");
@@ -782,40 +834,39 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
        ${whereSql}
        GROUP BY period, d.gender, d.party_type
        ORDER BY period ASC, d.gender ASC, d.party_type ASC`,
-      params
+      params,
     );
-   const format = (req.query.format ?? "").toString().trim().toLowerCase();
+    const format = (req.query.format ?? "").toString().trim().toLowerCase();
 
-   if (format === "series") {
-     const seriesMap = new Map();
+    if (format === "series") {
+      const seriesMap = new Map();
 
-     for (const r of rows) {
-       const key = `${r.gender} - ${r.party_type}`;
-       if (!seriesMap.has(key)) seriesMap.set(key, []);
+      for (const r of rows) {
+        const key = `${r.gender} - ${r.party_type}`;
+        if (!seriesMap.has(key)) seriesMap.set(key, []);
 
-       const n = Number(r.known_verdicts);
-       const g = Number(r.guilty_trials);
-       const ci = wilsonInterval(g, n, z);
+        const n = Number(r.known_verdicts);
+        const g = Number(r.guilty_trials);
+        const ci = wilsonInterval(g, n, z);
 
-       seriesMap.get(key).push({
-         x: Number(r.period),
-         y: r.guilty_rate === null ? null : Number(r.guilty_rate),
-         low: ci.low === null ? null : Number(ci.low.toFixed(2)),
-         high: ci.high === null ? null : Number(ci.high.toFixed(2)),
-         n
-       });
-     }
+        seriesMap.get(key).push({
+          x: Number(r.period),
+          y: r.guilty_rate === null ? null : Number(r.guilty_rate),
+          low: ci.low === null ? null : Number(ci.low.toFixed(2)),
+          high: ci.high === null ? null : Number(ci.high.toFixed(2)),
+          n,
+        });
+      }
 
-  return res.json({
-    bucket,
-    from: cleanFrom,
-    to: cleanTo,
-    group: group || null,
-    z,
-    series: Array.from(seriesMap, ([label, data]) => ({ label, data }))
-  });
-}
-
+      return res.json({
+        bucket,
+        from: cleanFrom,
+        to: cleanTo,
+        group: group || null,
+        z,
+        series: Array.from(seriesMap, ([label, data]) => ({ label, data })),
+      });
+    }
 
     res.json({
       bucket,
@@ -823,7 +874,7 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
       to,
       group: group || null,
       total: rows.length,
-      data: rows
+      data: rows,
     });
   } catch (err) {
     console.error(err);
@@ -840,7 +891,7 @@ app.get("/api/stats/party-type/over-time", async (req, res) => {
 
     if (!from || !to) {
       return res.status(400).json({
-        error: "Query params 'from' and 'to' are required (YYYY-MM-DD)"
+        error: "Query params 'from' and 'to' are required (YYYY-MM-DD)",
       });
     }
 
@@ -849,14 +900,10 @@ app.get("/api/stats/party-type/over-time", async (req, res) => {
         ? "FLOOR(YEAR(t.trial_date) / 10) * 10"
         : "YEAR(t.trial_date)";
 
-    const where = [
-      "d.party_type IS NOT NULL",
-      "t.trial_date BETWEEN ? AND ?"
-    ];
+    const where = ["d.party_type IS NOT NULL", "t.trial_date BETWEEN ? AND ?"];
     const cleanFrom = from.slice(0, 10);
     const cleanTo = to.slice(0, 10);
     const params = [cleanFrom, cleanTo];
-
 
     if (group) {
       where.push("o.offence_group = ?");
@@ -886,7 +933,7 @@ app.get("/api/stats/party-type/over-time", async (req, res) => {
        ${whereSql}
        GROUP BY period, d.party_type
        ORDER BY period ASC, d.party_type ASC`,
-      params
+      params,
     );
     const format = (req.query.format ?? "").toString().trim().toLowerCase();
 
@@ -900,7 +947,7 @@ app.get("/api/stats/party-type/over-time", async (req, res) => {
         seriesMap.get(key).push({
           x: Number(r.period),
           y: r.guilty_rate === null ? null : Number(r.guilty_rate),
-          n: Number(r.known_verdicts) // sample size behind the rate
+          n: Number(r.known_verdicts), // sample size behind the rate
         });
       }
 
@@ -909,28 +956,23 @@ app.get("/api/stats/party-type/over-time", async (req, res) => {
         from: cleanFrom,
         to: cleanTo,
         group: group || null,
-        series: Array.from(seriesMap, ([label, data]) => ({ label, data }))
+        series: Array.from(seriesMap, ([label, data]) => ({ label, data })),
       });
     }
 
-   res.json({
-    bucket,
-    from: cleanFrom,
-    to: cleanTo,
-    group: group || null,
-    total: rows.length,
-    data: rows
-  });
-
+    res.json({
+      bucket,
+      from: cleanFrom,
+      to: cleanTo,
+      group: group || null,
+      total: rows.length,
+      data: rows,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
-
-
-
 
 /* -----------------------
    Server start
