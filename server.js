@@ -800,6 +800,14 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
     const cleanTo = to.slice(0, 10);
     const params = [cleanFrom, cleanTo];
 
+    const genderFilter =
+      gender === "male" || gender === "female" ? gender : "all";
+
+    if (genderFilter !== "all") {
+      where.push("d.gender = ?");
+      params.push(genderFilter);
+    }
+
     if (gender === "male" || gender === "female") {
       where.push("d.gender = ?");
       params.push(gender);

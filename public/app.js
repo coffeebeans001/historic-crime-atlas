@@ -82,7 +82,7 @@ function buildUrl() {
   const z = String(Number(document.getElementById("confidence").value || 1.96));
   const params = new URLSearchParams({ bucket, from, to, format: "series", z });
   const gender = document.getElementById("gender")?.value || "all";
-  params.set("gender", gender); 
+  params.set("gender", gender);
 
   if (group) params.set("group", group);
 
@@ -263,6 +263,10 @@ function ensureChart() {
         },
       },
       plugins: {
+        title: {
+          display: true,
+          text: "Loading..." 
+        },
         legend: {
           labels: {
             // Only show the "main line" datasets in the legend (hide CI helpers)
@@ -334,6 +338,14 @@ function ensureChart() {
   });
 }
 
+function getGenderLabel() {
+  const val = document.getElementById("gender")?.value || "all";
+
+  if (val === "male") return "Male Defendants";
+  if (val === "female") return "Female Defendants";
+  return "All Defendants";
+}
+
 async function render() {
   ensureChart();
 
@@ -357,6 +369,9 @@ async function render() {
 
   chart.options.scales.x.title.text = bucket === "decade" ? "Decade" : "Year";
 
+  const label = getGenderLabel();
+  chart.options.plugins.title.text = `Conviction Rate Over Time (${label})`;
+
   chart.update("none");
 }
 
@@ -374,17 +389,14 @@ let baseTiles;
 let mapHandlersBound = false; // ✅ ADD THIS
 let popupFadeTimer = null;
 
-
-
-
 if (!window.__nearbyUI) {
   window.__nearbyUI = {
     pinnedMarker: null,
     pinnedId: null,
     activeMarker: null,
     activeListBtn: null,
-    markerById: new Map(),  // optional place to store it
-    btnById: new Map(),      // optional map: id -> button
+    markerById: new Map(), // optional place to store it
+    btnById: new Map(), // optional map: id -> button
   };
 }
 
@@ -399,7 +411,11 @@ function safePanToMarker(marker, zoomToShow = true) {
     map.panTo(ll, { animate: true });
   };
 
-  if (zoomToShow && markersLayer && typeof markersLayer.zoomToShowLayer === "function") {
+  if (
+    zoomToShow &&
+    markersLayer &&
+    typeof markersLayer.zoomToShowLayer === "function"
+  ) {
     markersLayer.zoomToShowLayer(marker, doPan);
   } else {
     doPan();
@@ -490,8 +506,6 @@ function onMapClick(e) {
   // fetchNearby().catch(console.error); // optional
 }
 
-
-
 function ensureMap() {
   if (!map) {
     map = L.map("map").setView([currentCenter.lat, currentCenter.lng], 13);
@@ -538,20 +552,20 @@ function ensureMap() {
   if (!mapHandlersBound) {
     mapHandlersBound = true;
 
-  map.on("movestart", () => {
-  document
-    .querySelectorAll(".leaflet-popup.crime-popup")
-    .forEach(p => p.style.opacity = "0.25");
-});
+    map.on("movestart", () => {
+      document
+        .querySelectorAll(".leaflet-popup.crime-popup")
+        .forEach((p) => (p.style.opacity = "0.25"));
+    });
 
-map.on("moveend", () => {
-  clearTimeout(popupFadeTimer);
-  popupFadeTimer = setTimeout(() => {
-    document
-      .querySelectorAll(".leaflet-popup.crime-popup")
-      .forEach(p => p.style.opacity = "1");
-  }, 120);
-});
+    map.on("moveend", () => {
+      clearTimeout(popupFadeTimer);
+      popupFadeTimer = setTimeout(() => {
+        document
+          .querySelectorAll(".leaflet-popup.crime-popup")
+          .forEach((p) => (p.style.opacity = "1"));
+      }, 120);
+    });
 
     map.on("click", (e) => {
       currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
@@ -699,26 +713,26 @@ function renderNearbyList(rows, markerById) {
 
   el.innerHTML = `<ol>${items}</ol>`;
 
- // ---------- Wire interactions ----------
-el.querySelectorAll('button[data-id]').forEach((btn) => {
- btn.addEventListener("click", () => {
-const id = btn.getAttribute("data-id");
-if (!id) return;
+  // ---------- Wire interactions ----------
+  el.querySelectorAll("button[data-id]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.getAttribute("data-id");
+      if (!id) return;
 
-const marker = markerById.get(id);
-if (!marker) return;
+      const marker = markerById.get(id);
+      if (!marker) return;
 
-setActive(marker, btn);
-pinMarker(marker);
+      setActive(marker, btn);
+      pinMarker(marker);
 
-markersLayer.zoomToShowLayer(marker, () => {
-  map.panTo(marker.getLatLng(), { animate: true });
-  marker.openPopup();
-});
+      markersLayer.zoomToShowLayer(marker, () => {
+        map.panTo(marker.getLatLng(), { animate: true });
+        marker.openPopup();
+      });
 
-btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
-});
-});
+      btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  });
 }
 
 async function fetchNearby() {
@@ -817,23 +831,23 @@ async function fetchNearby() {
   Click = PIN popup
 ---------------------------- */
       marker.on("click", () => {
-  if (!window.__nearbyUI) return;
-  const ui = window.__nearbyUI;
+        if (!window.__nearbyUI) return;
+        const ui = window.__nearbyUI;
 
-  // Close previously pinned marker
-  if (ui.pinnedMarker && ui.pinnedMarker !== marker) {
-    ui.pinnedMarker.closePopup?.();
-  }
+        // Close previously pinned marker
+        if (ui.pinnedMarker && ui.pinnedMarker !== marker) {
+          ui.pinnedMarker.closePopup?.();
+        }
 
-  // Set new pinned marker
-  ui.pinnedMarker = marker;
+        // Set new pinned marker
+        ui.pinnedMarker = marker;
 
-  // Open + pan (cluster-safe)
-  markersLayer.zoomToShowLayer(marker, () => {
-    marker.openPopup();
-    map.panTo(marker.getLatLng(), { animate: true });
-  });
-});
+        // Open + pan (cluster-safe)
+        markersLayer.zoomToShowLayer(marker, () => {
+          marker.openPopup();
+          map.panTo(marker.getLatLng(), { animate: true });
+        });
+      });
 
       // CLICK = sticky select
       marker.on("click", () => {
@@ -846,24 +860,26 @@ async function fetchNearby() {
 
       marker.bindPopup(popupHTML);
 
-   if (r.id != null) {
-  const id = String(r.id);
-  markerById.set(id, marker);
+      if (r.id != null) {
+        const id = String(r.id);
+        markerById.set(id, marker);
 
-  // marker click pins + sync list
-  marker.on("click", () => {
-    const btn = document.querySelector(`#nearby-results button[data-id="${id}"]`);
-    setActive(marker, btn);
-    pinMarker(marker);
+        // marker click pins + sync list
+        marker.on("click", () => {
+          const btn = document.querySelector(
+            `#nearby-results button[data-id="${id}"]`,
+          );
+          setActive(marker, btn);
+          pinMarker(marker);
 
-    markersLayer.zoomToShowLayer(marker, () => {
-      map.panTo(marker.getLatLng(), { animate: true });
-      marker.openPopup();
-    });
+          markersLayer.zoomToShowLayer(marker, () => {
+            map.panTo(marker.getLatLng(), { animate: true });
+            marker.openPopup();
+          });
 
-    btn?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  });
-}
+          btn?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+      }
 
       // MarkerClusterGroup uses addLayer
       markersLayer.addLayer(marker);

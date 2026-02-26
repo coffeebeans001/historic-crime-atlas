@@ -8,147 +8,186 @@
     <!-- Chart.js (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-   <!-- Leaflet -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <!-- Leaflet -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
 
-<!-- MarkerCluster -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+    <!-- MarkerCluster -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
+    />
 
-
-
-<style>
-  body { font-family: system-ui, Arial; margin: 24px; }
-  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
-  label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
-  input, select { padding: 8px; font-size: 14px; }
-  canvas { max-width: 100%; }
-  #chart-wrap { width: 100%; max-width: 1100px; height: 320px; }
-  #crimeChart { width: 100% !important; height: 100% !important; display: block; }
-  .marker-hover {
-  transform: translateY(-2px);
-  filter: drop-shadow(0 6px 8px rgba(0,0,0,.25));
- }
-  /* Nearby list UX */
-#nearby-results button[data-id]{
-  padding: 8px 10px;
-  border-radius: 10px;
-  width: 100%;
-}
-
-#nearby-results button[data-id]:hover{
-  background: rgba(0,0,0,0.06);
-}
-
-#nearby-results button[data-id].is-active{
-  background: rgba(0,0,0,0.10);
-  outline: 2px solid rgba(0,0,0,0.12);
-}
-/* Nearby list UX */
-#nearby-results .nearby-item{
-  all: unset;
-  cursor: pointer;
-  display: block;
-  padding: 8px 10px;
-  border-radius: 10px;
-  width: 100%;
-}
-
-#nearby-results .nearby-item:hover{
-  background: rgba(0,0,0,0.06);
-}
-
-#nearby-results .nearby-item.is-active{
-  background: rgba(0,0,0,0.10);
-  outline: 2px solid rgba(0,0,0,0.12);
-}
-
-/* Let clicks pass THROUGH the popup so markers underneath remain clickable */
-.leaflet-popup {
-  pointer-events: none;
-}
-
-/* BUT keep the close (×) button clickable */
-.leaflet-popup-close-button {
-  pointer-events: auto;
-}
-
-  /* popup transparency */
-    .leaflet-popup-content-wrapper {
-      background: rgba(255, 255, 255, 0.92);
-    }
-
-    .leaflet-popup-tip {
-      background: rgba(255, 255, 255, 0.92);
-    }
-
-    /* popup fade-in animation */
-    .leaflet-popup {
-      animation: popupFadeIn 140ms ease-out;
-    }
-
-    @keyframes popupFadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(4px);
+    <style>
+      body {
+        font-family: system-ui, Arial;
+        margin: 24px;
       }
-      to {
-        opacity: 1;
-        transform: translateY(0);
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
       }
-    }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 14px;
+      }
+      input,
+      select {
+        padding: 8px;
+        font-size: 14px;
+      }
+      canvas {
+        max-width: 100%;
+      }
+      #chart-wrap {
+        width: 100%;
+        max-width: 1100px;
+        height: 320px;
+      }
+      #crimeChart {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+      }
+      .marker-hover {
+        transform: translateY(-2px);
+        filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.25));
+      }
+      /* Nearby list UX */
+      #nearby-results button[data-id] {
+        padding: 8px 10px;
+        border-radius: 10px;
+        width: 100%;
+      }
 
- /* Transparent popup bubble + tip */
-.leaflet-popup.crime-popup .leaflet-popup-content-wrapper{
-  background: rgba(20,20,20,0.45) !important;
-  color: #fff !important;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(255,255,255,0.12);
-}
+      #nearby-results button[data-id]:hover {
+        background: rgba(0, 0, 0, 0.06);
+      }
 
-.leaflet-popup.crime-popup .leaflet-popup-tip{
-  background: rgba(20,20,20,0.70) !important;
-}
+      #nearby-results button[data-id].is-active {
+        background: rgba(0, 0, 0, 0.1);
+        outline: 2px solid rgba(0, 0, 0, 0.12);
+      }
+      /* Nearby list UX */
+      #nearby-results .nearby-item {
+        all: unset;
+        cursor: pointer;
+        display: block;
+        padding: 8px 10px;
+        border-radius: 10px;
+        width: 100%;
+      }
 
-.leaflet-popup.crime-popup a{
-  color: #fff;
-  text-decoration: underline;
-}
+      #nearby-results .nearby-item:hover {
+        background: rgba(0, 0, 0, 0.06);
+      }
 
-.leaflet-popup.crime-popup{
-  animation: popupFade 120ms ease-out;
-}
+      #nearby-results .nearby-item.is-active {
+        background: rgba(0, 0, 0, 0.1);
+        outline: 2px solid rgba(0, 0, 0, 0.12);
+      }
 
-@keyframes popupFade{
-  from { opacity: 0; transform: translateY(2px); }
-  to  { opacity: 1; transform: translateY(0); }
-}
+      /* Let clicks pass THROUGH the popup so markers underneath remain clickable */
+      .leaflet-popup {
+        pointer-events: none;
+      }
 
-/* Gentle elevation without dominance */
-.leaflet-popup.crime-popup .leaflet-popup-content-wrapper{
-  box-shadow: 0 6px 18px rgba(0,0,0,0.22);
-}
+      /* BUT keep the close (×) button clickable */
+      .leaflet-popup-close-button {
+        pointer-events: auto;
+      }
 
-/* Slightly stronger when user is interacting */
-.leaflet-popup.crime-popup.leaflet-interactive
-  .leaflet-popup-content-wrapper{
-  box-shadow: 0 10px 24px rgba(0,0,0,0.28);
-}
+      /* popup transparency */
+      .leaflet-popup-content-wrapper {
+        background: rgba(255, 255, 255, 0.92);
+      }
 
-</style>
+      .leaflet-popup-tip {
+        background: rgba(255, 255, 255, 0.92);
+      }
 
-    
-    
- 
+      /* popup fade-in animation */
+      .leaflet-popup {
+        animation: popupFadeIn 140ms ease-out;
+      }
 
+      @keyframes popupFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script defer src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+      /* Transparent popup bubble + tip */
+      .leaflet-popup.crime-popup .leaflet-popup-content-wrapper {
+        background: rgba(20, 20, 20, 0.45) !important;
+        color: #fff !important;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
 
-<!-- Your app (MUST be after the plugin) -->
-<script defer src="/app.js"></script>
+      .leaflet-popup.crime-popup .leaflet-popup-tip {
+        background: rgba(20, 20, 20, 0.7) !important;
+      }
 
+      .leaflet-popup.crime-popup a {
+        color: #fff;
+        text-decoration: underline;
+      }
+
+      .leaflet-popup.crime-popup {
+        animation: popupFade 120ms ease-out;
+      }
+
+      @keyframes popupFade {
+        from {
+          opacity: 0;
+          transform: translateY(2px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Gentle elevation without dominance */
+      .leaflet-popup.crime-popup .leaflet-popup-content-wrapper {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+      }
+
+      /* Slightly stronger when user is interacting */
+      .leaflet-popup.crime-popup.leaflet-interactive
+        .leaflet-popup-content-wrapper {
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+      }
+    </style>
+
+    <script
+      defer
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    ></script>
+    <script
+      defer
+      src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"
+    ></script>
+
+    <!-- Your app (MUST be after the plugin) -->
+    <script defer src="/app.js"></script>
   </head>
   <body>
     <h1>Robbery trend (guilty rate %)</h1>
@@ -179,22 +218,28 @@
 
       <label for="gender">Gender</label>
       <select id="gender">
-       <option value="all">All</option>
-       <option value="male">Male</option>
-       <option value="female">Female</option>
-       <option value="unknown">Unknown</option>
+        <option value="all">All</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
       </select>
 
-      <button id="reload" style="padding: 10px 14px; font-size: 14px;">
+      <button id="reload" style="padding: 10px 14px; font-size: 14px">
         Reload
       </button>
     </div>
-    <label style="display:inline-flex;align-items:center;gap:.5rem;">
-     <input type="checkbox" id="toggle-ci" checked />
-     Show confidence intervals
+    <label style="display: inline-flex; align-items: center; gap: 0.5rem">
+      <input type="checkbox" id="toggle-ci" checked />
+      Show confidence intervals
     </label>
-     
-    <label style="display:inline-flex;align-items:center;gap:.5rem;margin-left:1rem;">
+
+    <label
+      style="
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: 1rem;
+      "
+    >
       Confidence:
       <select id="confidence">
         <option value="1.645">90%</option>
@@ -202,42 +247,59 @@
         <option value="2.576">99%</option>
       </select>
     </label>
-    
-    
 
     <div id="chart-wrap">
       <canvas id="crimeChart"></canvas>
-    </div>  
+    </div>
 
-    <hr style="margin:24px 0;" />
+    <hr style="margin: 24px 0" />
 
     <h2>Nearby historic crimes</h2>
 
-    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
-      <button id="use-gps" style="padding:10px 14px; font-size:14px;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center">
+      <button id="use-gps" style="padding: 10px 14px; font-size: 14px">
         Use my location
       </button>
 
-      <label style="display:inline-flex;align-items:center;gap:.5rem;">
+      <label style="display: inline-flex; align-items: center; gap: 0.5rem">
         Radius (m):
-        <input id="radius" type="number" value="2000" min="50" max="20000" step="50" />
+        <input
+          id="radius"
+          type="number"
+          value="2000"
+          min="50"
+          max="20000"
+          step="50"
+        />
       </label>
 
-      <label style="display:inline-flex;align-items:center;gap:.5rem;">
+      <label style="display: inline-flex; align-items: center; gap: 0.5rem">
         Limit:
-        <input id="nearby-limit" type="number" value="5" min="1" max="50" step="1" />
+        <input
+          id="nearby-limit"
+          type="number"
+          value="5"
+          min="1"
+          max="50"
+          step="1"
+        />
       </label>
 
-      <button id="nearby" style="padding:10px 14px; font-size:14px;">
+      <button id="nearby" style="padding: 10px 14px; font-size: 14px">
         Find nearby
       </button>
     </div>
 
-    <div id="map" style="height: 420px; margin-top: 12px; border-radius: 12px; overflow: hidden;"></div>
+    <div
+      id="map"
+      style="
+        height: 420px;
+        margin-top: 12px;
+        border-radius: 12px;
+        overflow: hidden;
+      "
+    ></div>
 
-    <div id="nearby-results" style="margin-top:12px;"></div>
-    
-   
+    <div id="nearby-results" style="margin-top: 12px"></div>
   </body>
 </html>
-
