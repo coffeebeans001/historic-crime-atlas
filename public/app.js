@@ -265,7 +265,7 @@ function ensureChart() {
       plugins: {
         title: {
           display: true,
-          text: "Loading..." 
+          text: "Loading...",
         },
         legend: {
           labels: {
@@ -346,6 +346,116 @@ function getGenderLabel() {
   return "All Defendants";
 }
 
+function readUrlState() {
+  const p = new URLSearchParams(location.search);
+
+  const state = {
+    from: p.get("from"),
+    to: p.get("to"),
+    group: p.get("group"),
+    bucket: p.get("bucket"),
+    confidence: p.get("confidence"),
+    ci: p.get("ci"), // "1" or "0"
+    gender: p.get("gender"),
+
+    lat: p.get("lat"),
+    lng: p.get("lng"),
+    radius: p.get("radius"),
+    limit: p.get("limit"),
+
+    nearby: p.get("nearby"), // "1" to auto-run
+  };
+
+  return state;
+}
+
+function writeUrlState({ push = false } = {}) {
+  const p = new URLSearchParams(location.search);
+
+  // Read current UI values safely
+  const fromEl = document.getElementById("from");
+  const toEl = document.getElementById("to");
+  const groupEl = document.getElementById("group");
+  const bucketEl = document.getElementById("bucket");
+  const confEl = document.getElementById("confidence");
+  const ciEl = document.getElementById("toggle-ci");
+  const genderEl = document.getElementById("gender");
+
+  const radiusEl = document.getElementById("radius");
+  const limitEl = document.getElementById("nearby-limit");
+
+  // Chart params
+  if (fromEl?.value) p.set("from", fromEl.value);
+  else p.delete("from");
+  if (toEl?.value) p.set("to", toEl.value);
+  else p.delete("to");
+  if (groupEl?.value) p.set("group", groupEl.value.trim());
+  else p.delete("group");
+  if (bucketEl?.value) p.set("bucket", bucketEl.value);
+  else p.delete("bucket");
+  if (confEl?.value) p.set("confidence", confEl.value);
+  else p.delete("confidence");
+  if (genderEl?.value) p.set("gender", genderEl.value);
+  else p.delete("gender");
+  if (ciEl) p.set("ci", ciEl.checked ? "1" : "0");
+
+  // Map params
+  if (Number.isFinite(currentCenter?.lat))
+    p.set("lat", String(currentCenter.lat));
+  if (Number.isFinite(currentCenter?.lng))
+    p.set("lng", String(currentCenter.lng));
+  if (radiusEl?.value) p.set("radius", String(radiusEl.value));
+  if (limitEl?.value) p.set("limit", String(limitEl.value));
+
+  const qs = p.toString();
+  const url = qs ? `?${qs}` : location.pathname;
+
+  if (push) history.pushState(null, "", url);
+  else history.replaceState(null, "", url);
+}
+
+function applyStateToUI(state) {
+  // Chart controls
+  const fromEl = document.getElementById("from");
+  const toEl = document.getElementById("to");
+  const groupEl = document.getElementById("group");
+  const bucketEl = document.getElementById("bucket");
+  const confEl = document.getElementById("confidence");
+  const ciEl = document.getElementById("toggle-ci");
+  const genderEl = document.getElementById("gender");
+
+  if (fromEl && state.from) fromEl.value = state.from;
+  if (toEl && state.to) toEl.value = state.to;
+  if (groupEl && state.group) groupEl.value = state.group;
+  if (bucketEl && state.bucket) bucketEl.value = state.bucket;
+  if (confEl && state.confidence) confEl.value = state.confidence;
+  if (genderEl && state.gender) genderEl.value = state.gender;
+
+  if (ciEl && (state.ci === "0" || state.ci === "1")) {
+    ciEl.checked = state.ci === "1";
+  }
+
+  // Map controls
+  const radiusEl = document.getElementById("radius");
+  const limitEl = document.getElementById("nearby-limit");
+
+  if (radiusEl && state.radius) radiusEl.value = state.radius;
+  if (limitEl && state.limit) limitEl.value = state.limit;
+
+  // Center
+  const lat = state.lat != null ? Number(state.lat) : null;
+  const lng = state.lng != null ? Number(state.lng) : null;
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    currentCenter = { lat, lng };
+  }
+}
+
+let _urlSyncTimer = null;
+function scheduleUrlSync({ push = false } = {}) {
+  if (_urlSyncTimer) clearTimeout(_urlSyncTimer);
+  _urlSyncTimer = setTimeout(() => writeUrlState({ push }), 120);
+}
+
 async function render() {
   ensureChart();
 
@@ -369,8 +479,13 @@ async function render() {
 
   chart.options.scales.x.title.text = bucket === "decade" ? "Decade" : "Year";
 
-  const label = getGenderLabel();
-  chart.options.plugins.title.text = `Conviction Rate Over Time (${label})`;
+  const groupLabel =
+    document.getElementById("group")?.value?.trim() || "All offences";
+  const genderLabel =
+    document.getElementById("gender")?.selectedOptions?.[0]?.text ||
+    "All Defendants";
+
+  chart.options.plugins.title.text = `${groupLabel} — Conviction Rate Over Time (${genderLabel})`;
 
   chart.update("none");
 }
@@ -958,40 +1073,49 @@ document.getElementById("reload").addEventListener("click", () => {
 });
 
 document.getElementById("bucket").addEventListener("change", () => {
-  render().catch((err) => {
-    console.error(err);
-    alert(err.message);
-  });
-});
-
-document.getElementById("confidence").addEventListener("change", () => {
-  render().catch((err) => {
-    console.error(err);
-    alert(err.message);
-  });
-});
-
-document.getElementById("gender").addEventListener("change", () => {
+  scheduleUrlSync();
   render().catch(console.error);
 });
 
-// CI visibility toggle — NO refetch
-document.getElementById("toggle-ci").addEventListener("change", () => {
-  if (!chart) return;
-  const show = document.getElementById("toggle-ci").checked;
-  animateCi(show, 250);
+document.getElementById("confidence").addEventListener("change", () => {
+  scheduleUrlSync();
+  render().catch(console.error);
 });
 
-const radiusInput = document.getElementById("radius");
-if (radiusInput)
-  radiusInput.addEventListener("change", () => {
-    updateRadiusCircle();
-  });
+document.getElementById("toggle-ci").addEventListener("change", () => {
+  scheduleUrlSync();
+  if (!chart) return;
+  animateCi(document.getElementById("toggle-ci").checked, 250);
+});
+
+document.getElementById("gender")?.addEventListener("change", () => {
+  scheduleUrlSync();
+  render().catch(console.error);
+});
+
+document.getElementById("radius")?.addEventListener("change", () => {
+  ensureMap();
+  updateRadiusCircle();
+  scheduleUrlSync();
+});
+
+document.getElementById("group")?.addEventListener("change", () => {
+  scheduleUrlSync();
+  render().catch(console.error);
+});
 
 // Buttons: Nearby
 const nearbyBtn = document.getElementById("nearby");
 if (nearbyBtn) {
   nearbyBtn.addEventListener("click", () => {
+    // push=true so the back button feels natural for “actions”
+    scheduleUrlSync({ push: true });
+
+    // also mark that this view includes nearby results (optional)
+    const p = new URLSearchParams(location.search);
+    p.set("nearby", "1");
+    history.replaceState(null, "", `?${p.toString()}`);
+
     fetchNearby().catch((err) => {
       console.error(err);
       alert(err.message);
@@ -1009,7 +1133,7 @@ if (radiusEl) {
 
 function init() {
   // Chart
-  render().catch(console.error);
+  initFromUrl();
 
   // Map base + center + radius
   ensureMap();
@@ -1027,4 +1151,31 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
+}
+
+function initFromUrl() {
+  const state = readUrlState();
+  applyStateToUI(state);
+
+  // Ensure map uses URL center (if any)
+  ensureMap();
+  updateRadiusCircle();
+
+  // Render chart using URL-selected filters
+  render().catch(console.error);
+
+  // Optional: auto-run nearby if nearby=1
+  if (state.nearby === "1") {
+    fetchNearby().catch(console.error);
+  }
+
+  // Keep back/forward working
+  window.addEventListener("popstate", () => {
+    const s = readUrlState();
+    applyStateToUI(s);
+    ensureMap();
+    updateRadiusCircle();
+    render().catch(console.error);
+    if (s.nearby === "1") fetchNearby().catch(console.error);
+  });
 }
