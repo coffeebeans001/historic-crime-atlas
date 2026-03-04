@@ -234,10 +234,53 @@ function setGroupHidden(chart, clickedLabel, hidden) {
   });
 }
 
+// ---- Chart loading overlay (register ONCE) ----
+const loadingOverlayPlugin = {
+  id: "loadingOverlay",
+  beforeDraw(chart, _args, opts) {
+    if (!chart.$loading) return;
+
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return;
+
+    const {
+      text = "Loading…",
+      font = "14px system-ui, -apple-system, Segoe UI, Roboto, Arial",
+      backdrop = "rgba(255,255,255,0.65)",
+    } = opts || {};
+
+    const { left, top, right, bottom } = chartArea;
+
+    ctx.save();
+    // backdrop
+    ctx.fillStyle = backdrop;
+    ctx.fillRect(left, top, right - left, bottom - top);
+
+    // text
+    ctx.fillStyle = "#111";
+    ctx.font = font;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, (left + right) / 2, (top + bottom) / 2);
+    ctx.restore();
+  },
+};
+
+Chart.register(loadingOverlayPlugin);
+
+function setChartLoading(on) {
+  if (!chart) return;
+  chart.$loading = !!on;
+  chart.update("none");
+}
+
 function ensureChart() {
   if (chart) return;
 
-  const ctx = document.getElementById("crimeChart").getContext("2d");
+  const canvas = document.getElementById("crimeChart");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
 
   chart = new Chart(ctx, {
     type: "line",
@@ -246,15 +289,10 @@ function ensureChart() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "nearest", intersect: false },
-      layout: {
-        padding: { top: 12, bottom: 12 },
-      },
+      layout: { padding: { top: 12, bottom: 12 } },
 
       scales: {
-        x: {
-          type: "linear",
-          title: { display: true, text: "Year" },
-        },
+        x: { type: "linear", title: { display: true, text: "Year" } },
         y: {
           min: 0,
           max: 100,
@@ -262,70 +300,31 @@ function ensureChart() {
           title: { display: true, text: "Guilty rate (%)" },
         },
       },
+
       plugins: {
-        title: {
-          display: true,
-          text: "Loading...",
-        },
+        // 🔥 this is where your title/legend/tooltip live
+        title: { display: true, text: "Loading…" },
+
         legend: {
-          labels: {
-            // Only show the "main line" datasets in the legend (hide CI helpers)
-            filter: (item, chartData) => {
-              const ds = chartData.datasets[item.datasetIndex];
-              return (
-                !ds.label.includes("(upper CI)") &&
-                !ds.label.includes("(CI band)")
-              );
-            },
-
-            // Nicer legend look
-            usePointStyle: true,
-            pointStyle: "line",
-            boxWidth: 32,
-            padding: 16,
-          },
-
-          // Click legend item => toggle whole group (line + CI band + upper CI)
-          onClick: (e, item, legend) => {
-            const c = legend.chart;
-            const ds = c.data.datasets[item.datasetIndex];
-            const base = (ds.label || "").replace(/\s*\(.*?\)\s*$/, "");
-
-            const main = c.data.datasets.find((d) => (d.label || "") === base);
-            const nextHidden = main ? !main.hidden : true;
-
-            c.data.datasets.forEach((d) => {
-              const lbl = d.label || "";
-              if (lbl.startsWith(base)) {
-                d.hidden = nextHidden;
-
-                // if we're showing again, CI visibility should still obey your checkbox
-                if (!nextHidden && lbl.includes("CI")) {
-                  d.hidden = !document.getElementById("toggle-ci").checked;
-                }
-              }
-            });
-
-            c.update();
-          },
+          // keep your existing legend settings here if you already had them
         },
 
         tooltip: {
           callbacks: {
             label: (ctx) => {
-              const dsLabel = ctx.dataset.label || "";
+              const dsLabel = ctx.dataset?.label || "";
 
               // Hide CI helper datasets completely
-              if (dsLabel.includes("(CI")) return null;
+              if (dsLabel.includes("(CI)")) return null;
 
               const raw = ctx.raw || {};
               if (raw.y == null) return null;
 
               const y = Number(raw.y).toFixed(1);
               const n = raw.n;
+
               const low = raw.low;
               const high = raw.high;
-
               const ci =
                 low != null && high != null ? ` (CI ${low}%–${high}%)` : "";
 
@@ -333,9 +332,17 @@ function ensureChart() {
             },
           },
         },
+
+        // 👇 plugin options live under its id
+        loadingOverlay: {
+          text: "Loading…",
+          backdrop: "rgba(255,255,255,0.55)",
+        },
       },
     },
   });
+
+  setChartLoading(true); // starts in loading state
 }
 
 function getGenderLabel() {
@@ -458,36 +465,41 @@ function scheduleUrlSync({ push = false } = {}) {
 
 async function render() {
   ensureChart();
+  setChartLoading(true);
 
-  const payload = await loadSeries();
-  const bucket = document.getElementById("bucket").value;
+  try {
+    const payload = await loadSeries();
+    const bucket = document.getElementById("bucket").value;
 
-  chart.data.datasets = buildDatasets(payload.series);
-  const showCi = document.getElementById("toggle-ci").checked;
+    chart.data.datasets = buildDatasets(payload.series);
+    const showCi = document.getElementById("toggle-ci").checked;
 
-  if (!showCi) {
-    chart.data.datasets.forEach((ds) => {
-      if (isCiDataset(ds)) ds.hidden = true;
-    });
-    setCiAlpha(0);
-  } else {
-    chart.data.datasets.forEach((ds) => {
-      if (isCiDataset(ds)) ds.hidden = false;
-    });
-    setCiAlpha(DEFAULT_CI_ALPHA);
+    if (!showCi) {
+      chart.data.datasets.forEach((ds) => {
+        if (isCiDataset(ds)) ds.hidden = true;
+      });
+      setCiAlpha(0);
+    } else {
+      chart.data.datasets.forEach((ds) => {
+        if (isCiDataset(ds)) ds.hidden = false;
+      });
+      setCiAlpha(DEFAULT_CI_ALPHA);
+    }
+
+    chart.options.scales.x.title.text = bucket === "decade" ? "Decade" : "Year";
+
+    const groupLabel =
+      document.getElementById("group")?.value?.trim() || "All offences";
+    const genderLabel =
+      document.getElementById("gender")?.selectedOptions?.[0]?.text ||
+      "All Defendants";
+
+    chart.options.plugins.title.text = `${groupLabel} — Conviction Rate Over Time (${genderLabel})`;
+
+    chart.update("none");
+  } finally {
+    setChartLoading(false);
   }
-
-  chart.options.scales.x.title.text = bucket === "decade" ? "Decade" : "Year";
-
-  const groupLabel =
-    document.getElementById("group")?.value?.trim() || "All offences";
-  const genderLabel =
-    document.getElementById("gender")?.selectedOptions?.[0]?.text ||
-    "All Defendants";
-
-  chart.options.plugins.title.text = `${groupLabel} — Conviction Rate Over Time (${genderLabel})`;
-
-  chart.update("none");
 }
 
 // --------------------
@@ -620,6 +632,36 @@ function onMapClick(e) {
   updateRadiusCircle();
   // fetchNearby().catch(console.error); // optional
 }
+
+// --- Chart loading overlay plugin ---
+const loadingOverlayPlugin = {
+  id: "loadingOverlay",
+  beforeDraw(chart, args, opts) {
+    if (!opts || !opts.enabled) return;
+
+    const { ctx, chartArea } = chart;
+    if (!chartArea) return;
+
+    const { left, top, right, bottom, width, height } = chartArea;
+
+    ctx.save();
+    // subtle veil
+    ctx.fillStyle = "rgba(255,255,255,0.65)";
+    ctx.fillRect(left, top, width, height);
+
+    // spinner text
+    ctx.fillStyle = "rgba(0,0,0,0.65)";
+    ctx.font = "14px system-ui, Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(
+      opts.text || "Loading…",
+      (left + right) / 2,
+      (top + bottom) / 2,
+    );
+    ctx.restore();
+  },
+};
 
 function ensureMap() {
   if (!map) {
