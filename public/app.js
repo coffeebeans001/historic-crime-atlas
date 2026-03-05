@@ -1,5 +1,5 @@
 let chart; // single chart reference
-const DEFAULT_CI_ALPHA = 0.2;
+const DEFAULT_CI_ALPHA = 0.18;
 const LINE_TENSION = 0.2;
 
 function isCiDataset(ds) {
@@ -290,6 +290,8 @@ function ensureChart() {
       maintainAspectRatio: false,
       interaction: { mode: "nearest", intersect: false },
       layout: { padding: { top: 12, bottom: 12 } },
+      animation: { duration: 400, easing: "easeOutQuart" },
+      transitions: { active: { animation: { duration: 0 } } },
 
       scales: {
         x: { type: "linear", title: { display: true, text: "Year" } },
@@ -306,29 +308,55 @@ function ensureChart() {
         title: { display: true, text: "Loading…" },
 
         legend: {
-          // keep your existing legend settings here if you already had them
+          labels: {
+            filter: (item) => {
+              const t = item.text || "";
+              return !t.includes("(upper CI)") && !t.includes("(CI band)");
+            },
+          },
         },
 
         tooltip: {
           callbacks: {
+            title: (ctx) => {
+              const year = ctx[0]?.parsed?.x;
+              return `Year: ${year}`;
+            },
+
             label: (ctx) => {
               const dsLabel = ctx.dataset?.label || "";
 
-              // Hide CI helper datasets completely
-              if (dsLabel.includes("(CI)")) return null;
+              // Hide CI helper datasets
+              if (dsLabel.includes("CI")) return null;
 
               const raw = ctx.raw || {};
-              if (raw.y == null) return null;
 
-              const y = Number(raw.y).toFixed(1);
+              const rate = raw.y != null ? Number(raw.y).toFixed(1) : null;
               const n = raw.n;
-
               const low = raw.low;
               const high = raw.high;
-              const ci =
-                low != null && high != null ? ` (CI ${low}%–${high}%)` : "";
 
-              return `${dsLabel}: ${y}%${ci}${n ? ` (n=${n})` : ""}`;
+              const lines = [];
+
+              // Group name (Male / Female)
+              if (dsLabel) {
+                const group = dsLabel.split("-")[0].trim();
+                lines.push(`${group} defendants`);
+              }
+
+              if (rate !== null) {
+                lines.push(`Conviction rate: ${rate}%`);
+              }
+
+              if (low != null && high != null) {
+                lines.push(`95% CI: ${low}–${high}`);
+              }
+
+              if (n != null) {
+                lines.push(`n = ${n} trials`);
+              }
+
+              return lines;
             },
           },
         },
@@ -496,7 +524,7 @@ async function render() {
 
     chart.options.plugins.title.text = `${groupLabel} — Conviction Rate Over Time (${genderLabel})`;
 
-    chart.update("none");
+    chart.update();
   } finally {
     setChartLoading(false);
   }
@@ -632,36 +660,6 @@ function onMapClick(e) {
   updateRadiusCircle();
   // fetchNearby().catch(console.error); // optional
 }
-
-// --- Chart loading overlay plugin ---
-const loadingOverlayPlugin = {
-  id: "loadingOverlay",
-  beforeDraw(chart, args, opts) {
-    if (!opts || !opts.enabled) return;
-
-    const { ctx, chartArea } = chart;
-    if (!chartArea) return;
-
-    const { left, top, right, bottom, width, height } = chartArea;
-
-    ctx.save();
-    // subtle veil
-    ctx.fillStyle = "rgba(255,255,255,0.65)";
-    ctx.fillRect(left, top, width, height);
-
-    // spinner text
-    ctx.fillStyle = "rgba(0,0,0,0.65)";
-    ctx.font = "14px system-ui, Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(
-      opts.text || "Loading…",
-      (left + right) / 2,
-      (top + bottom) / 2,
-    );
-    ctx.restore();
-  },
-};
 
 function ensureMap() {
   if (!map) {
