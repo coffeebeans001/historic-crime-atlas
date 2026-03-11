@@ -1,4 +1,5 @@
 let chart; // single chart reference
+const LOW_SAMPLE_THRESHOLD = 5;
 const DEFAULT_CI_ALPHA = 0.18;
 const LINE_TENSION = 0.2;
 
@@ -491,12 +492,39 @@ function scheduleUrlSync({ push = false } = {}) {
   _urlSyncTimer = setTimeout(() => writeUrlState({ push }), 120);
 }
 
+function updateSampleWarning(seriesArr) {
+  const el = document.getElementById("sampleWarning");
+  if (!el) return;
+
+  let lowSampleFound = false;
+  let smallestN = Infinity;
+
+  seriesArr.forEach((series) => {
+    (series.data || []).forEach((p) => {
+      if (p.n != null && p.n < LOW_SAMPLE_THRESHOLD) {
+        lowSampleFound = true;
+        if (p.n < smallestN) smallestN = p.n;
+      }
+    });
+  });
+
+  if (!lowSampleFound) {
+    el.hidden = true;
+    el.textContent = "";
+    return;
+  }
+
+  el.hidden = false;
+  el.textContent = `This view includes years with very small sample sizes (minimum n = ${smallestN}). Confidence intervals and trend values in these periods should be interpreted cautiously.`;
+}
+
 async function render() {
   ensureChart();
   setChartLoading(true);
 
   try {
     const payload = await loadSeries();
+    updateSampleWarning(payload.series);
     const bucket = document.getElementById("bucket").value;
 
     chart.data.datasets = buildDatasets(payload.series);
