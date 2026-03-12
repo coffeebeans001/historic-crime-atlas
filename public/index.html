@@ -186,6 +186,16 @@
         line-height: 1.4;
         border-radius: 4px;
       }
+
+      #groupSearch {
+        width: 100%;
+        max-width: 320px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        border-radius: 6px;
+        font: inherit;
+      }
     </style>
 
     <script
@@ -222,10 +232,15 @@
         </select>
       </label>
 
-      <label>
-        Group
-        <input id="group" type="text" value="Robbery" />
-      </label>
+      <label for="group">Search offence</label>
+      <input
+        id="group"
+        type="text"
+        list="groupOptions"
+        placeholder="Type to search offences..."
+        autocomplete="off"
+      />
+      <datalist id="groupOptions"></datalist>
 
       <label for="gender">Gender</label>
       <select id="gender">

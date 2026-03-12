@@ -79,13 +79,27 @@ function buildUrl() {
   const from = document.getElementById("from").value;
   const to = document.getElementById("to").value;
   const bucket = document.getElementById("bucket").value;
-  const group = document.getElementById("group").value.trim();
+
   const z = String(Number(document.getElementById("confidence").value || 1.96));
   const params = new URLSearchParams({ bucket, from, to, format: "series", z });
   const gender = document.getElementById("gender")?.value || "all";
   params.set("gender", gender);
 
-  if (group) params.set("group", group);
+  const groupInput = document.getElementById("group");
+  const groupList = document.getElementById("groupOptions");
+
+  const group = groupInput?.value?.trim() || "";
+
+  // collect all valid offence names
+  const validGroups = groupList
+    ? Array.from(groupList.options).map((o) => o.value)
+    : [];
+
+  if (group && validGroups.includes(group)) {
+    params.set("group", group);
+  } else {
+    params.delete("group");
+  }
 
   return `/api/stats/gender-party/over-time?${params.toString()}`;
 }
@@ -425,8 +439,16 @@ function writeUrlState({ push = false } = {}) {
   else p.delete("from");
   if (toEl?.value) p.set("to", toEl.value);
   else p.delete("to");
-  if (groupEl?.value) p.set("group", groupEl.value.trim());
-  else p.delete("group");
+  const groupVal = groupEl?.value?.trim() || "";
+  const validGroups = Array.from(
+    document.getElementById("groupOptions")?.options || [],
+  ).map((o) => o.value);
+
+  if (groupVal && validGroups.includes(groupVal)) {
+    p.set("group", groupVal);
+  } else {
+    p.delete("group");
+  }
   if (bucketEl?.value) p.set("bucket", bucketEl.value);
   else p.delete("bucket");
   if (confEl?.value) p.set("confidence", confEl.value);
@@ -516,6 +538,19 @@ function updateSampleWarning(seriesArr) {
 
   el.hidden = false;
   el.textContent = `This view includes years with very small sample sizes (minimum n = ${smallestN}). Confidence intervals and trend values in these periods should be interpreted cautiously.`;
+}
+
+function populateGroupOptions(groups) {
+  const list = document.getElementById("groupOptions");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  groups.forEach((g) => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    list.appendChild(opt);
+  });
 }
 
 async function render() {
@@ -805,7 +840,7 @@ function updateRadiusCircle() {
 function buildNearbyUrl() {
   const from = document.getElementById("from").value;
   const to = document.getElementById("to").value;
-  const group = document.getElementById("group").value.trim();
+
   const radius = Number(document.getElementById("radius").value || 2000);
   const limit = Number(document.getElementById("nearby-limit").value || 5);
 
@@ -817,8 +852,6 @@ function buildNearbyUrl() {
     radius: String(radius),
     limit: String(limit),
   });
-
-  if (group) params.set("group", group);
 
   return `/api/trials/nearby?${params.toString()}`;
 }
