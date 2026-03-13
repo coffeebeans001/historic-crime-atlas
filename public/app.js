@@ -75,6 +75,31 @@ function animateCi(show, durationMs = 250) {
   requestAnimationFrame(tick);
 }
 
+function getValidatedGroup() {
+  const groupInput = document.getElementById("group");
+  const groupList = document.getElementById("groupOptions");
+
+  const group = groupInput?.value?.trim() || "";
+  const validGroups = groupList
+    ? Array.from(groupList.options).map((o) => o.value)
+    : [];
+
+  return validGroups.includes(group) ? group : "";
+}
+
+function populateGroupOptions(groups) {
+  const list = document.getElementById("groupOptions");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  groups.forEach((g) => {
+    const opt = document.createElement("option");
+    opt.value = g;
+    list.appendChild(opt);
+  });
+}
+
 function buildUrl() {
   const from = document.getElementById("from").value;
   const to = document.getElementById("to").value;
@@ -85,17 +110,9 @@ function buildUrl() {
   const gender = document.getElementById("gender")?.value || "all";
   params.set("gender", gender);
 
-  const groupInput = document.getElementById("group");
-  const groupList = document.getElementById("groupOptions");
+  const group = getValidatedGroup();
 
-  const group = groupInput?.value?.trim() || "";
-
-  // collect all valid offence names
-  const validGroups = groupList
-    ? Array.from(groupList.options).map((o) => o.value)
-    : [];
-
-  if (group && validGroups.includes(group)) {
+  if (group) {
     params.set("group", group);
   } else {
     params.delete("group");
@@ -111,7 +128,10 @@ async function loadSeries() {
     const txt = await res.text();
     throw new Error(`Request failed (${res.status}): ${txt}`);
   }
-  return res.json();
+
+  const payload = await res.json();
+
+  return payload;
 }
 
 function hashString(str) {
@@ -540,17 +560,15 @@ function updateSampleWarning(seriesArr) {
   el.textContent = `This view includes years with very small sample sizes (minimum n = ${smallestN}). Confidence intervals and trend values in these periods should be interpreted cautiously.`;
 }
 
-function populateGroupOptions(groups) {
-  const list = document.getElementById("groupOptions");
-  if (!list) return;
+async function loadGroupOptions() {
+  const res = await fetch("/api/offence-groups");
 
-  list.innerHTML = "";
+  if (!res.ok) {
+    throw new Error("Failed to load offence groups");
+  }
 
-  groups.forEach((g) => {
-    const opt = document.createElement("option");
-    opt.value = g;
-    list.appendChild(opt);
-  });
+  const groups = await res.json();
+  populateGroupOptions(groups);
 }
 
 async function render() {
@@ -579,8 +597,7 @@ async function render() {
 
     chart.options.scales.x.title.text = bucket === "decade" ? "Decade" : "Year";
 
-    const groupLabel =
-      document.getElementById("group")?.value?.trim() || "All offences";
+    const groupLabel = getValidatedGroup() || "All offences";
     const genderLabel =
       document.getElementById("gender")?.selectedOptions?.[0]?.text ||
       "All Defendants";
@@ -1232,8 +1249,9 @@ if (radiusEl) {
   });
 }
 
-function init() {
+async function init() {
   // Chart
+  await loadGroupOptions().catch(console.error);
   initFromUrl();
 
   // Map base + center + radius
