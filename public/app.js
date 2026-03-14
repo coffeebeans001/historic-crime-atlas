@@ -1252,6 +1252,21 @@ if (radiusEl) {
 async function init() {
   // Chart
   await loadGroupOptions().catch(console.error);
+
+  const groupInput = document.getElementById("group");
+
+  if (groupInput) {
+    groupInput.addEventListener("change", () => {
+      const valid = getValidatedGroup();
+
+      if (!valid && groupInput.value.trim() !== "") {
+        groupInput.value = "";
+      }
+
+      render().catch(console.error);
+    });
+  }
+
   initFromUrl();
 
   // Map base + center + radius

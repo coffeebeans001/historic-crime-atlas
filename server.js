@@ -870,9 +870,6 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
         ...new Set(rows.map((r) => r.offence_group).filter(Boolean)),
       ].sort();
 
-      console.log("sample row keys:", rows[0] ? Object.keys(rows[0]) : []);
-      console.log("groupNames:", groupNames);
-
       return res.json({
         bucket,
         from: cleanFrom,
@@ -993,14 +990,15 @@ app.get("/api/stats/party-type/over-time", async (req, res) => {
 app.get("/api/offence-groups", async (_req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT DISTINCT offence_name
-      FROM offences
-      WHERE offence_name IS NOT NULL
-        AND offence_name <> ''
-      ORDER BY offence_name ASC
+      SELECT DISTINCT o.offence_group
+      FROM offences o
+      JOIN trials t ON t.offence_id = o.offence_id
+      WHERE o.offence_group IS NOT NULL
+        AND o.offence_group <> ''
+      ORDER BY o.offence_group ASC
     `);
 
-    res.json(rows.map((r) => r.offence_name));
+    res.json(rows.map((r) => r.offence_group));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to load offence groups" });
