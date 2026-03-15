@@ -582,6 +582,40 @@ function scheduleUrlSync({ push = false } = {}) {
   _urlSyncTimer = setTimeout(() => writeUrlState({ push }), 120);
 }
 
+function writeUrlState() {
+  const params = new URLSearchParams();
+
+  const from = document.getElementById("from")?.value?.trim() || "";
+  const to = document.getElementById("to")?.value?.trim() || "";
+  const bucket = document.getElementById("bucket")?.value || "";
+  const gender = document.getElementById("gender")?.value || "all";
+  const confidence = document.getElementById("confidence")?.value || "";
+  const group = getValidatedGroup();
+
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  if (bucket) params.set("bucket", bucket);
+  if (gender && gender !== "all") params.set("gender", gender);
+  if (confidence) params.set("confidence", confidence);
+  if (group) params.set("group", group);
+
+  const lat = currentCenter?.lat;
+  const lng = currentCenter?.lng;
+  const radius = document.getElementById("radius")?.value || "";
+  const limit = document.getElementById("nearby-limit")?.value || "";
+
+  if (lat != null) params.set("lat", String(lat));
+  if (lng != null) params.set("lng", String(lng));
+  if (radius) params.set("radius", radius);
+  if (limit) params.set("limit", limit);
+
+  const ciToggle = document.getElementById("toggle-ci");
+  if (ciToggle) params.set("ci", ciToggle.checked ? "1" : "0");
+
+  const newUrl = `${window.location.pathname}?${params.toString()}`;
+  window.history.replaceState({}, "", newUrl);
+}
+
 function updateSampleWarning(seriesArr) {
   const el = document.getElementById("sampleWarning");
   if (!el) return;
@@ -653,6 +687,7 @@ async function render() {
     chart.options.plugins.title.text = `${groupLabel} — Conviction Rate Over Time (${genderLabel})`;
 
     chart.update();
+    writeUrlState();
   } finally {
     setChartLoading(false);
   }
