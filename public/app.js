@@ -134,6 +134,20 @@ function applyBestGroupMatchAndRender(groupInput) {
   render().catch(console.error);
 }
 
+function previewBestGroupMatch(groupInput) {
+  const raw = groupInput.value.trim();
+  if (!raw) return;
+
+  const best = getBestMatchingGroup(raw);
+  if (!best) return;
+
+  // Only preview when the user typed a partial match
+  if (best.toLowerCase() !== raw.toLowerCase()) {
+    groupInput.value = best;
+    groupInput.setSelectionRange(raw.length, best.length);
+  }
+}
+
 function buildUrl() {
   const from = document.getElementById("from").value;
   const to = document.getElementById("to").value;
@@ -1290,6 +1304,10 @@ async function init() {
   const groupInput = document.getElementById("group");
 
   if (groupInput) {
+    groupInput.addEventListener("input", () => {
+      previewBestGroupMatch(groupInput);
+    });
+
     groupInput.addEventListener("change", () => {
       applyBestGroupMatchAndRender(groupInput);
     });
