@@ -121,6 +121,19 @@ function populateGroupOptions(groups) {
   });
 }
 
+function applyBestGroupMatchAndRender(groupInput) {
+  const raw = groupInput.value.trim();
+  const best = getBestMatchingGroup(raw);
+
+  if (best) {
+    groupInput.value = best;
+  } else if (raw !== "") {
+    groupInput.value = "";
+  }
+
+  render().catch(console.error);
+}
+
 function buildUrl() {
   const from = document.getElementById("from").value;
   const to = document.getElementById("to").value;
@@ -1278,16 +1291,11 @@ async function init() {
 
   if (groupInput) {
     groupInput.addEventListener("change", () => {
-      const raw = groupInput.value.trim();
-      const best = getBestMatchingGroup(raw);
+      applyBestGroupMatchAndRender(groupInput);
+    });
 
-      if (best) {
-        groupInput.value = best;
-      } else if (raw !== "") {
-        groupInput.value = "";
-      }
-
-      render().catch(console.error);
+    groupInput.addEventListener("blur", () => {
+      applyBestGroupMatchAndRender(groupInput);
     });
   }
 
