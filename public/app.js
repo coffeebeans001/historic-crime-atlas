@@ -87,6 +87,27 @@ function getValidatedGroup() {
   return validGroups.includes(group) ? group : "";
 }
 
+function getBestMatchingGroup(query) {
+  const value = (query || "").trim().toLowerCase();
+  const groupList = document.getElementById("groupOptions");
+
+  if (!value || !groupList) return "";
+
+  const options = Array.from(groupList.options).map((o) => o.value);
+
+  // Exact match first
+  const exact = options.find((opt) => opt.toLowerCase() === value);
+  if (exact) return exact;
+
+  // Starts-with match next
+  const startsWith = options.find((opt) => opt.toLowerCase().startsWith(value));
+  if (startsWith) return startsWith;
+
+  // Includes match last
+  const includes = options.find((opt) => opt.toLowerCase().includes(value));
+  return includes || "";
+}
+
 function populateGroupOptions(groups) {
   const list = document.getElementById("groupOptions");
   if (!list) return;
@@ -1257,9 +1278,12 @@ async function init() {
 
   if (groupInput) {
     groupInput.addEventListener("change", () => {
-      const valid = getValidatedGroup();
+      const raw = groupInput.value.trim();
+      const best = getBestMatchingGroup(raw);
 
-      if (!valid && groupInput.value.trim() !== "") {
+      if (best) {
+        groupInput.value = best;
+      } else if (raw !== "") {
         groupInput.value = "";
       }
 
