@@ -238,53 +238,61 @@ function rgbaForLabel(label, alpha = 1) {
 function buildDatasets(seriesArr) {
   const datasets = [];
 
-  seriesArr.forEach((series) => {
-    const { rgb, rgba } = rgbaForLabel(series.label, DEFAULT_CI_ALPHA);
+  (seriesArr || [])
+    .filter((series) => series && Array.isArray(series.data))
+    .forEach((series) => {
+      const { rgb, rgba } = rgbaForLabel(series.label, DEFAULT_CI_ALPHA);
 
-    // upper (invisible line)
-    datasets.push({
-      label: `${series.label} (upper CI)`,
-      data: series.data.map((p) => ({ x: p.x, y: p.high })),
-      borderColor: "transparent",
-      backgroundColor: "transparent",
-      borderWidth: 0,
-      pointRadius: 0,
-      pointHoverRadius: 0,
-      hitRadius: 0,
-    });
+      // upper (invisible line)
+      datasets.push({
+        label: `${series.label} (upper CI)`,
+        data: series.data
+          .filter((p) => p && p.x != null)
+          .map((p) => ({ x: p.x, y: p.high })),
+        borderColor: "transparent",
+        backgroundColor: "transparent",
+        borderWidth: 0,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        hitRadius: 0,
+      });
 
-    // band (filled to previous dataset)
-    datasets.push({
-      label: `${series.label} (CI band)`,
-      data: series.data.map((p) => ({ x: p.x, y: p.low })),
-      fill: "-1",
-      backgroundColor: rgba,
-      borderColor: "transparent",
-      borderWidth: 0,
-      pointRadius: 0,
-      pointHoverRadius: 0,
-      hitRadius: 0,
-    });
+      // band
+      datasets.push({
+        label: `${series.label} (CI band)`,
+        data: series.data
+          .filter((p) => p && p.x != null)
+          .map((p) => ({ x: p.x, y: p.high })),
+        fill: "-1",
+        backgroundColor: rgba,
+        borderColor: "transparent",
+        borderWidth: 0,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        hitRadius: 0,
+      });
 
-    // main line
-    datasets.push({
-      label: series.label,
-      data: series.data.map((p) => ({
-        x: p.x,
-        y: p.y,
-        n: p.n,
-        low: p.low,
-        high: p.high,
-      })),
-      borderColor: rgb,
-      backgroundColor: rgb,
-      tension: LINE_TENSION,
-      spanGaps: true,
-      borderWidth: 2,
-      pointRadius: 3,
-      pointHoverRadius: 6,
+      // main line
+      datasets.push({
+        label: series.label,
+        data: series.data
+          .filter((p) => p && p.x != null)
+          .map((p) => ({
+            x: p.x,
+            y: p.y,
+            n: p.n,
+            low: p.low,
+            high: p.high,
+          })),
+        borderColor: rgb,
+        backgroundColor: rgb,
+        tension: LINE_TENSION,
+        spanGaps: true,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+      });
     });
-  });
 
   return datasets;
 }
@@ -360,7 +368,7 @@ function setChartLoading(on) {
 function ensureChart() {
   if (chart) return;
 
-  const canvas = document.getElementById("crimeChart");
+  const canvas = document.getElementById("chart");
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
@@ -576,6 +584,18 @@ function applyStateToUI(state) {
   }
 }
 
+const groupInput = document.getElementById("group");
+
+if (groupInput) {
+  const best = getBestMatchingGroup(groupInput.value.trim());
+
+  if (best) {
+    groupInput.value = best;
+  } else if (groupInput.value.trim() !== "") {
+    groupInput.value = "";
+  }
+}
+
 let _urlSyncTimer = null;
 function scheduleUrlSync({ push = false } = {}) {
   if (_urlSyncTimer) clearTimeout(_urlSyncTimer);
@@ -653,15 +673,42 @@ async function loadGroupOptions() {
   populateGroupOptions(groups);
 }
 
+function showNoDataOverlay(show) {
+  const el = document.getElementById("chart-no-data");
+  if (!el) return;
+
+  if (show) {
+    el.classList.remove("hidden");
+  } else {
+    el.classList.add("hidden");
+  }
+}
+
 async function render() {
   ensureChart();
+  console.log("chart after ensureChart:", chart);
+  console.log("canvas:", document.getElementById("chart"));
+  console.log("canvas 2:", document.getElementById("crimeChart"));
+  showNoDataOverlay(false);
   setChartLoading(true);
 
   try {
     const payload = await loadSeries();
+    console.log(payload);
+    const noData = !payload?.series || payload.series.length === 0;
+    showNoDataOverlay(noData);
+
+    if (noData) {
+      chart.data.datasets = [];
+      chart.update();
+      return;
+    }
+
     updateSampleWarning(payload.series);
     const bucket = document.getElementById("bucket").value;
-
+    console.log("series check:", payload.series);
+    console.log("first series:", payload.series?.[0]);
+    console.log("first series data:", payload.series?.[0]?.data);
     chart.data.datasets = buildDatasets(payload.series);
     const showCi = document.getElementById("toggle-ci").checked;
 
@@ -690,6 +737,33 @@ async function render() {
     writeUrlState();
   } finally {
     setChartLoading(false);
+  }
+}
+
+function updateSampleWarning(seriesArr) {
+  const el = document.getElementById("sample-warning");
+  if (!el) return;
+
+  const points = (seriesArr || [])
+    .filter((series) => series && Array.isArray(series.data))
+    .flatMap((series) => series.data)
+    .filter((p) => p && typeof p.n === "number");
+
+  if (points.length === 0) {
+    el.textContent = "";
+    el.style.display = "none";
+    return;
+  }
+
+  const minN = Math.min(...points.map((p) => p.n));
+  const show = minN < LOW_SAMPLE_THRESHOLD;
+
+  if (show) {
+    el.textContent = `This view includes years with very small sample sizes (minimum n = ${minN}). Confidence intervals and trend values in these periods should be interpreted cautiously.`;
+    el.style.display = "";
+  } else {
+    el.textContent = "";
+    el.style.display = "none";
   }
 }
 
@@ -1336,8 +1410,6 @@ async function init() {
   // Chart
   await loadGroupOptions().catch(console.error);
 
-  const groupInput = document.getElementById("group");
-
   if (groupInput) {
     groupInput.addEventListener("input", () => {
       previewBestGroupMatch(groupInput);
@@ -1376,25 +1448,21 @@ function initFromUrl() {
   const state = readUrlState();
   applyStateToUI(state);
 
-  // Ensure map uses URL center (if any)
+  const groupInput = document.getElementById("group");
+  if (groupInput) {
+    const best = getBestMatchingGroup(groupInput.value.trim());
+    if (best) {
+      groupInput.value = best;
+    } else if (groupInput.value.trim() !== "") {
+      groupInput.value = "";
+    }
+  }
+
   ensureMap();
   updateRadiusCircle();
-
-  // Render chart using URL-selected filters
   render().catch(console.error);
 
-  // Optional: auto-run nearby if nearby=1
   if (state.nearby === "1") {
     fetchNearby().catch(console.error);
   }
-
-  // Keep back/forward working
-  window.addEventListener("popstate", () => {
-    const s = readUrlState();
-    applyStateToUI(s);
-    ensureMap();
-    updateRadiusCircle();
-    render().catch(console.error);
-    if (s.nearby === "1") fetchNearby().catch(console.error);
-  });
 }
