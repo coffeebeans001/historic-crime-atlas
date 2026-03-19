@@ -248,13 +248,18 @@ function buildDatasets(seriesArr) {
         label: `${series.label} (upper CI)`,
         data: series.data
           .filter((p) => p && p.x != null)
-          .map((p) => ({ x: p.x, y: p.high })),
-        borderColor: "transparent",
+          .map((p) => ({
+            x: p.x,
+            y: p.high,
+          })),
+        borderColor: rgba,
         backgroundColor: "transparent",
-        borderWidth: 0,
+        borderWidth: 1,
         pointRadius: 0,
         pointHoverRadius: 0,
         hitRadius: 0,
+        tension: LINE_TENSION,
+        spanGaps: true,
       });
 
       // band
@@ -262,7 +267,10 @@ function buildDatasets(seriesArr) {
         label: `${series.label} (CI band)`,
         data: series.data
           .filter((p) => p && p.x != null)
-          .map((p) => ({ x: p.x, y: p.high })),
+          .map((p) => ({
+            x: p.x,
+            y: p.low,
+          })),
         fill: "-1",
         backgroundColor: rgba,
         borderColor: "transparent",
@@ -270,6 +278,8 @@ function buildDatasets(seriesArr) {
         pointRadius: 0,
         pointHoverRadius: 0,
         hitRadius: 0,
+        tension: 0.4,
+        spanGaps: true,
       });
 
       // main line
@@ -284,13 +294,14 @@ function buildDatasets(seriesArr) {
             low: p.low,
             high: p.high,
           })),
+
         borderColor: rgb,
         backgroundColor: rgb,
-        tension: LINE_TENSION,
+        tension: 0.4,
         spanGaps: true,
         borderWidth: 2,
-        pointRadius: 3,
-        pointHoverRadius: 6,
+        pointRadius: 4,
+        pointHoverRadius: 7,
       });
     });
 
@@ -385,12 +396,20 @@ function ensureChart() {
       transitions: { active: { animation: { duration: 0 } } },
 
       scales: {
-        x: { type: "linear", title: { display: true, text: "Year" } },
+        x: {
+          type: "linear",
+          title: {
+            display: true,
+            text: "Year",
+          },
+        },
         y: {
           min: 0,
           max: 100,
-          grace: "6%",
-          title: { display: true, text: "Guilty rate (%)" },
+          title: {
+            display: true,
+            text: "Guilty rate (%)",
+          },
         },
       },
 
@@ -686,15 +705,12 @@ function showNoDataOverlay(show) {
 
 async function render() {
   ensureChart();
-  console.log("chart after ensureChart:", chart);
-  console.log("canvas:", document.getElementById("chart"));
-  console.log("canvas 2:", document.getElementById("crimeChart"));
+
   showNoDataOverlay(false);
   setChartLoading(true);
 
   try {
     const payload = await loadSeries();
-    console.log(payload);
     const noData = !payload?.series || payload.series.length === 0;
     showNoDataOverlay(noData);
 
@@ -706,10 +722,9 @@ async function render() {
 
     updateSampleWarning(payload.series);
     const bucket = document.getElementById("bucket").value;
-    console.log("series check:", payload.series);
-    console.log("first series:", payload.series?.[0]);
-    console.log("first series data:", payload.series?.[0]?.data);
+
     chart.data.datasets = buildDatasets(payload.series);
+    
     const showCi = document.getElementById("toggle-ci").checked;
 
     if (!showCi) {
