@@ -747,6 +747,49 @@ function movingAveragePoints(points, windowSize = 3) {
   });
 }
 
+function generateInsight(seriesArr) {
+  const points = (seriesArr || [])
+    .flatMap((s) => s.data || [])
+    .filter((p) => p && typeof p.y === "number" && typeof p.x !== "undefined");
+
+  if (!points.length) {
+    return "No data available for the selected filters.";
+  }
+
+  const values = points.map((p) => p.y);
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+
+  const minPoint = points.reduce((a, b) => (a.y < b.y ? a : b));
+  const maxPoint = points.reduce((a, b) => (a.y > b.y ? a : b));
+
+  const first = points[0].y;
+  const last = points[points.length - 1].y;
+
+  let trend = "stable";
+  if (last > first + 2) trend = "increasing";
+  else if (last < first - 2) trend = "decreasing";
+
+  const ns = points
+    .map((p) => p.n)
+    .filter((n) => typeof n === "number" && !Number.isNaN(n));
+
+  const minN = ns.length ? Math.min(...ns) : null;
+
+  let warning = "";
+  if (minN !== null && minN < 5) {
+    warning = ` ⚠ Results include very small sample sizes (minimum n = ${minN}).`;
+  }
+
+  return `
+Average conviction rate: ${avg.toFixed(1)}%.
+
+Highest recorded rate: ${maxPoint.y.toFixed(1)}% in ${maxPoint.x}.
+Lowest recorded rate: ${minPoint.y.toFixed(1)}% in ${minPoint.x}.
+
+Overall trend appears ${trend}.${warning}
+`;
+}
+
 async function render() {
   ensureChart();
 
@@ -761,6 +804,14 @@ async function render() {
     if (noData) {
       chart.data.datasets = [];
       chart.update();
+
+      const insightEl = document.getElementById("insight-text");
+      if (insightEl) {
+        insightEl.textContent = "No data available for the selected filters.";
+        insightEl.style.borderLeft = "4px solid #d63333";
+        insightEl.style.borderRadius = "4px";
+      }
+
       return;
     }
 
@@ -768,6 +819,26 @@ async function render() {
     const bucket = document.getElementById("bucket").value;
 
     chart.data.datasets = buildDatasets(payload.series);
+
+    const insightEl = document.getElementById("insight-text");
+    if (insightEl) {
+      const text = generateInsight(payload.series);
+      insightEl.textContent = text;
+
+      const points = (payload.series || [])
+        .flatMap((s) => s.data || [])
+        .filter((p) => p && typeof p.n === "number");
+
+      const minN = points.length ? Math.min(...points.map((p) => p.n)) : null;
+
+      if (minN !== null && minN < 5) {
+        insightEl.style.borderLeft = "4px solid #d63333";
+      } else {
+        insightEl.style.borderLeft = "4px solid #198754";
+      }
+
+      insightEl.style.borderRadius = "4px";
+    }
 
     const showCi = document.getElementById("toggle-ci").checked;
 
