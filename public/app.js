@@ -777,16 +777,17 @@ function generateInsight(seriesArr) {
 
   let warning = "";
   if (minN !== null && minN < 5) {
-    warning = ` ⚠ Results include very small sample sizes (minimum n = ${minN}).`;
+    warning = ` Caution: these results include very small sample sizes (minimum n = ${minN}), so individual years should be interpreted carefully.`;
   }
 
   return `
-Average conviction rate: ${avg.toFixed(1)}%.
+Interpretive summary:
 
-Highest recorded rate: ${maxPoint.y.toFixed(1)}% in ${maxPoint.x}.
-Lowest recorded rate: ${minPoint.y.toFixed(1)}% in ${minPoint.x}.
+Across the selected period, the average conviction rate is ${avg.toFixed(1)}%.
 
-Overall trend appears ${trend}.${warning}
+The highest observed rate is ${maxPoint.y.toFixed(1)}% in ${maxPoint.x}, and the lowest observed rate is ${minPoint.y.toFixed(1)}% in ${minPoint.x}.
+
+Taken as a whole, the pattern appears ${trend}.${warning}
 `;
 }
 
