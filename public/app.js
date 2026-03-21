@@ -243,18 +243,18 @@ function buildDatasets(seriesArr) {
     .forEach((series) => {
       const { rgb, rgba } = rgbaForLabel(series.label, DEFAULT_CI_ALPHA);
 
-      // upper (invisible line)
+      const cleanPoints = series.data.filter((p) => p && p.x != null);
+
+      // 1) upper CI (invisible line)
       datasets.push({
         label: `${series.label} (upper CI)`,
-        data: series.data
-          .filter((p) => p && p.x != null)
-          .map((p) => ({
-            x: p.x,
-            y: p.high,
-          })),
-        borderColor: rgba,
+        data: cleanPoints.map((p) => ({
+          x: p.x,
+          y: p.high,
+        })),
+        borderColor: "transparent",
         backgroundColor: "transparent",
-        borderWidth: 1,
+        borderWidth: 0,
         pointRadius: 0,
         pointHoverRadius: 0,
         hitRadius: 0,
@@ -262,15 +262,13 @@ function buildDatasets(seriesArr) {
         spanGaps: true,
       });
 
-      // band
+      // 2) lower CI band (fills to previous dataset)
       datasets.push({
         label: `${series.label} (CI band)`,
-        data: series.data
-          .filter((p) => p && p.x != null)
-          .map((p) => ({
-            x: p.x,
-            y: p.low,
-          })),
+        data: cleanPoints.map((p) => ({
+          x: p.x,
+          y: p.low,
+        })),
         fill: "-1",
         backgroundColor: rgba,
         borderColor: "transparent",
@@ -278,30 +276,49 @@ function buildDatasets(seriesArr) {
         pointRadius: 0,
         pointHoverRadius: 0,
         hitRadius: 0,
-        tension: 0.4,
+        tension: LINE_TENSION,
         spanGaps: true,
       });
 
-      // main line
+      // 3) main raw line
       datasets.push({
         label: series.label,
-        data: series.data
-          .filter((p) => p && p.x != null)
-          .map((p) => ({
-            x: p.x,
-            y: p.y,
-            n: p.n,
-            low: p.low,
-            high: p.high,
-          })),
-
+        data: cleanPoints.map((p) => ({
+          x: p.x,
+          y: p.y,
+          n: p.n,
+          low: p.low,
+          high: p.high,
+        })),
         borderColor: rgb,
         backgroundColor: rgb,
-        tension: 0.4,
+        tension: 0,
         spanGaps: true,
         borderWidth: 2,
         pointRadius: 4,
         pointHoverRadius: 7,
+      });
+
+      // 4) smoothed trend overlay
+      const smoothedPoints = movingAveragePoints(
+        cleanPoints.map((p) => ({
+          x: p.x,
+          y: p.y,
+        })),
+        5,
+      );
+
+      datasets.push({
+        label: `${series.label} (trend)`,
+        data: smoothedPoints,
+        borderColor: rgb,
+        backgroundColor: "transparent",
+        tension: 0.4,
+        spanGaps: true,
+        borderWidth: 3,
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        borderDash: [6, 4],
       });
     });
 
@@ -421,7 +438,11 @@ function ensureChart() {
           labels: {
             filter: (item) => {
               const t = item.text || "";
-              return !t.includes("(upper CI)") && !t.includes("(CI band)");
+              return (
+                !t.includes("(upper CI)") &&
+                !t.includes("(CI band)") &&
+                !t.includes("(trend)")
+              );
             },
           },
         },
@@ -703,6 +724,29 @@ function showNoDataOverlay(show) {
   }
 }
 
+function movingAveragePoints(points, windowSize = 3) {
+  const clean = (points || []).filter(
+    (p) => p && typeof p.x === "number" && typeof p.y === "number",
+  );
+
+  if (clean.length === 0) return [];
+
+  const half = Math.floor(windowSize / 2);
+
+  return clean.map((point, index) => {
+    const start = Math.max(0, index - half);
+    const end = Math.min(clean.length - 1, index + half);
+
+    const slice = clean.slice(start, end + 1);
+    const avgY = slice.reduce((sum, p) => sum + p.y, 0) / slice.length;
+
+    return {
+      x: point.x,
+      y: avgY,
+    };
+  });
+}
+
 async function render() {
   ensureChart();
 
@@ -724,7 +768,7 @@ async function render() {
     const bucket = document.getElementById("bucket").value;
 
     chart.data.datasets = buildDatasets(payload.series);
-    
+
     const showCi = document.getElementById("toggle-ci").checked;
 
     if (!showCi) {
