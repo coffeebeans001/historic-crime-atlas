@@ -805,6 +805,32 @@ ${confidenceLabel}${warning}
 `;
 }
 
+function updateConfidenceBadge(minN) {
+  const badge = document.getElementById("confidence-badge");
+  if (!badge) return;
+
+  if (minN === null || typeof minN !== "number") {
+    badge.textContent = "Confidence: unavailable";
+    badge.style.background = "#e9ecef";
+    badge.style.color = "#333";
+    return;
+  }
+
+  if (minN < 5) {
+    badge.textContent = `Low confidence (min n = ${minN})`;
+    badge.style.background = "#f8d7da";
+    badge.style.color = "#842029";
+  } else if (minN < 20) {
+    badge.textContent = `Moderate confidence (min n = ${minN})`;
+    badge.style.background = "#fff3cd";
+    badge.style.color = "#664d03";
+  } else {
+    badge.textContent = `Stronger confidence (min n = ${minN})`;
+    badge.style.background = "#d1e7dd";
+    badge.style.color = "#0f5132";
+  }
+}
+
 async function render() {
   ensureChart();
 
@@ -827,6 +853,8 @@ async function render() {
         insightEl.style.borderRadius = "4px";
       }
 
+      updateConfidenceBadge(null);
+
       return;
     }
 
@@ -847,14 +875,16 @@ async function render() {
       const minN = points.length ? Math.min(...points.map((p) => p.n)) : null;
 
       if (minN !== null && minN < 5) {
-        insightEl.style.borderLeft = "4px solid #d63333"; // red
+        insightEl.style.borderLeft = "4px solid #d63333";
       } else if (minN !== null && minN < 20) {
-        insightEl.style.borderLeft = "4px solid #fd7e14"; // amber
+        insightEl.style.borderLeft = "4px solid #fd7e14";
       } else {
-        insightEl.style.borderLeft = "4px solid #198754"; // green
+        insightEl.style.borderLeft = "4px solid #198754";
       }
 
       insightEl.style.borderRadius = "4px";
+
+      updateConfidenceBadge(minN);
     }
 
     const showCi = document.getElementById("toggle-ci").checked;
