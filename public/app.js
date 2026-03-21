@@ -775,9 +775,21 @@ function generateInsight(seriesArr) {
 
   const minN = ns.length ? Math.min(...ns) : null;
 
+  let confidenceLabel = "Confidence level: unavailable.";
   let warning = "";
-  if (minN !== null && minN < 5) {
-    warning = ` Caution: these results include very small sample sizes (minimum n = ${minN}), so individual years should be interpreted carefully.`;
+
+  if (minN !== null) {
+    if (minN < 5) {
+      confidenceLabel = `Confidence level: low (minimum n = ${minN}).`;
+      warning =
+        " Caution: these results include very small sample sizes, so individual years should be interpreted carefully.";
+    } else if (minN < 20) {
+      confidenceLabel = `Confidence level: moderate (minimum n = ${minN}).`;
+      warning =
+        " These results should be interpreted with some caution, as sample sizes remain limited in at least some years.";
+    } else {
+      confidenceLabel = `Confidence level: stronger (minimum n = ${minN}).`;
+    }
   }
 
   return `
@@ -787,7 +799,9 @@ Across the selected period, the average conviction rate is ${avg.toFixed(1)}%.
 
 The highest observed rate is ${maxPoint.y.toFixed(1)}% in ${maxPoint.x}, and the lowest observed rate is ${minPoint.y.toFixed(1)}% in ${minPoint.x}.
 
-Taken as a whole, the pattern appears ${trend}.${warning}
+Taken as a whole, the pattern appears ${trend}.
+
+${confidenceLabel}${warning}
 `;
 }
 
@@ -833,9 +847,11 @@ async function render() {
       const minN = points.length ? Math.min(...points.map((p) => p.n)) : null;
 
       if (minN !== null && minN < 5) {
-        insightEl.style.borderLeft = "4px solid #d63333";
+        insightEl.style.borderLeft = "4px solid #d63333"; // red
+      } else if (minN !== null && minN < 20) {
+        insightEl.style.borderLeft = "4px solid #fd7e14"; // amber
       } else {
-        insightEl.style.borderLeft = "4px solid #198754";
+        insightEl.style.borderLeft = "4px solid #198754"; // green
       }
 
       insightEl.style.borderRadius = "4px";
