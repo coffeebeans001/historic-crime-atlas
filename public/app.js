@@ -922,25 +922,25 @@ function compareSeries(seriesArr) {
   );
   const gapChange = lastGap - firstGap;
 
+  const nameA = a.label.replace(/\s*-\s*Individual/i, "").trim();
+  const nameB = b.label.replace(/\s*-\s*Individual/i, "").trim();
+
   let gapSummary = "";
   if (avgGap > 25) {
-    gapSummary =
-      "The difference between the two series is substantial across the selected period.";
+    gapSummary = `${nameA} and ${nameB} conviction rates differ substantially across the selected period.`;
   } else if (avgGap > 10) {
-    gapSummary =
-      "The difference between the two series is noticeable across the selected period.";
+    gapSummary = `${nameA} and ${nameB} conviction rates show a noticeable gap across the selected period.`;
   } else {
-    gapSummary =
-      "The two series remain relatively close across the selected period.";
+    gapSummary = `${nameA} and ${nameB} conviction rates remain relatively close across the selected period.`;
   }
 
   let divergenceSummary = "";
   if (gapChange > 10) {
-    divergenceSummary = "The gap appears to widen over time.";
+    divergenceSummary = `The gap between ${nameA.toLowerCase()} and ${nameB.toLowerCase()} appears to widen over time.`;
   } else if (gapChange < -10) {
-    divergenceSummary = "The gap appears to narrow over time.";
+    divergenceSummary = `The gap between ${nameA.toLowerCase()} and ${nameB.toLowerCase()} appears to narrow over time.`;
   } else {
-    divergenceSummary = "The gap remains broadly stable over time.";
+    divergenceSummary = `The gap between ${nameA.toLowerCase()} and ${nameB.toLowerCase()} remains broadly stable over time.`;
   }
 
   return {
@@ -967,7 +967,6 @@ function generateInsight(seriesArr) {
   const spikeInfo = detectMidPeriodSpike(points);
   const comparisonInfo = compareSeries(seriesArr);
 
-  
   const ns = points
     .map((p) => p.n)
     .filter((n) => typeof n === "number" && !Number.isNaN(n));
