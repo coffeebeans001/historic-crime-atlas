@@ -1033,6 +1033,26 @@ function updateConfidenceBadge(minN) {
   }
 }
 
+function buildInsightHeading({ groupLabel, genderLabel, seriesArr }) {
+  const cleanGroup = groupLabel || "All offences";
+  const cleanGender = genderLabel || "All";
+
+  const isComparison = (seriesArr || []).length > 1;
+
+  const groupText =
+    cleanGroup.toLowerCase() === "all offences" ? "All-offence" : cleanGroup;
+
+  if (isComparison) {
+    return `${groupText} comparison summary`;
+  }
+
+  if (cleanGender.toLowerCase() === "all") {
+    return `${groupText} conviction summary`;
+  }
+
+  return `${cleanGender} ${groupText.toLowerCase()} summary`;
+}
+
 async function render() {
   ensureChart();
 
@@ -1111,6 +1131,16 @@ async function render() {
       "All Defendants";
 
     chart.options.plugins.title.text = `${groupLabel} — Conviction Rate Over Time (${genderLabel})`;
+
+    const headingEl = document.getElementById("insight-heading");
+
+    if (headingEl) {
+      headingEl.textContent = buildInsightHeading({
+        groupLabel,
+        genderLabel,
+        seriesArr: payload.series,
+      });
+    }
 
     chart.update();
     writeUrlState();
