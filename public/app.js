@@ -747,7 +747,7 @@ function movingAveragePoints(points, windowSize = 3) {
   });
 }
 
-function analyseTrend(points) {
+function analyseTrend(points, label = "The data") {
   const clean = (points || []).filter(
     (p) => p && typeof p.x === "number" && typeof p.y === "number",
   );
@@ -756,8 +756,7 @@ function analyseTrend(points) {
     return {
       direction: "insufficient data",
       volatility: "unknown",
-      summary:
-        "There is not enough data to assess the overall pattern reliably.",
+      summary: `${label} does not include enough observations to assess the overall pattern reliably.`,
     };
   }
 
@@ -786,18 +785,15 @@ function analyseTrend(points) {
   let summary = "";
 
   if (direction === "stable") {
-    summary = "The pattern remains broadly stable across the selected period.";
+    summary = `${label} remain broadly stable across the selected period.`;
   } else if (direction === "gradual increase") {
-    summary =
-      "The data suggests a gradual increase across the selected period.";
+    summary = `${label} show a gradual increase across the selected period.`;
   } else if (direction === "clear increase") {
-    summary =
-      "The data suggests a clear upward movement across the selected period.";
+    summary = `${label} show a clear upward movement across the selected period.`;
   } else if (direction === "gradual decrease") {
-    summary = "The data suggests a gradual decline across the selected period.";
+    summary = `${label} show a gradual decline across the selected period.`;
   } else if (direction === "clear decrease") {
-    summary =
-      "The data suggests a clear downward movement across the selected period.";
+    summary = `${label} show a clear downward movement across the selected period.`;
   }
 
   if (volatility === "moderate") {
@@ -963,7 +959,13 @@ function generateInsight(seriesArr) {
 
   const minPoint = points.reduce((a, b) => (a.y < b.y ? a : b));
   const maxPoint = points.reduce((a, b) => (a.y > b.y ? a : b));
-  const trendInfo = analyseTrend(points);
+
+  const trendLabel =
+    seriesArr && seriesArr.length === 1
+      ? `${seriesArr[0].label.replace(/\s*-\s*Individual/i, "").trim()} conviction rates`
+      : "Conviction rates";
+
+  const trendInfo = analyseTrend(points, trendLabel);
   const spikeInfo = detectMidPeriodSpike(points);
   const comparisonInfo = compareSeries(seriesArr);
 
