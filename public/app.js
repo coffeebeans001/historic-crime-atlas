@@ -810,6 +810,145 @@ function analyseTrend(points) {
   return { direction, volatility, summary };
 }
 
+function detectMidPeriodSpike(points) {
+  const clean = (points || []).filter(
+    (p) => p && typeof p.x === "number" && typeof p.y === "number",
+  );
+
+  if (clean.length < 5) {
+    return {
+      hasSpike: false,
+      summary:
+        "There is not enough data to assess whether a mid-period spike is present.",
+    };
+  }
+
+  const midStart = Math.floor(clean.length * 0.3);
+  const midEnd = Math.ceil(clean.length * 0.7);
+
+  const early = clean.slice(0, midStart);
+  const middle = clean.slice(midStart, midEnd);
+  const late = clean.slice(midEnd);
+
+  if (!early.length || !middle.length || !late.length) {
+    return {
+      hasSpike: false,
+      summary:
+        "There is not enough data to assess whether a mid-period spike is present.",
+    };
+  }
+
+  const avg = (arr) => arr.reduce((sum, p) => sum + p.y, 0) / arr.length;
+
+  const earlyAvg = avg(early);
+  const middleAvg = avg(middle);
+  const lateAvg = avg(late);
+
+  const sideAvg = (earlyAvg + lateAvg) / 2;
+  const diff = middleAvg - sideAvg;
+
+  if (diff > 10) {
+    const peakPoint = middle.reduce((a, b) => (a.y > b.y ? a : b));
+    return {
+      hasSpike: true,
+      type: "spike",
+      year: peakPoint.x,
+      summary: `A notable mid-period spike appears around ${peakPoint.x}.`,
+    };
+  }
+
+  if (diff < -10) {
+    const dipPoint = middle.reduce((a, b) => (a.y < b.y ? a : b));
+    return {
+      hasSpike: true,
+      type: "dip",
+      year: dipPoint.x,
+      summary: `A noticeable mid-period dip appears around ${dipPoint.x}.`,
+    };
+  }
+
+  return {
+    hasSpike: false,
+    summary: "No strong mid-period spike is evident.",
+  };
+}
+
+function compareSeries(seriesArr) {
+  const cleanSeries = (seriesArr || []).filter(
+    (s) => s && typeof s.label === "string" && Array.isArray(s.data),
+  );
+
+  if (cleanSeries.length < 2) {
+    return {
+      available: false,
+      summary: "",
+    };
+  }
+
+  const [a, b] = cleanSeries;
+
+  const mapA = new Map(
+    a.data
+      .filter((p) => p && typeof p.x === "number" && typeof p.y === "number")
+      .map((p) => [p.x, p.y]),
+  );
+
+  const mapB = new Map(
+    b.data
+      .filter((p) => p && typeof p.x === "number" && typeof p.y === "number")
+      .map((p) => [p.x, p.y]),
+  );
+
+  const sharedYears = [...mapA.keys()]
+    .filter((x) => mapB.has(x))
+    .sort((x, y) => x - y);
+
+  if (sharedYears.length < 2) {
+    return {
+      available: false,
+      summary: "",
+    };
+  }
+
+  const gaps = sharedYears.map((x) => Math.abs(mapA.get(x) - mapB.get(x)));
+  const avgGap = gaps.reduce((sum, g) => sum + g, 0) / gaps.length;
+
+  const firstGap = Math.abs(
+    mapA.get(sharedYears[0]) - mapB.get(sharedYears[0]),
+  );
+  const lastGap = Math.abs(
+    mapA.get(sharedYears[sharedYears.length - 1]) -
+      mapB.get(sharedYears[sharedYears.length - 1]),
+  );
+  const gapChange = lastGap - firstGap;
+
+  let gapSummary = "";
+  if (avgGap > 25) {
+    gapSummary =
+      "The difference between the two series is substantial across the selected period.";
+  } else if (avgGap > 10) {
+    gapSummary =
+      "The difference between the two series is noticeable across the selected period.";
+  } else {
+    gapSummary =
+      "The two series remain relatively close across the selected period.";
+  }
+
+  let divergenceSummary = "";
+  if (gapChange > 10) {
+    divergenceSummary = "The gap appears to widen over time.";
+  } else if (gapChange < -10) {
+    divergenceSummary = "The gap appears to narrow over time.";
+  } else {
+    divergenceSummary = "The gap remains broadly stable over time.";
+  }
+
+  return {
+    available: true,
+    summary: `${gapSummary} ${divergenceSummary}`,
+  };
+}
+
 function generateInsight(seriesArr) {
   const points = (seriesArr || [])
     .flatMap((s) => s.data || [])
@@ -825,7 +964,10 @@ function generateInsight(seriesArr) {
   const minPoint = points.reduce((a, b) => (a.y < b.y ? a : b));
   const maxPoint = points.reduce((a, b) => (a.y > b.y ? a : b));
   const trendInfo = analyseTrend(points);
+  const spikeInfo = detectMidPeriodSpike(points);
+  const comparisonInfo = compareSeries(seriesArr);
 
+  
   const ns = points
     .map((p) => p.n)
     .filter((n) => typeof n === "number" && !Number.isNaN(n));
@@ -857,6 +999,8 @@ Across the selected period, the average conviction rate is ${avg.toFixed(1)}%.
 The highest observed rate is ${maxPoint.y.toFixed(1)}% in ${maxPoint.x}, and the lowest observed rate is ${minPoint.y.toFixed(1)}% in ${minPoint.x}.
 
 ${trendInfo.summary}
+${spikeInfo.summary}
+${comparisonInfo.available ? comparisonInfo.summary : ""}
 
 ${confidenceLabel}${warning}
 `;
