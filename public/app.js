@@ -747,6 +747,69 @@ function movingAveragePoints(points, windowSize = 3) {
   });
 }
 
+function analyseTrend(points) {
+  const clean = (points || []).filter(
+    (p) => p && typeof p.x === "number" && typeof p.y === "number",
+  );
+
+  if (clean.length < 2) {
+    return {
+      direction: "insufficient data",
+      volatility: "unknown",
+      summary:
+        "There is not enough data to assess the overall pattern reliably.",
+    };
+  }
+
+  const first = clean[0].y;
+  const last = clean[clean.length - 1].y;
+  const change = last - first;
+
+  let direction = "stable";
+  if (change > 10) direction = "clear increase";
+  else if (change > 3) direction = "gradual increase";
+  else if (change < -10) direction = "clear decrease";
+  else if (change < -3) direction = "gradual decrease";
+
+  const stepChanges = [];
+  for (let i = 1; i < clean.length; i++) {
+    stepChanges.push(Math.abs(clean[i].y - clean[i - 1].y));
+  }
+
+  const avgStep =
+    stepChanges.reduce((sum, v) => sum + v, 0) / stepChanges.length;
+
+  let volatility = "low";
+  if (avgStep > 25) volatility = "high";
+  else if (avgStep > 10) volatility = "moderate";
+
+  let summary = "";
+
+  if (direction === "stable") {
+    summary = "The pattern remains broadly stable across the selected period.";
+  } else if (direction === "gradual increase") {
+    summary =
+      "The data suggests a gradual increase across the selected period.";
+  } else if (direction === "clear increase") {
+    summary =
+      "The data suggests a clear upward movement across the selected period.";
+  } else if (direction === "gradual decrease") {
+    summary = "The data suggests a gradual decline across the selected period.";
+  } else if (direction === "clear decrease") {
+    summary =
+      "The data suggests a clear downward movement across the selected period.";
+  }
+
+  if (volatility === "moderate") {
+    summary += " There is also moderate year-to-year variation.";
+  } else if (volatility === "high") {
+    summary +=
+      " Year-to-year variation is high, so the pattern should be interpreted with caution.";
+  }
+
+  return { direction, volatility, summary };
+}
+
 function generateInsight(seriesArr) {
   const points = (seriesArr || [])
     .flatMap((s) => s.data || [])
@@ -761,13 +824,7 @@ function generateInsight(seriesArr) {
 
   const minPoint = points.reduce((a, b) => (a.y < b.y ? a : b));
   const maxPoint = points.reduce((a, b) => (a.y > b.y ? a : b));
-
-  const first = points[0].y;
-  const last = points[points.length - 1].y;
-
-  let trend = "stable";
-  if (last > first + 2) trend = "increasing";
-  else if (last < first - 2) trend = "decreasing";
+  const trendInfo = analyseTrend(points);
 
   const ns = points
     .map((p) => p.n)
@@ -799,7 +856,7 @@ Across the selected period, the average conviction rate is ${avg.toFixed(1)}%.
 
 The highest observed rate is ${maxPoint.y.toFixed(1)}% in ${maxPoint.x}, and the lowest observed rate is ${minPoint.y.toFixed(1)}% in ${minPoint.x}.
 
-Taken as a whole, the pattern appears ${trend}.
+${trendInfo.summary}
 
 ${confidenceLabel}${warning}
 `;
