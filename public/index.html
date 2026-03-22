@@ -303,21 +303,53 @@
       </div>
     </div>
 
-    <div
-      id="confidence-badge"
-      style="
-        display: inline-block;
-        margin-top: 12px;
-        margin-bottom: 8px;
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 13px;
-        font-weight: 600;
-        background: #eee;
-        color: #333;
-      "
-    >
-      Confidence: unavailable
+    <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px">
+      <div
+        id="confidence-badge"
+        style="
+          padding: 4px 10px;
+          border-radius: 999px;
+          font-size: 13px;
+          font-weight: 600;
+          background: #eee;
+          color: #333;
+        "
+      >
+        Confidence: unavailable
+      </div>
+
+      <span
+        id="confidence-info"
+        style="
+          font-size: 14px;
+          cursor: pointer;
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+        "
+      >
+        ⓘ
+        <span
+          id="confidence-tooltip"
+          style="
+            display: none;
+            position: absolute;
+            top: 22px;
+            left: 0;
+            width: 260px;
+            background: #333;
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            line-height: 1.4;
+            z-index: 10;
+          "
+        >
+          Confidence reflects the minimum sample size (n) in the selected data.
+          Smaller sample sizes can produce less stable or less reliable trends.
+        </span>
+      </span>
     </div>
 
     <div

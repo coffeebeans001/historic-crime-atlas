@@ -1599,6 +1599,19 @@ async function init() {
     groupInput.addEventListener("blur", () => {
       applyBestGroupMatchAndRender(groupInput);
     });
+
+    const info = document.getElementById("confidence-info");
+    const tooltip = document.getElementById("confidence-tooltip");
+
+    if (info && tooltip) {
+      info.addEventListener("mouseenter", () => {
+        tooltip.style.display = "block";
+      });
+
+      info.addEventListener("mouseleave", () => {
+        tooltip.style.display = "none";
+      });
+    }
   }
 
   initFromUrl();
