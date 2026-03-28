@@ -79,12 +79,16 @@ function getValidatedGroup() {
   const groupInput = document.getElementById("group");
   const groupList = document.getElementById("groupOptions");
 
-  const group = groupInput?.value?.trim() || "";
+  const raw = groupInput?.value?.trim() || "";
+
+  // Empty input means: use All offences
+  if (raw === "") return null;
+
   const validGroups = groupList
     ? Array.from(groupList.options).map((o) => o.value)
     : [];
 
-  return validGroups.includes(group) ? group : "";
+  return validGroups.includes(raw) ? raw : "__INVALID__";
 }
 
 function getBestMatchingGroup(query) {
@@ -127,8 +131,6 @@ function applyBestGroupMatchAndRender(groupInput) {
 
   if (best) {
     groupInput.value = best;
-  } else if (raw !== "") {
-    groupInput.value = "";
   }
 
   render().catch(console.error);
@@ -1115,19 +1117,34 @@ async function render() {
   setChartLoading(true);
 
   try {
-    const payload = await loadSeries();
+    const validatedGroup = getValidatedGroup();
+    console.log("group input raw:", document.getElementById("group")?.value);
+    console.log("validatedGroup:", validatedGroup);
+    const invalidGroup = validatedGroup === "__INVALID__";
+
+    let payload = { series: [] };
+
+    if (!invalidGroup) {
+      payload = await loadSeries();
+    }
+
     const noData =
-      !payload.series ||
+      invalidGroup ||
+      !payload?.series ||
       payload.series.length === 0 ||
       payload.series.every(
         (s) => !Array.isArray(s.data) || s.data.length === 0,
       );
+
     showNoDataOverlay(noData);
 
     if (noData) {
       chart.data.datasets = [];
 
-      const groupLabel = getValidatedGroup() || "All offences";
+      const groupLabel =
+        validatedGroup === null || validatedGroup === "__INVALID__"
+          ? "All offences"
+          : validatedGroup;
 
       const genderLabel =
         document.getElementById("gender")?.selectedOptions?.[0]?.text ||
@@ -1166,7 +1183,10 @@ async function render() {
 
     chart.options.scales.x.title.text = bucket === "decade" ? "Decade" : "Year";
 
-    const groupLabel = getValidatedGroup() || "All offences";
+    const groupLabel =
+      validatedGroup === null || validatedGroup === "__INVALID__"
+        ? "All offences"
+        : validatedGroup;
 
     const genderLabel =
       document.getElementById("gender")?.selectedOptions?.[0]?.text ||
