@@ -81,7 +81,6 @@ function getValidatedGroup() {
 
   const raw = groupInput?.value?.trim() || "";
 
-  // Empty input means: use All offences
   if (raw === "") return null;
 
   const validGroups = groupList
@@ -133,6 +132,7 @@ function applyBestGroupMatchAndRender(groupInput) {
     groupInput.value = best;
   }
 
+  updateGroupInputState();
   render().catch(console.error);
 }
 
@@ -1110,6 +1110,20 @@ function updateInsightPanel({
   }
 }
 
+function updateGroupInputState() {
+  const groupInput = document.getElementById("group");
+  if (!groupInput) return;
+
+  const validatedGroup = getValidatedGroup();
+  groupInput.style.borderColor = "";
+  groupInput.style.backgroundColor = "";
+
+  if (validatedGroup === "__INVALID__") {
+    groupInput.style.borderColor = "#d63333";
+    groupInput.style.backgroundColor = "#fff5f5";
+  }
+}
+
 async function render() {
   ensureChart();
 
@@ -1118,8 +1132,8 @@ async function render() {
 
   try {
     const validatedGroup = getValidatedGroup();
-    console.log("group input raw:", document.getElementById("group")?.value);
-    console.log("validatedGroup:", validatedGroup);
+    updateGroupInputState();
+
     const invalidGroup = validatedGroup === "__INVALID__";
 
     let payload = { series: [] };
@@ -1141,10 +1155,14 @@ async function render() {
     if (noData) {
       chart.data.datasets = [];
 
+      const rawGroup = document.getElementById("group")?.value?.trim() || "";
+
       const groupLabel =
-        validatedGroup === null || validatedGroup === "__INVALID__"
+        validatedGroup === null
           ? "All offences"
-          : validatedGroup;
+          : validatedGroup === "__INVALID__"
+            ? rawGroup
+            : validatedGroup;
 
       const genderLabel =
         document.getElementById("gender")?.selectedOptions?.[0]?.text ||
@@ -1183,10 +1201,14 @@ async function render() {
 
     chart.options.scales.x.title.text = bucket === "decade" ? "Decade" : "Year";
 
+    const rawGroup = document.getElementById("group")?.value?.trim() || "";
+
     const groupLabel =
-      validatedGroup === null || validatedGroup === "__INVALID__"
+      validatedGroup === null
         ? "All offences"
-        : validatedGroup;
+        : validatedGroup === "__INVALID__"
+          ? rawGroup
+          : validatedGroup;
 
     const genderLabel =
       document.getElementById("gender")?.selectedOptions?.[0]?.text ||
@@ -1893,7 +1915,7 @@ async function init() {
 
   if (groupInput) {
     groupInput.addEventListener("input", () => {
-      previewBestGroupMatch(groupInput);
+      updateGroupInputState();
     });
 
     groupInput.addEventListener("change", () => {
