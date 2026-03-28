@@ -1053,6 +1053,61 @@ function buildInsightHeading({ groupLabel, genderLabel, seriesArr }) {
   return `${cleanGender} ${groupText.toLowerCase()} summary`;
 }
 
+function updateInsightPanel({
+  groupLabel,
+  genderLabel,
+  seriesArr,
+  insightText,
+  minN,
+}) {
+  const headingEl = document.getElementById("insight-heading");
+  const badgeEl = document.getElementById("confidence-badge");
+  const insightEl = document.getElementById("insight-text");
+
+  if (headingEl) {
+    headingEl.textContent = buildInsightHeading({
+      groupLabel,
+      genderLabel,
+      seriesArr,
+    });
+  }
+
+  if (badgeEl) {
+    if (minN === null || typeof minN !== "number") {
+      badgeEl.textContent = "Confidence: unavailable";
+      badgeEl.style.background = "#e9ecef";
+      badgeEl.style.color = "#333";
+    } else if (minN < 5) {
+      badgeEl.textContent = `Low confidence (min n = ${minN})`;
+      badgeEl.style.background = "#f8d7da";
+      badgeEl.style.color = "#842029";
+    } else if (minN < 20) {
+      badgeEl.textContent = `Moderate confidence (min n = ${minN})`;
+      badgeEl.style.background = "#fff3cd";
+      badgeEl.style.color = "#664d03";
+    } else {
+      badgeEl.textContent = `Stronger confidence (min n = ${minN})`;
+      badgeEl.style.background = "#d1e7dd";
+      badgeEl.style.color = "#0f5132";
+    }
+  }
+
+  if (insightEl) {
+    insightEl.textContent =
+      insightText || "No data available for the selected filters.";
+
+    if (minN === null || typeof minN !== "number" || minN < 5) {
+      insightEl.style.borderLeft = "4px solid #d63333";
+    } else if (minN < 20) {
+      insightEl.style.borderLeft = "4px solid #fd7e14";
+    } else {
+      insightEl.style.borderLeft = "4px solid #198754";
+    }
+
+    insightEl.style.borderRadius = "4px";
+  }
+}
+
 async function render() {
   ensureChart();
 
@@ -1061,22 +1116,32 @@ async function render() {
 
   try {
     const payload = await loadSeries();
-    const noData = !payload?.series || payload.series.length === 0;
+    const noData =
+      !payload.series ||
+      payload.series.length === 0 ||
+      payload.series.every(
+        (s) => !Array.isArray(s.data) || s.data.length === 0,
+      );
     showNoDataOverlay(noData);
 
     if (noData) {
       chart.data.datasets = [];
+
+      const groupLabel = getValidatedGroup() || "All offences";
+
+      const genderLabel =
+        document.getElementById("gender")?.selectedOptions?.[0]?.text ||
+        "All Defendants";
+
+      updateInsightPanel({
+        groupLabel,
+        genderLabel,
+        seriesArr: [],
+        insightText: "No data available for the selected filters.",
+        minN: null,
+      });
+
       chart.update();
-
-      const insightEl = document.getElementById("insight-text");
-      if (insightEl) {
-        insightEl.textContent = "No data available for the selected filters.";
-        insightEl.style.borderLeft = "4px solid #d63333";
-        insightEl.style.borderRadius = "4px";
-      }
-
-      updateConfidenceBadge(null);
-
       return;
     }
 
@@ -1084,30 +1149,6 @@ async function render() {
     const bucket = document.getElementById("bucket").value;
 
     chart.data.datasets = buildDatasets(payload.series);
-
-    const insightEl = document.getElementById("insight-text");
-    if (insightEl) {
-      const text = generateInsight(payload.series);
-      insightEl.textContent = text;
-
-      const points = (payload.series || [])
-        .flatMap((s) => s.data || [])
-        .filter((p) => p && typeof p.n === "number");
-
-      const minN = points.length ? Math.min(...points.map((p) => p.n)) : null;
-
-      if (minN !== null && minN < 5) {
-        insightEl.style.borderLeft = "4px solid #d63333";
-      } else if (minN !== null && minN < 20) {
-        insightEl.style.borderLeft = "4px solid #fd7e14";
-      } else {
-        insightEl.style.borderLeft = "4px solid #198754";
-      }
-
-      insightEl.style.borderRadius = "4px";
-
-      updateConfidenceBadge(minN);
-    }
 
     const showCi = document.getElementById("toggle-ci").checked;
 
@@ -1126,21 +1167,32 @@ async function render() {
     chart.options.scales.x.title.text = bucket === "decade" ? "Decade" : "Year";
 
     const groupLabel = getValidatedGroup() || "All offences";
+
     const genderLabel =
       document.getElementById("gender")?.selectedOptions?.[0]?.text ||
       "All Defendants";
 
+    // chart title (KEEP THIS)
     chart.options.plugins.title.text = `${groupLabel} — Conviction Rate Over Time (${genderLabel})`;
 
-    const headingEl = document.getElementById("insight-heading");
+    // 🔥 NEW unified panel logic (REPLACE old heading block with this)
+    const insightText = generateInsight(payload.series);
 
-    if (headingEl) {
-      headingEl.textContent = buildInsightHeading({
-        groupLabel,
-        genderLabel,
-        seriesArr: payload.series,
-      });
-    }
+    const pointsForConfidence = (payload.series || [])
+      .flatMap((s) => s.data || [])
+      .filter((p) => p && typeof p.n === "number");
+
+    const minN = pointsForConfidence.length
+      ? Math.min(...pointsForConfidence.map((p) => p.n))
+      : null;
+
+    updateInsightPanel({
+      groupLabel,
+      genderLabel,
+      seriesArr: payload.series,
+      insightText,
+      minN,
+    });
 
     chart.update();
     writeUrlState();
