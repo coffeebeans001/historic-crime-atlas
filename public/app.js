@@ -1173,6 +1173,41 @@ function getClosestGroupSuggestion(raw) {
   return match || null;
 }
 
+function downloadChartAsPng() {
+  if (!chart) return;
+
+  const link = document.createElement("a");
+  const safeTitle = (chart.options?.plugins?.title?.text || "conviction-chart")
+    .toString()
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .toLowerCase();
+
+  link.href = chart.toBase64Image("image/png", 1);
+  link.download = `${safeTitle || "conviction-chart"}.png`;
+  link.click();
+}
+
+async function copyInsightText() {
+  const heading =
+    document.getElementById("insight-heading")?.textContent?.trim() || "";
+  const badge =
+    document.getElementById("confidence-badge")?.textContent?.trim() || "";
+  const insight =
+    document.getElementById("insight-text")?.textContent?.trim() || "";
+
+  const text = [heading, badge, insight].filter(Boolean).join("\n\n");
+
+  if (!text) return;
+
+  await navigator.clipboard.writeText(text);
+}
+
+async function copyShareableLink() {
+  await navigator.clipboard.writeText(window.location.href);
+}
+
 async function render() {
   ensureChart();
 
@@ -1989,6 +2024,42 @@ async function init() {
 
     info.addEventListener("mouseleave", () => {
       tooltip.style.display = "none";
+    });
+  }
+  const downloadChartBtn = document.getElementById("download-chart-btn");
+  if (downloadChartBtn) {
+    downloadChartBtn.addEventListener("click", () => {
+      downloadChartAsPng();
+    });
+  }
+
+  const copyInsightBtn = document.getElementById("copy-insight-btn");
+  if (copyInsightBtn) {
+    copyInsightBtn.addEventListener("click", async () => {
+      try {
+        await copyInsightText();
+        copyInsightBtn.textContent = "Copied insight";
+        setTimeout(() => {
+          copyInsightBtn.textContent = "Copy insight text";
+        }, 1200);
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  }
+
+  const copyLinkBtn = document.getElementById("copy-link-btn");
+  if (copyLinkBtn) {
+    copyLinkBtn.addEventListener("click", async () => {
+      try {
+        await copyShareableLink();
+        copyLinkBtn.textContent = "Copied link";
+        setTimeout(() => {
+          copyLinkBtn.textContent = "Copy shareable link";
+        }, 1200);
+      } catch (err) {
+        console.error(err);
+      }
     });
   }
 }
