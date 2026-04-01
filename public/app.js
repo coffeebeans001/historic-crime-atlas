@@ -1115,13 +1115,27 @@ function updateGroupInputState() {
   if (!groupInput) return;
 
   const validatedGroup = getValidatedGroup();
+
   groupInput.style.borderColor = "";
   groupInput.style.backgroundColor = "";
+  groupInput.style.outline = "";
+  groupInput.style.boxShadow = "";
 
+  // empty = neutral
+  if (validatedGroup === null) {
+    return;
+  }
+
+  // invalid = red, even while focused
   if (validatedGroup === "__INVALID__") {
     groupInput.style.borderColor = "#d63333";
     groupInput.style.backgroundColor = "#fff5f5";
+    groupInput.style.outline = "2px solid rgba(214, 51, 51, 0.15)";
+    groupInput.style.boxShadow = "0 0 0 2px rgba(214, 51, 51, 0.12)";
+    return;
   }
+
+  // valid = neutral
 }
 
 async function render() {
@@ -1913,10 +1927,14 @@ async function init() {
   // Chart
   await loadGroupOptions().catch(console.error);
 
-  if (groupInput) {
-    groupInput.addEventListener("input", () => {
-      updateGroupInputState();
-    });
+  const groupInput = document.getElementById("group");
+
+   groupInput.addEventListener("input", (e) => {
+     if (!e.inputType || !e.inputType.startsWith("delete")) {
+       previewBestGroupMatch(groupInput);
+     }
+     updateGroupInputState();
+   });
 
     groupInput.addEventListener("change", () => {
       applyBestGroupMatchAndRender(groupInput);
@@ -1952,7 +1970,7 @@ async function init() {
   // DevTools helpers (optional but useful)
   window.__markersLayer = markersLayer;
   window.__centerMarker = centerMarker;
-}
+
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
