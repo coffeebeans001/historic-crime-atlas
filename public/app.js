@@ -1112,6 +1112,7 @@ function updateInsightPanel({
 
 function updateGroupInputState() {
   const groupInput = document.getElementById("group");
+  const feedbackEl = document.getElementById("group-feedback");
   if (!groupInput) return;
 
   const validatedGroup = getValidatedGroup();
@@ -1121,21 +1122,55 @@ function updateGroupInputState() {
   groupInput.style.outline = "";
   groupInput.style.boxShadow = "";
 
+  if (feedbackEl) {
+    feedbackEl.textContent = "";
+  }
+
   // empty = neutral
   if (validatedGroup === null) {
     return;
   }
 
-  // invalid = red, even while focused
+  // invalid = red + feedback
   if (validatedGroup === "__INVALID__") {
     groupInput.style.borderColor = "#d63333";
     groupInput.style.backgroundColor = "#fff5f5";
     groupInput.style.outline = "2px solid rgba(214, 51, 51, 0.15)";
     groupInput.style.boxShadow = "0 0 0 2px rgba(214, 51, 51, 0.12)";
+
+    const raw = groupInput.value.trim();
+    const suggestion = getClosestGroupSuggestion(raw);
+
+    if (feedbackEl) {
+      feedbackEl.textContent = suggestion
+        ? `No matching offence found. Try ${suggestion}.`
+        : "No matching offence found.";
+    }
     return;
   }
 
   // valid = neutral
+}
+
+function getClosestGroupSuggestion(raw) {
+  const list = document.getElementById("groupOptions");
+  if (!list) return null;
+
+  const options = Array.from(list.options).map((o) => o.value);
+
+  if (!raw) return null;
+
+  const lower = raw.toLowerCase();
+
+  // simple match: startsWith first
+  let match = options.find((o) => o.toLowerCase().startsWith(lower));
+
+  if (match) return match;
+
+  // fallback: includes
+  match = options.find((o) => o.toLowerCase().includes(lower));
+
+  return match || null;
 }
 
 async function render() {
@@ -1929,48 +1964,47 @@ async function init() {
 
   const groupInput = document.getElementById("group");
 
-   groupInput.addEventListener("input", (e) => {
-     if (!e.inputType || !e.inputType.startsWith("delete")) {
-       previewBestGroupMatch(groupInput);
-     }
-     updateGroupInputState();
-   });
-
-    groupInput.addEventListener("change", () => {
-      applyBestGroupMatchAndRender(groupInput);
-    });
-
-    groupInput.addEventListener("blur", () => {
-      applyBestGroupMatchAndRender(groupInput);
-    });
-
-    const info = document.getElementById("confidence-info");
-    const tooltip = document.getElementById("confidence-tooltip");
-
-    if (info && tooltip) {
-      info.addEventListener("mouseenter", () => {
-        tooltip.style.display = "block";
-      });
-
-      info.addEventListener("mouseleave", () => {
-        tooltip.style.display = "none";
-      });
+  groupInput.addEventListener("input", (e) => {
+    if (!e.inputType || !e.inputType.startsWith("delete")) {
+      previewBestGroupMatch(groupInput);
     }
+    updateGroupInputState();
+  });
+
+  groupInput.addEventListener("change", () => {
+    applyBestGroupMatchAndRender(groupInput);
+  });
+
+  groupInput.addEventListener("blur", () => {
+    applyBestGroupMatchAndRender(groupInput);
+  });
+
+  const info = document.getElementById("confidence-info");
+  const tooltip = document.getElementById("confidence-tooltip");
+
+  if (info && tooltip) {
+    info.addEventListener("mouseenter", () => {
+      tooltip.style.display = "block";
+    });
+
+    info.addEventListener("mouseleave", () => {
+      tooltip.style.display = "none";
+    });
   }
+}
 
-  initFromUrl();
+initFromUrl();
 
-  // Map base + center + radius
-  ensureMap();
-  updateRadiusCircle();
+// Map base + center + radius
+ensureMap();
+updateRadiusCircle();
 
-  // Populate markers + list on page load
-  fetchNearby().catch(console.error);
+// Populate markers + list on page load
+fetchNearby().catch(console.error);
 
-  // DevTools helpers (optional but useful)
-  window.__markersLayer = markersLayer;
-  window.__centerMarker = centerMarker;
-
+// DevTools helpers (optional but useful)
+window.__markersLayer = markersLayer;
+window.__centerMarker = centerMarker;
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);

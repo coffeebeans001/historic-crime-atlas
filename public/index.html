@@ -261,8 +261,18 @@
         placeholder="Type to search offences..."
         autocomplete="off"
       />
-      <datalist id="groupOptions"></datalist>
 
+      <div
+        id="group-feedback"
+        style="
+          margin-top: 6px;
+          font-size: 13px;
+          color: #d63333;
+          min-height: 18px;
+        "
+      ></div>
+      <datalist id="groupOptions"></datalist>
+      
       <label for="gender">Gender</label>
       <select id="gender">
         <option value="all">All</option>
