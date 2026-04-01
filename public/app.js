@@ -1208,6 +1208,178 @@ async function copyShareableLink() {
   await navigator.clipboard.writeText(window.location.href);
 }
 
+async function downloadResearchSnapshot() {
+  if (!chart) return;
+
+  const heading =
+    document.getElementById("insight-heading")?.textContent?.trim() || "";
+  const badge =
+    document.getElementById("confidence-badge")?.textContent?.trim() || "";
+  const insight =
+    document.getElementById("insight-text")?.textContent?.trim() || "";
+  const chartTitle =
+    chart.options?.plugins?.title?.text?.toString().trim() ||
+    "Conviction chart";
+
+  const chartCanvas = document.getElementById("chart");
+  if (!chartCanvas) return;
+
+  const chartImage = new Image();
+  chartImage.src = chart.toBase64Image("image/png", 1);
+
+  await new Promise((resolve, reject) => {
+    chartImage.onload = resolve;
+    chartImage.onerror = reject;
+  });
+
+  const padding = 24;
+  const lineHeight = 24;
+  const sectionGap = 16;
+
+  const textLines = [
+    chartTitle,
+    "",
+    heading,
+    badge,
+    "",
+    ...wrapText(insight, 90),
+  ];
+
+  const textHeight = textLines.length * lineHeight;
+  const width = Math.max(chartCanvas.width + padding * 2, 1200);
+  const height =
+    padding + textHeight + sectionGap + chartCanvas.height + padding;
+
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = width;
+  exportCanvas.height = height;
+
+  const ctx = exportCanvas.getContext("2d");
+  if (!ctx) return;
+
+  // background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, width, height);
+
+  // title + text
+  let y = padding + 8;
+
+  ctx.fillStyle = "#111";
+  ctx.font = "bold 28px Arial";
+  ctx.fillText(chartTitle, padding, y);
+
+  y += lineHeight * 2;
+
+  ctx.font = "bold 24px Arial";
+  ctx.fillText(heading, padding, y);
+
+  y += lineHeight;
+
+  // badge
+  const badgeText = badge || "Confidence: unavailable";
+  const badgePaddingX = 12;
+  const badgePaddingY = 8;
+  ctx.font = "bold 18px Arial";
+  const badgeWidth = ctx.measureText(badgeText).width + badgePaddingX * 2;
+
+  let badgeBg = "#e9ecef";
+  let badgeFg = "#333";
+
+  if (badgeText.toLowerCase().includes("low confidence")) {
+    badgeBg = "#f8d7da";
+    badgeFg = "#842029";
+  } else if (badgeText.toLowerCase().includes("moderate confidence")) {
+    badgeBg = "#fff3cd";
+    badgeFg = "#664d03";
+  } else if (badgeText.toLowerCase().includes("stronger confidence")) {
+    badgeBg = "#d1e7dd";
+    badgeFg = "#0f5132";
+  }
+
+  roundRect(ctx, padding, y - 18, badgeWidth, 32, 16, badgeBg);
+  ctx.fillStyle = badgeFg;
+  ctx.fillText(badgeText, padding + badgePaddingX, y + 4);
+
+  y += lineHeight * 2;
+
+  // insight box
+  const insightLines = wrapText(insight, 95);
+  const insightBoxHeight = Math.max(56, insightLines.length * 22 + 20);
+
+  let borderColor = "#d63333";
+  if (badgeText.toLowerCase().includes("moderate confidence")) {
+    borderColor = "#fd7e14";
+  } else if (badgeText.toLowerCase().includes("stronger confidence")) {
+    borderColor = "#198754";
+  }
+
+  ctx.fillStyle = "#f5f5f5";
+  ctx.fillRect(padding, y - 18, width - padding * 2, insightBoxHeight);
+  ctx.fillStyle = borderColor;
+  ctx.fillRect(padding, y - 18, 6, insightBoxHeight);
+
+  ctx.fillStyle = "#222";
+  ctx.font = "18px Arial";
+
+  let insightY = y + 8;
+  for (const line of insightLines) {
+    ctx.fillText(line, padding + 18, insightY);
+    insightY += 22;
+  }
+
+  y += insightBoxHeight + sectionGap;
+
+  // chart image
+  ctx.drawImage(chartImage, padding, y, chartCanvas.width, chartCanvas.height);
+
+  const link = document.createElement("a");
+  const safeTitle = (chartTitle || "research-snapshot")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .toLowerCase();
+
+  link.href = exportCanvas.toDataURL("image/png");
+  link.download = `${safeTitle || "research-snapshot"}.png`;
+  link.click();
+}
+
+function wrapText(text, maxChars = 90) {
+  if (!text) return [];
+  const words = text.split(/\s+/);
+  const lines = [];
+  let current = "";
+
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word;
+    if (test.length <= maxChars) {
+      current = test;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+    }
+  }
+
+  if (current) lines.push(current);
+  return lines;
+}
+
+function roundRect(ctx, x, y, width, height, radius, fillColor) {
+  ctx.fillStyle = fillColor;
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
 async function render() {
   ensureChart();
 
@@ -2057,6 +2229,17 @@ async function init() {
         setTimeout(() => {
           copyLinkBtn.textContent = "Copy shareable link";
         }, 1200);
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  }
+
+  const downloadSnapshotBtn = document.getElementById("download-snapshot-btn");
+  if (downloadSnapshotBtn) {
+    downloadSnapshotBtn.addEventListener("click", async () => {
+      try {
+        await downloadResearchSnapshot();
       } catch (err) {
         console.error(err);
       }
