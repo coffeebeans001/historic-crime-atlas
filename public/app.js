@@ -1274,7 +1274,6 @@ async function downloadResearchSnapshot() {
     "",
     ...wrapText(insight, 90),
     "",
-    `Exported: ${exportDateTime}`,
   ];
 
   const textHeight = textLines.length * lineHeight;
@@ -1374,8 +1373,29 @@ async function downloadResearchSnapshot() {
   ctx.drawImage(chartImage, padding, y, chartCanvas.width, chartCanvas.height);
   y += chartCanvas.height + sectionGap;
 
-  ctx.fillStyle = "#666";
+  // footer separator
+  y += 10;
+
+  ctx.strokeStyle = "#ddd";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding, y);
+  ctx.lineTo(width - padding, y);
+  ctx.stroke();
+
+  y += 20;
+
+  // set font ONCE here
   ctx.font = "14px Arial";
+
+  // timestamp
+  ctx.fillStyle = "italic 13px Arial";
+  ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
+
+  y += 18;
+
+  // URL section
+  ctx.fillStyle = "#666";
   ctx.fillText("Shareable URL:", padding, y);
 
   y += 20;
