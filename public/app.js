@@ -1220,7 +1220,7 @@ async function downloadResearchSnapshot() {
   const chartTitle =
     chart.options?.plugins?.title?.text?.toString().trim() ||
     "Conviction chart";
-
+  const currentUrl = window.location.href;
   const chartCanvas = document.getElementById("chart");
   if (!chartCanvas) return;
 
@@ -1247,8 +1247,17 @@ async function downloadResearchSnapshot() {
 
   const textHeight = textLines.length * lineHeight;
   const width = Math.max(chartCanvas.width + padding * 2, 1200);
+  const urlLines = wrapText(currentUrl, 110);
+  const urlHeight = urlLines.length * 18 + 20;
+
   const height =
-    padding + textHeight + sectionGap + chartCanvas.height + padding;
+    padding +
+    textHeight +
+    sectionGap +
+    chartCanvas.height +
+    sectionGap +
+    urlHeight +
+    padding;
 
   const exportCanvas = document.createElement("canvas");
   exportCanvas.width = width;
@@ -1331,6 +1340,18 @@ async function downloadResearchSnapshot() {
 
   // chart image
   ctx.drawImage(chartImage, padding, y, chartCanvas.width, chartCanvas.height);
+  y += chartCanvas.height + sectionGap;
+
+  ctx.fillStyle = "#666";
+  ctx.font = "14px Arial";
+  ctx.fillText("Shareable URL:", padding, y);
+
+  y += 20;
+
+  for (const line of urlLines) {
+    ctx.fillText(line, padding, y);
+    y += 18;
+  }
 
   const link = document.createElement("a");
   const safeTitle = (chartTitle || "research-snapshot")
