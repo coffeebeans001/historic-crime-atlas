@@ -1265,6 +1265,7 @@ async function downloadResearchSnapshot() {
   const padding = 24;
   const lineHeight = 24;
   const sectionGap = 16;
+  const headerHeight = 72;
 
   const textLines = [
     chartTitle,
@@ -1283,6 +1284,7 @@ async function downloadResearchSnapshot() {
 
   const height =
     padding +
+    headerHeight +
     textHeight +
     sectionGap +
     chartCanvas.height +
@@ -1302,7 +1304,26 @@ async function downloadResearchSnapshot() {
   ctx.fillRect(0, 0, width, height);
 
   // title + text
-  let y = padding + 8;
+  // header
+  let y = padding;
+
+  ctx.fillStyle = "#111";
+  ctx.font = "bold 26px Arial";
+  ctx.fillText("Old Bailey Research Snapshot", padding, y + 28);
+
+  ctx.fillStyle = "#666";
+  ctx.font = "14px Arial";
+  ctx.fillText("Historic criminal case insight export", padding, y + 52);
+
+  ctx.strokeStyle = "#ddd";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padding, y + headerHeight);
+  ctx.lineTo(width - padding, y + headerHeight);
+  ctx.stroke();
+
+  // title + text
+  y += headerHeight + 24;
 
   ctx.fillStyle = "#111";
   ctx.font = "bold 28px Arial";
