@@ -1221,10 +1221,21 @@ function getExportDateTime() {
     second: "2-digit",
   });
 
-  const file = now.toISOString().replace(/[:]/g, "-").replace(/\..+/, "");
+  const pad = (n) => n.toString().padStart(2, "0");
+
+  const file = [
+    now.getFullYear(),
+    pad(now.getMonth() + 1),
+    pad(now.getDate()),
+    pad(now.getHours()),
+    pad(now.getMinutes()),
+    pad(now.getSeconds()),
+  ].join("-");
 
   return { display, file };
 }
+
+const { display: exportDateTime, file: exportFileTime } = getExportDateTime();
 
 async function downloadResearchSnapshot() {
   if (!chart) return;
