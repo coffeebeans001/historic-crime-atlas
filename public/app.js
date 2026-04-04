@@ -1208,6 +1208,24 @@ async function copyShareableLink() {
   await navigator.clipboard.writeText(window.location.href);
 }
 
+function getExportDateTime() {
+  const now = new Date();
+
+  const display = now.toLocaleString("en-GB", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  const file = now.toISOString().replace(/[:]/g, "-").replace(/\..+/, "");
+
+  return { display, file };
+}
+
 async function downloadResearchSnapshot() {
   if (!chart) return;
 
@@ -1221,6 +1239,7 @@ async function downloadResearchSnapshot() {
     chart.options?.plugins?.title?.text?.toString().trim() ||
     "Conviction chart";
   const currentUrl = window.location.href;
+  const { display: exportDateTime, file: exportFileTime } = getExportDateTime();
   const chartCanvas = document.getElementById("chart");
   if (!chartCanvas) return;
 
@@ -1243,6 +1262,8 @@ async function downloadResearchSnapshot() {
     badge,
     "",
     ...wrapText(insight, 90),
+    "",
+    `Exported: ${exportDateTime}`,
   ];
 
   const textHeight = textLines.length * lineHeight;
@@ -1287,7 +1308,7 @@ async function downloadResearchSnapshot() {
   // badge
   const badgeText = badge || "Confidence: unavailable";
   const badgePaddingX = 12;
-  const badgePaddingY = 8;
+
   ctx.font = "bold 18px Arial";
   const badgeWidth = ctx.measureText(badgeText).width + badgePaddingX * 2;
 
@@ -1361,7 +1382,7 @@ async function downloadResearchSnapshot() {
     .toLowerCase();
 
   link.href = exportCanvas.toDataURL("image/png");
-  link.download = `${safeTitle || "research-snapshot"}.png`;
+  link.download = `${safeTitle || "research-snapshot"}-${exportFileTime}.png`;
   link.click();
 }
 
