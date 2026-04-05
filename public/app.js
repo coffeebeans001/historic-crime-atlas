@@ -1382,23 +1382,23 @@ async function downloadResearchSnapshot() {
   ctx.fillStyle = "#111";
   ctx.font = "bold 26px Arial";
   // app mark (OB)
-const markSize = 36;
-const markX = padding;
-const markY = y + 6;
+  const markSize = 36;
+  const markX = padding;
+  const markY = y + 6;
 
-roundRect(ctx, markX, markY, markSize, markSize, 8, "#111");
+  roundRect(ctx, markX, markY, markSize, markSize, 8, "#1f4b99");
 
-ctx.fillStyle = "#fff";
-ctx.font = "bold 16px Arial";
-ctx.textAlign = "center";
-ctx.fillText("OB", markX + markSize / 2, markY + 24);
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 16px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("OB", markX + markSize / 2, markY + 24);
 
-ctx.textAlign = "left";
+  ctx.textAlign = "left";
 
-// title (shifted right)
-ctx.fillStyle = "#111";
-ctx.font = "bold 26px Arial";
-ctx.fillText("Old Bailey Research Snapshot", padding + 50, y + 28);
+  // title (shifted right)
+  ctx.fillStyle = "#111";
+  ctx.font = "bold 26px Arial";
+  ctx.fillText("Old Bailey Research Snapshot", padding + 50, y + 28);
 
   ctx.fillStyle = "#666";
   ctx.font = "14px Arial";
