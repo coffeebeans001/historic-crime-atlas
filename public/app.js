@@ -1243,6 +1243,32 @@ function getExportDateTime() {
 
 const { display: exportDateTime, file: exportFileTime } = getExportDateTime();
 
+function drawChip(ctx, text, x, y, options = {}) {
+  const paddingX = options.paddingX ?? 10;
+  const paddingY = options.paddingY ?? 6;
+  const radius = options.radius ?? 12;
+  const bg = options.bg ?? "#f3f4f6";
+  const color = options.color ?? "#333";
+  const font = options.font ?? "13px Arial";
+
+  ctx.save();
+  ctx.font = font;
+
+  const textWidth = ctx.measureText(text).width;
+  const chipWidth = textWidth + paddingX * 2;
+  const chipHeight = 26;
+
+  roundRect(ctx, x, y, chipWidth, chipHeight, radius, bg);
+
+  ctx.fillStyle = color;
+  ctx.font = font;
+  ctx.fillText(text, x + paddingX, y + 17);
+
+  ctx.restore();
+
+  return { chipWidth, chipHeight };
+}
+
 async function downloadResearchSnapshot() {
   if (!chart) return;
 
@@ -1283,7 +1309,12 @@ async function downloadResearchSnapshot() {
     rangeText = `Up to ${formatDisplayDate(dateTo)}`;
   }
 
-  const filtersText = `Filters: Offence: ${offenceFilter} | Gender: ${genderFilter} | Range: ${rangeText}`;
+  const filterChips = [
+    `Offence: ${offenceFilter}`,
+    `Gender: ${genderFilter}`,
+    `Range: ${rangeText}`,
+  ];
+
   const chartImage = new Image();
   chartImage.src = chart.toBase64Image("image/png", 1);
 
@@ -1295,7 +1326,7 @@ async function downloadResearchSnapshot() {
   const padding = 24;
   const lineHeight = 24;
   const sectionGap = 16;
-  const headerHeight = 104;
+  const headerHeight = 150;
 
   const textLines = [
     chartTitle,
@@ -1333,7 +1364,6 @@ async function downloadResearchSnapshot() {
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, width, height);
 
-  // title + text
   // header
   let y = padding;
 
@@ -1345,15 +1375,30 @@ async function downloadResearchSnapshot() {
   ctx.font = "14px Arial";
   ctx.fillText("Historic criminal case insight export", padding, y + 52);
 
-  const wrappedFilters = wrapText(filtersText, 95);
-  let filtersY = y + 78;
+  let chipX = padding;
+  let chipY = y + 72;
+  const chipGap = 10;
+  const chipRowHeight = 34;
 
-  ctx.fillStyle = "#555";
-  ctx.font = "13px Arial";
+  for (const chipText of filterChips) {
+    ctx.font = "13px Arial";
+    const estimatedWidth = ctx.measureText(chipText).width + 20;
 
-  for (const line of wrappedFilters) {
-    ctx.fillText(line, padding, filtersY);
-    filtersY += 18;
+    if (chipX + estimatedWidth > width - padding) {
+      chipX = padding;
+      chipY += chipRowHeight;
+    }
+
+    const { chipWidth } = drawChip(ctx, chipText, chipX, chipY, {
+      bg: "#f3f4f6",
+      color: "#444",
+      font: "13px Arial",
+      paddingX: 10,
+      paddingY: 6,
+      radius: 13,
+    });
+
+    chipX += chipWidth + chipGap;
   }
 
   ctx.strokeStyle = "#ddd";
