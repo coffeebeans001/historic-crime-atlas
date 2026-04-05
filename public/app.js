@@ -1310,9 +1310,21 @@ async function downloadResearchSnapshot() {
   }
 
   const filterChips = [
-    `Offence: ${offenceFilter}`,
-    `Gender: ${genderFilter}`,
-    `Range: ${rangeText}`,
+    {
+      text: `Offence: ${offenceFilter}`,
+      bg: "#f8d7da",
+      color: "#842029",
+    },
+    {
+      text: `Gender: ${genderFilter}`,
+      bg: "#dbeafe",
+      color: "#1d4ed8",
+    },
+    {
+      text: `Range: ${rangeText}`,
+      bg: "#dcfce7",
+      color: "#166534",
+    },
   ];
 
   const chartImage = new Image();
@@ -1380,18 +1392,18 @@ async function downloadResearchSnapshot() {
   const chipGap = 10;
   const chipRowHeight = 34;
 
-  for (const chipText of filterChips) {
+  for (const chip of filterChips) {
     ctx.font = "13px Arial";
-    const estimatedWidth = ctx.measureText(chipText).width + 20;
+    const estimatedWidth = ctx.measureText(chip.text).width + 20;
 
     if (chipX + estimatedWidth > width - padding) {
       chipX = padding;
       chipY += chipRowHeight;
     }
 
-    const { chipWidth } = drawChip(ctx, chipText, chipX, chipY, {
-      bg: "#f3f4f6",
-      color: "#444",
+    const { chipWidth } = drawChip(ctx, chip.text, chipX, chipY, {
+      bg: chip.bg,
+      color: chip.color,
       font: "13px Arial",
       paddingX: 10,
       paddingY: 6,
