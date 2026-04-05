@@ -1208,6 +1208,12 @@ async function copyShareableLink() {
   await navigator.clipboard.writeText(window.location.href);
 }
 
+function formatDisplayDate(dateString) {
+  if (!dateString) return "";
+  const [year, month, day] = dateString.split("-");
+  return `${day}/${month}/${year}`;
+}
+
 function getExportDateTime() {
   const now = new Date();
 
@@ -1253,7 +1259,31 @@ async function downloadResearchSnapshot() {
   const { display: exportDateTime, file: exportFileTime } = getExportDateTime();
   const chartCanvas = document.getElementById("chart");
   if (!chartCanvas) return;
+  const offenceFilter =
+    document.getElementById("group")?.value?.trim() || "All offences";
 
+  const genderRaw = document.getElementById("gender")?.value?.trim() || "all";
+
+  const genderFilter =
+    genderRaw === "all"
+      ? "All genders"
+      : genderRaw.charAt(0).toUpperCase() + genderRaw.slice(1);
+
+  const dateFrom = document.getElementById("from")?.value?.trim() || "";
+
+  const dateTo = document.getElementById("to")?.value?.trim() || "";
+
+  let rangeText = "Full dataset";
+
+  if (dateFrom && dateTo) {
+    rangeText = `${formatDisplayDate(dateFrom)} to ${formatDisplayDate(dateTo)}`;
+  } else if (dateFrom) {
+    rangeText = `From ${formatDisplayDate(dateFrom)}`;
+  } else if (dateTo) {
+    rangeText = `Up to ${formatDisplayDate(dateTo)}`;
+  }
+
+  const filtersText = `Filters: Offence: ${offenceFilter} | Gender: ${genderFilter} | Range: ${rangeText}`;
   const chartImage = new Image();
   chartImage.src = chart.toBase64Image("image/png", 1);
 
@@ -1265,7 +1295,7 @@ async function downloadResearchSnapshot() {
   const padding = 24;
   const lineHeight = 24;
   const sectionGap = 16;
-  const headerHeight = 72;
+  const headerHeight = 104;
 
   const textLines = [
     chartTitle,
@@ -1314,6 +1344,17 @@ async function downloadResearchSnapshot() {
   ctx.fillStyle = "#666";
   ctx.font = "14px Arial";
   ctx.fillText("Historic criminal case insight export", padding, y + 52);
+
+  const wrappedFilters = wrapText(filtersText, 95);
+  let filtersY = y + 78;
+
+  ctx.fillStyle = "#555";
+  ctx.font = "13px Arial";
+
+  for (const line of wrappedFilters) {
+    ctx.fillText(line, padding, filtersY);
+    filtersY += 18;
+  }
 
   ctx.strokeStyle = "#ddd";
   ctx.lineWidth = 1;
