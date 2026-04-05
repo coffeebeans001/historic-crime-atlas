@@ -378,7 +378,7 @@ const loadingOverlayPlugin = {
     ctx.fillRect(left, top, right - left, bottom - top);
 
     // text
-    ctx.fillStyle = "#111";
+    ctx.fillStyle = "#fff";
     ctx.font = font;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -1270,6 +1270,7 @@ function drawChip(ctx, text, x, y, options = {}) {
 }
 
 async function downloadResearchSnapshot() {
+  console.log("downloadResearchSnapshot started");
   if (!chart) return;
 
   const heading =
@@ -1285,6 +1286,35 @@ async function downloadResearchSnapshot() {
   const { display: exportDateTime, file: exportFileTime } = getExportDateTime();
   const chartCanvas = document.getElementById("chart");
   if (!chartCanvas) return;
+
+  const exportTheme = "light"; // change to "dark" when you want dark export
+  const theme =
+    exportTheme === "dark"
+      ? {
+          background: "#111827",
+          panel: "#1f2937",
+          textPrimary: "#f9fafb",
+          textSecondary: "#d1d5db",
+          textMuted: "#9ca3af",
+          divider: "#374151",
+          badgeBg: "#374151",
+          badgeText: "#f9fafb",
+          footerText: "#9ca3af",
+          urlText: "#d1d5db",
+        }
+      : {
+          background: "#ffffff",
+          panel: "#f9fafb",
+          textPrimary: "#111111",
+          textSecondary: "#666666",
+          textMuted: "#555555",
+          divider: "#dddddd",
+          badgeBg: "#eef2ff",
+          badgeText: "#1f2937",
+          footerText: "#777777",
+          urlText: "#666666",
+        };
+
   const offenceFilter =
     document.getElementById("group")?.value?.trim() || "All offences";
 
@@ -1309,30 +1339,36 @@ async function downloadResearchSnapshot() {
     rangeText = `Up to ${formatDisplayDate(dateTo)}`;
   }
 
-  const filterChips = [
-    {
-      text: `Offence: ${offenceFilter}`,
-      bg: "#f8d7da",
-      color: "#842029",
-    },
-    {
-      text: `Gender: ${genderFilter}`,
-      bg: "#dbeafe",
-      color: "#1d4ed8",
-    },
-    {
-      text: `Range: ${rangeText}`,
-      bg: "#dcfce7",
-      color: "#166534",
-    },
-  ];
+ const filterChips = [
+  {
+    text: `Offence: ${offenceFilter}`,
+    bg: "#f8d7da",
+    color: "#842029",
+  },
+  {
+    text: `Gender: ${genderFilter}`,
+    bg: "#dbeafe",
+    color: "#1d4ed8",
+  },
+  {
+    text: `Range: ${rangeText}`,
+    bg: "#dcfce7",
+    color: "#166534",
+  },
+];
 
   const chartImage = new Image();
   chartImage.src = chart.toBase64Image("image/png", 1);
-
+  console.log("chart image src set", chartImage.src);
   await new Promise((resolve, reject) => {
-    chartImage.onload = resolve;
-    chartImage.onerror = reject;
+    chartImage.onload = () => {
+      console.log("chart image loaded");
+      resolve();
+    };
+    chartImage.onerror = (error) => {
+      console.error("chart image failed to load", error);
+      reject(error);
+    };
   });
 
   const padding = 24;
@@ -1373,22 +1409,21 @@ async function downloadResearchSnapshot() {
   if (!ctx) return;
 
   // background
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, width, height);
 
   // header
   let y = padding;
 
-  ctx.fillStyle = "#111";
+  ctx.fillStyle = theme.textPrimary;
   ctx.font = "bold 26px Arial";
   // app mark (OB)
   const markSize = 36;
   const markX = padding;
   const markY = y + 6;
 
-  roundRect(ctx, markX, markY, markSize, markSize, 8, "#1f4b99");
-
-  ctx.fillStyle = "#fff";
+  roundRect(ctx, markX, markY, markSize, markSize, 8, theme.textPrimary);
+  ctx.fillStyle = theme.background;
   ctx.font = "bold 16px Arial";
   ctx.textAlign = "center";
   ctx.fillText("OB", markX + markSize / 2, markY + 24);
@@ -1396,11 +1431,11 @@ async function downloadResearchSnapshot() {
   ctx.textAlign = "left";
 
   // title (shifted right)
-  ctx.fillStyle = "#111";
+  ctx.fillStyle = theme.textPrimary;
   ctx.font = "bold 26px Arial";
   ctx.fillText("Old Bailey Research Snapshot", padding + 50, y + 28);
 
-  ctx.fillStyle = "#666";
+  ctx.fillStyle = theme.textSecondary;
   ctx.font = "14px Arial";
   ctx.fillText("Historic criminal case insight export", padding + 50, y + 52);
 
@@ -1430,7 +1465,7 @@ async function downloadResearchSnapshot() {
     chipX += chipWidth + chipGap;
   }
 
-  ctx.strokeStyle = "#ddd";
+  ctx.strokeStyle = theme.divider;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(padding, y + headerHeight);
@@ -1440,7 +1475,7 @@ async function downloadResearchSnapshot() {
   // title + text
   y += headerHeight + 24;
 
-  ctx.fillStyle = "#111";
+  ctx.fillStyle = theme.textPrimary;
   ctx.font = "bold 28px Arial";
   ctx.fillText(chartTitle, padding, y);
 
@@ -1512,7 +1547,7 @@ async function downloadResearchSnapshot() {
   // footer separator
   y += 10;
 
-  ctx.strokeStyle = "#ddd";
+  ctx.strokeStyle = theme.divider;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(padding, y);
@@ -1525,13 +1560,14 @@ async function downloadResearchSnapshot() {
   ctx.font = "14px Arial";
 
   // timestamp
-  ctx.fillStyle = "italic 13px Arial";
+  ctx.fillStyle = theme.footerText;
+  ctx.font = "13px Arial";
   ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
 
   y += 18;
 
   // URL section
-  ctx.fillStyle = "#666";
+  ctx.fillStyle = theme.urlText;
   ctx.fillText("Shareable URL:", padding, y);
 
   y += 20;
@@ -1541,17 +1577,30 @@ async function downloadResearchSnapshot() {
     y += 18;
   }
 
-  const link = document.createElement("a");
   const safeTitle = (chartTitle || "research-snapshot")
-    .replace(/[^\w\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "_")
-    .toLowerCase();
+  .replace(/[^\w\s-]/g, "")
+  .trim()
+  .replace(/\s+/g, "_")
+  .toLowerCase();
 
-  link.href = exportCanvas.toDataURL("image/png");
+exportCanvas.toBlob((blob) => {
+  if (!blob) {
+    console.error("Failed to create export blob");
+    return;
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
   link.download = `${safeTitle || "research-snapshot"}-${exportFileTime}.png`;
+
+  document.body.appendChild(link);
+  console.log("about to trigger download");
   link.click();
-}
+  link.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}, "image/png");
 
 function wrapText(text, maxChars = 90) {
   if (!text) return [];
@@ -2428,7 +2477,7 @@ async function init() {
       }
     });
   }
-
+}
   const copyLinkBtn = document.getElementById("copy-link-btn");
   if (copyLinkBtn) {
     copyLinkBtn.addEventListener("click", async () => {
