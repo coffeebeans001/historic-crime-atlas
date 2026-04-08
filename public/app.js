@@ -1340,23 +1340,23 @@ async function downloadResearchSnapshot() {
     rangeText = `Up to ${formatDisplayDate(dateTo)}`;
   }
 
- const filterChips = [
-  {
-    text: `Offence: ${offenceFilter}`,
-    bg: "#f8d7da",
-    color: "#842029",
-  },
-  {
-    text: `Gender: ${genderFilter}`,
-    bg: "#dbeafe",
-    color: "#1d4ed8",
-  },
-  {
-    text: `Range: ${rangeText}`,
-    bg: "#dcfce7",
-    color: "#166534",
-  },
-];
+  const filterChips = [
+    {
+      text: `Offence: ${offenceFilter}`,
+      bg: "#f8d7da",
+      color: "#842029",
+    },
+    {
+      text: `Gender: ${genderFilter}`,
+      bg: "#dbeafe",
+      color: "#1d4ed8",
+    },
+    {
+      text: `Range: ${rangeText}`,
+      bg: "#dcfce7",
+      color: "#166534",
+    },
+  ];
 
   const chartImage = new Image();
   chartImage.src = chart.toBase64Image("image/png", 1);
@@ -1494,8 +1494,8 @@ async function downloadResearchSnapshot() {
   ctx.font = "bold 18px Arial";
   const badgeWidth = ctx.measureText(badgeText).width + badgePaddingX * 2;
 
-  let badgeBg = "#e9ecef";
-  let badgeFg = "#333";
+  let badgeBg = "theme.badgeBg";
+  let badgeFg = "theme.badgeFg";
 
   if (badgeText.toLowerCase().includes("low confidence")) {
     badgeBg = "#f8d7da";
@@ -1525,12 +1525,12 @@ async function downloadResearchSnapshot() {
     borderColor = "#198754";
   }
 
-  ctx.fillStyle = "#f5f5f5";
+  ctx.fillStyle = theme.panel;
   ctx.fillRect(padding, y - 18, width - padding * 2, insightBoxHeight);
   ctx.fillStyle = borderColor;
   ctx.fillRect(padding, y - 18, 6, insightBoxHeight);
 
-  ctx.fillStyle = "#222";
+  ctx.fillStyle = theme.textPrimary;
   ctx.font = "18px Arial";
 
   let insightY = y + 8;
@@ -1562,7 +1562,7 @@ async function downloadResearchSnapshot() {
 
   // timestamp
   ctx.fillStyle = theme.footerText;
-  ctx.font = "13px Arial";
+  ctx.font = "italic 13px Arial";
   ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
 
   y += 18;
@@ -1579,29 +1579,29 @@ async function downloadResearchSnapshot() {
   }
 
   const safeTitle = (chartTitle || "research-snapshot")
-  .replace(/[^\w\s-]/g, "")
-  .trim()
-  .replace(/\s+/g, "_")
-  .toLowerCase();
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .toLowerCase();
 
-exportCanvas.toBlob((blob) => {
-  if (!blob) {
-    console.error("Failed to create export blob");
-    return;
-  }
+  exportCanvas.toBlob((blob) => {
+    if (!blob) {
+      console.error("Failed to create export blob");
+      return;
+    }
 
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${safeTitle || "research-snapshot"}-${exportFileTime}.png`;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeTitle || "research-snapshot"}-${exportFileTime}.png`;
 
-  document.body.appendChild(link);
-  console.log("about to trigger download");
-  link.click();
-  link.remove();
+    document.body.appendChild(link);
+    console.log("about to trigger download");
+    link.click();
+    link.remove();
 
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}, "image/png");
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }, "image/png");
 }
 
 function wrapText(text, maxChars = 90) {
@@ -2480,32 +2480,31 @@ async function init() {
     });
   }
 }
-  const copyLinkBtn = document.getElementById("copy-link-btn");
-  if (copyLinkBtn) {
-    copyLinkBtn.addEventListener("click", async () => {
-      try {
-        await copyShareableLink();
-        copyLinkBtn.textContent = "Copied link";
-        setTimeout(() => {
-          copyLinkBtn.textContent = "Copy shareable link";
-        }, 1200);
-      } catch (err) {
-        console.error(err);
-      }
-    });
-  }
+const copyLinkBtn = document.getElementById("copy-link-btn");
+if (copyLinkBtn) {
+  copyLinkBtn.addEventListener("click", async () => {
+    try {
+      await copyShareableLink();
+      copyLinkBtn.textContent = "Copied link";
+      setTimeout(() => {
+        copyLinkBtn.textContent = "Copy shareable link";
+      }, 1200);
+    } catch (err) {
+      console.error(err);
+    }
+  });
+}
 
-  const downloadSnapshotBtn = document.getElementById("download-snapshot-btn");
-  if (downloadSnapshotBtn) {
-    downloadSnapshotBtn.addEventListener("click", async () => {
-      try {
-        await downloadResearchSnapshot();
-      } catch (err) {
-        console.error(err);
-      }
-    });
-  }
-
+const downloadSnapshotBtn = document.getElementById("download-snapshot-btn");
+if (downloadSnapshotBtn) {
+  downloadSnapshotBtn.addEventListener("click", async () => {
+    try {
+      await downloadResearchSnapshot();
+    } catch (err) {
+      console.error(err);
+    }
+  });
+}
 
 initFromUrl();
 
