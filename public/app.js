@@ -1,3 +1,4 @@
+console.log("TOP LEVEL START");
 let chart; // single chart reference
 const LOW_SAMPLE_THRESHOLD = 5;
 const DEFAULT_CI_ALPHA = 0.18;
@@ -1601,6 +1602,7 @@ exportCanvas.toBlob((blob) => {
 
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }, "image/png");
+}
 
 function wrapText(text, maxChars = 90) {
   if (!text) return [];
@@ -1915,6 +1917,7 @@ function onMapClick(e) {
   // fetchNearby().catch(console.error); // optional
 }
 
+console.log("ensureMap declared here");
 function ensureMap() {
   if (!map) {
     map = L.map("map").setView([currentCenter.lat, currentCenter.lng], 13);
@@ -1998,7 +2001,6 @@ function ensureMap() {
       window.__nearbyUI.activeListBtn = null;
     });
   }
-
   window.map = map;
   window.markersLayer = markersLayer;
   window.centerMarker = centerMarker;
@@ -2503,7 +2505,7 @@ async function init() {
       }
     });
   }
-}
+
 
 initFromUrl();
 
@@ -2523,7 +2525,7 @@ if (document.readyState === "loading") {
 } else {
   init();
 }
-
+console.log("window.ensureMap:", window.ensureMap);
 function initFromUrl() {
   const state = readUrlState();
   applyStateToUI(state);
