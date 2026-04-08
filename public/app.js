@@ -1288,7 +1288,7 @@ async function downloadResearchSnapshot() {
   const chartCanvas = document.getElementById("chart");
   if (!chartCanvas) return;
 
-  const exportTheme = "light"; // change to "dark" when you want dark export
+  const exportTheme = document.getElementById("export-theme")?.value || "light";
   const theme =
     exportTheme === "dark"
       ? {
@@ -1340,23 +1340,42 @@ async function downloadResearchSnapshot() {
     rangeText = `Up to ${formatDisplayDate(dateTo)}`;
   }
 
-  const filterChips = [
-    {
-      text: `Offence: ${offenceFilter}`,
-      bg: "#f8d7da",
-      color: "#842029",
-    },
-    {
-      text: `Gender: ${genderFilter}`,
-      bg: "#dbeafe",
-      color: "#1d4ed8",
-    },
-    {
-      text: `Range: ${rangeText}`,
-      bg: "#dcfce7",
-      color: "#166534",
-    },
-  ];
+  const filterChips =
+    exportTheme === "dark"
+      ? [
+          {
+            text: `Offence: ${offenceFilter}`,
+            bg: "#4c1d24",
+            color: "#fecdd3",
+          },
+          {
+            text: `Gender: ${genderFilter}`,
+            bg: "#1e3a5f",
+            color: "#bfdbfe",
+          },
+          {
+            text: `Range: ${rangeText}`,
+            bg: "#163826",
+            color: "#bbf7d0",
+          },
+        ]
+      : [
+          {
+            text: `Offence: ${offenceFilter}`,
+            bg: "#f8d7da",
+            color: "#842029",
+          },
+          {
+            text: `Gender: ${genderFilter}`,
+            bg: "#dbeafe",
+            color: "#1d4ed8",
+          },
+          {
+            text: `Range: ${rangeText}`,
+            bg: "#dcfce7",
+            color: "#166534",
+          },
+        ];
 
   const chartImage = new Image();
   chartImage.src = chart.toBase64Image("image/png", 1);
