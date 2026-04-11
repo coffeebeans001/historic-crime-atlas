@@ -1,4 +1,3 @@
-console.log("TOP LEVEL START");
 let chart; // single chart reference
 const LOW_SAMPLE_THRESHOLD = 5;
 const DEFAULT_CI_ALPHA = 0.18;
@@ -1270,8 +1269,7 @@ function drawChip(ctx, text, x, y, options = {}) {
   return { chipWidth, chipHeight };
 }
 
-async function downloadResearchSnapshot() {
-  console.log("downloadResearchSnapshot started");
+async function buildResearchSnapshotCanvas() {
   if (!chart) return;
 
   const heading =
@@ -1379,10 +1377,8 @@ async function downloadResearchSnapshot() {
 
   const chartImage = new Image();
   chartImage.src = chart.toBase64Image("image/png", 1);
-  console.log("chart image src set", chartImage.src);
   await new Promise((resolve, reject) => {
     chartImage.onload = () => {
-      console.log("chart image loaded");
       resolve();
     };
     chartImage.onerror = (error) => {
@@ -1513,8 +1509,8 @@ async function downloadResearchSnapshot() {
   ctx.font = "bold 18px Arial";
   const badgeWidth = ctx.measureText(badgeText).width + badgePaddingX * 2;
 
-  let badgeBg = "theme.badgeBg";
-  let badgeFg = "theme.badgeFg";
+  let badgeBg = theme.badgeBg;
+  let badgeFg = theme.badgeText;
 
   if (badgeText.toLowerCase().includes("low confidence")) {
     badgeBg = "#f8d7da";
@@ -1603,6 +1599,25 @@ async function downloadResearchSnapshot() {
     .replace(/\s+/g, "_")
     .toLowerCase();
 
+  return exportCanvas;
+}
+
+async function downloadResearchSnapshot() {
+  const exportCanvas = await buildResearchSnapshotCanvas();
+  if (!exportCanvas) return;
+
+  const chartTitle =
+    chart.options?.plugins?.title?.text?.toString().trim() ||
+    "research-snapshot";
+
+  const { file: exportFileTime } = getExportDateTime();
+
+  const safeTitle = (chartTitle || "research-snapshot")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .toLowerCase();
+
   exportCanvas.toBlob((blob) => {
     if (!blob) {
       console.error("Failed to create export blob");
@@ -1612,10 +1627,9 @@ async function downloadResearchSnapshot() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${safeTitle || "research-snapshot"}-${exportFileTime}.png`;
+    link.download = `${safeTitle}-${exportFileTime}.png`;
 
     document.body.appendChild(link);
-    console.log("about to trigger download");
     link.click();
     link.remove();
 
@@ -1657,6 +1671,37 @@ function roundRect(ctx, x, y, width, height, radius, fillColor) {
   ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
   ctx.fill();
+}
+
+async function downloadSnapshotAsPDF() {
+  if (!chart) return;
+
+  // reuse your existing snapshot logic
+  const exportCanvas = await buildResearchSnapshotCanvas();
+
+  if (!exportCanvas) return;
+
+  const imgData = exportCanvas.toDataURL("image/png");
+
+  const { jsPDF } = window.jspdf;
+
+  // Create A4 portrait
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "px",
+    format: "a4",
+  });
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+
+  // scale image to fit page width
+  const imgWidth = pageWidth;
+  const imgHeight = (exportCanvas.height * pageWidth) / exportCanvas.width;
+
+  pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+
+  const safeTitle = "research-snapshot";
+  pdf.save(`${safeTitle}.pdf`);
 }
 
 async function render() {
@@ -1936,7 +1981,6 @@ function onMapClick(e) {
   // fetchNearby().catch(console.error); // optional
 }
 
-console.log("ensureMap declared here");
 function ensureMap() {
   if (!map) {
     map = L.map("map").setView([currentCenter.lat, currentCenter.lng], 13);
@@ -2327,7 +2371,6 @@ async function fetchNearby() {
     }
 
     // Optional debug (safe)
-    // console.log("cluster after add:", markersLayer.getLayers().length);
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -2512,6 +2555,17 @@ if (copyLinkBtn) {
       console.error(err);
     }
   });
+  const pdfBtn = document.getElementById("download-pdf-btn");
+
+  if (pdfBtn) {
+    pdfBtn.addEventListener("click", async () => {
+      try {
+        await downloadSnapshotAsPDF();
+      } catch (err) {
+        console.error("PDF download failed:", err);
+      }
+    });
+  }
 }
 
 const downloadSnapshotBtn = document.getElementById("download-snapshot-btn");
@@ -2543,7 +2597,6 @@ if (document.readyState === "loading") {
 } else {
   init();
 }
-console.log("window.ensureMap:", window.ensureMap);
 function initFromUrl() {
   const state = readUrlState();
   applyStateToUI(state);
