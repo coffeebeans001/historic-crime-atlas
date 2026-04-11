@@ -1674,18 +1674,12 @@ function roundRect(ctx, x, y, width, height, radius, fillColor) {
 }
 
 async function downloadSnapshotAsPDF() {
-  if (!chart) return;
-
-  // reuse your existing snapshot logic
   const exportCanvas = await buildResearchSnapshotCanvas();
-
   if (!exportCanvas) return;
 
   const imgData = exportCanvas.toDataURL("image/png");
-
   const { jsPDF } = window.jspdf;
 
-  // Create A4 portrait
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "px",
@@ -1693,15 +1687,42 @@ async function downloadSnapshotAsPDF() {
   });
 
   const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
 
-  // scale image to fit page width
-  const imgWidth = pageWidth;
-  const imgHeight = (exportCanvas.height * pageWidth) / exportCanvas.width;
+  const margin = 24;
+  const availableWidth = pageWidth - margin * 2;
+  const availableHeight = pageHeight - margin * 2;
 
-  pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+  const canvasWidth = exportCanvas.width;
+  const canvasHeight = exportCanvas.height;
 
-  const safeTitle = "research-snapshot";
-  pdf.save(`${safeTitle}.pdf`);
+  const widthRatio = availableWidth / canvasWidth;
+  const heightRatio = availableHeight / canvasHeight;
+  const scale = Math.min(widthRatio, heightRatio);
+
+  const imgWidth = canvasWidth * scale;
+  const imgHeight = canvasHeight * scale;
+
+  const x = (pageWidth - imgWidth) / 2;
+  const y = margin;
+
+  pdf.setFillColor(255, 255, 255);
+  pdf.rect(0, 0, pageWidth, pageHeight, "F");
+  pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+
+  const chartTitle =
+    chart.options?.plugins?.title?.text?.toString().trim() ||
+    "research-snapshot";
+
+  const { file: exportFileTime } = getExportDateTime();
+
+  const safeTitle = (chartTitle || "research-snapshot")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .toLowerCase();
+
+  pdf.save(`${safeTitle}-${exportFileTime}.pdf`);
 }
 
 async function render() {
