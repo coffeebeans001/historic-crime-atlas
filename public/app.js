@@ -172,16 +172,34 @@ function buildUrl() {
 }
 
 async function loadSeries() {
-  const url = buildUrl();
-  const res = await fetch(url);
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Request failed (${res.status}): ${txt}`);
+  const group = getValidatedGroup();
+  const gender = document.getElementById("gender")?.value || "all";
+  const from = document.getElementById("from")?.value || "";
+  const to = document.getElementById("to")?.value || "";
+  const radius = Number(document.getElementById("radius")?.value) || 2000;
+
+  const params = new URLSearchParams({
+    gender,
+    from,
+    to,
+    lat: String(currentCenter.lat),
+    lng: String(currentCenter.lng),
+    radius: String(radius),
+  });
+
+  // ✅ only include group if valid
+  if (group && group !== "__INVALID__") {
+    params.set("group", group);
   }
 
-  const payload = await res.json();
+  const res = await fetch(`/api/trials/series?${params.toString()}`);
 
-  return payload;
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`Series request failed (${res.status}): ${txt}`);
+  }
+
+  return res.json();
 }
 
 function hashString(str) {
@@ -1999,7 +2017,8 @@ function onMapClick(e) {
   currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
   centerMarker.setLatLng(e.latlng).openPopup();
   updateRadiusCircle();
-  // fetchNearby().catch(console.error); // optional
+  fetchNearby().catch(console.error); // optional
+  render().catch(console.error);
 }
 
 function ensureMap() {
@@ -2041,7 +2060,8 @@ function ensureMap() {
       currentCenter = { lat: pos.lat, lng: pos.lng };
       updateRadiusCircle();
       // optional auto-refresh:
-      // fetchNearby().catch(console.error);
+      fetchNearby().catch(console.error);
+      render().catch(console.error);
     });
   }
 
@@ -2470,11 +2490,19 @@ document.getElementById("gender")?.addEventListener("change", () => {
   render().catch(console.error);
 });
 
-document.getElementById("radius")?.addEventListener("change", () => {
-  ensureMap();
-  updateRadiusCircle();
-  scheduleUrlSync();
-});
+const radiusEl = document.getElementById("radius");
+
+if (radiusEl) {
+  radiusEl.addEventListener("input", () => {
+    ensureMap(); // keep this for safety
+    updateRadiusCircle();
+
+    fetchNearby().catch(console.error);
+    render().catch(console.error);
+
+    scheduleUrlSync(); // keep URL updated
+  });
+}
 
 document.getElementById("group")?.addEventListener("change", () => {
   scheduleUrlSync();
@@ -2497,14 +2525,6 @@ if (nearbyBtn) {
       console.error(err);
       alert(err.message);
     });
-  });
-}
-
-const radiusEl = document.getElementById("radius");
-if (radiusEl) {
-  radiusEl.addEventListener("change", () => {
-    ensureMap();
-    updateRadiusCircle();
   });
 }
 

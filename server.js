@@ -196,6 +196,73 @@ app.get("/api/trials/nearby", async (req, res) => {
   }
 });
 
+app.get("/api/trials/series", async (req, res) => {
+  try {
+    const { group, gender, from, to } = req.query;
+
+    const where = [];
+    const params = [];
+    let joins = `
+      LEFT JOIN defendants d ON d.defendant_id = t.defendant_id
+    `;
+
+    if (from) {
+      where.push("t.trial_date >= ?");
+      params.push(from);
+    }
+
+    if (to) {
+      where.push("t.trial_date <= ?");
+      params.push(to);
+    }
+
+    if (gender && gender !== "all") {
+      where.push("LOWER(d.gender) = LOWER(?)");
+      params.push(gender);
+    }
+
+    if (group) {
+      joins += `
+        LEFT JOIN offences o ON o.offence_id = t.offence_id
+      `;
+      where.push("o.offence_group = ?");
+      params.push(group);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+
+    const sql = `
+      SELECT
+        YEAR(t.trial_date) AS year,
+        COUNT(*) AS total,
+        SUM(CASE WHEN LOWER(t.verdict) = 'guilty' THEN 1 ELSE 0 END) AS guilty
+      FROM trials t
+      ${joins}
+      ${whereSql}
+      GROUP BY year
+      ORDER BY year
+    `;
+
+    const [rows] = await pool.query(sql, params);
+
+    const series = [
+      {
+        label: "Conviction rate",
+        data: rows.map((r) => ({
+          x: r.year,
+          y: r.total ? r.guilty / r.total : 0,
+          n: r.total,
+        })),
+      },
+    ];
+
+    res.json({ series });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(String(err.message || err));
+  }
+});
+
 app.get("/api/trials/:id", async (req, res) => {
   try {
     const trialId = parseInt(req.params.id, 10);
