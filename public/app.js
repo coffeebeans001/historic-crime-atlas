@@ -261,7 +261,18 @@ function buildDatasets(seriesArr) {
   (seriesArr || [])
     .filter((series) => series && Array.isArray(series.data))
     .forEach((series) => {
-      const { rgb, rgba } = rgbaForLabel(series.label, DEFAULT_CI_ALPHA);
+      const label = (series.label || "").toLowerCase();
+
+      let rgb = "#6b21a8";
+      let rgba = `rgba(107, 33, 168, ${DEFAULT_CI_ALPHA})`;
+
+      if (label.includes("female")) {
+        rgb = "#c0392b";
+        rgba = `rgba(192, 57, 43, ${DEFAULT_CI_ALPHA})`;
+      } else if (label.includes("male")) {
+        rgb = "#1d4ed8";
+        rgba = `rgba(29, 78, 216, ${DEFAULT_CI_ALPHA})`;
+      }
 
       const cleanPoints = series.data.filter((p) => p && p.x != null);
 

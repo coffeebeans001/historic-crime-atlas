@@ -216,9 +216,12 @@ app.get("/api/trials/series", async (req, res) => {
       params.push(to);
     }
 
-    if (gender && gender !== "all") {
-      where.push("LOWER(d.gender) = LOWER(?)");
-      params.push(gender);
+    let genderValues = [];
+
+    if (!gender || gender === "all") {
+      genderValues = ["male", "female"];
+    } else {
+      genderValues = [gender];
     }
 
     if (group) {
@@ -229,34 +232,48 @@ app.get("/api/trials/series", async (req, res) => {
       params.push(group);
     }
 
-    const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const results = [];
 
-    const sql = `
-      SELECT
-        YEAR(t.trial_date) AS year,
-        COUNT(*) AS total,
-        SUM(CASE WHEN LOWER(t.verdict) = 'guilty' THEN 1 ELSE 0 END) AS guilty
-      FROM trials t
-      ${joins}
-      ${whereSql}
-      GROUP BY year
-      ORDER BY year
-    `;
+    for (const g of genderValues) {
+      const whereLoop = [...where];
+      const paramsLoop = [...params];
 
-    const [rows] = await pool.query(sql, params);
+      if (g) {
+        whereLoop.push("LOWER(d.gender) = LOWER(?)");
+        paramsLoop.push(g);
+      }
 
-    const series = [
-      {
-        label: "Conviction rate",
+      const whereSql = whereLoop.length
+        ? `WHERE ${whereLoop.join(" AND ")}`
+        : "";
+
+      const sql = `
+    SELECT
+      YEAR(t.trial_date) AS year,
+      COUNT(*) AS total,
+      SUM(CASE WHEN LOWER(t.verdict) = 'guilty' THEN 1 ELSE 0 END) AS guilty
+    FROM trials t
+    ${joins}
+    ${whereSql}
+    GROUP BY year
+    ORDER BY year
+  `;
+
+      const [rows] = await pool.query(sql, paramsLoop);
+
+      results.push({
+        label: g.charAt(0).toUpperCase() + g.slice(1),
         data: rows.map((r) => ({
           x: r.year,
           y: r.total ? r.guilty / r.total : 0,
           n: r.total,
         })),
-      },
-    ];
+      });
+    }
 
-    res.json({ series });
+    res.json({ series: results });
+
+    
   } catch (err) {
     console.error(err);
     res.status(500).send(String(err.message || err));
