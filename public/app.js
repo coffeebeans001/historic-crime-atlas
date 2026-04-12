@@ -264,14 +264,14 @@ function buildDatasets(seriesArr) {
       const label = (series.label || "").toLowerCase();
 
       let rgb = "#6b21a8";
-      let rgba = `rgba(107, 33, 168, ${DEFAULT_CI_ALPHA})`;
+      let rgba = "rgba(107, 33, 168, 0.10)";
 
       if (label.includes("female")) {
         rgb = "#c0392b";
-        rgba = `rgba(192, 57, 43, ${DEFAULT_CI_ALPHA})`;
+        rgba = "rgba(192, 57, 43, 0.10)";
       } else if (label.includes("male")) {
         rgb = "#1d4ed8";
-        rgba = `rgba(29, 78, 216, ${DEFAULT_CI_ALPHA})`;
+        rgba = "rgba(29, 78, 216, 0.10)";
       }
 
       const cleanPoints = series.data.filter((p) => p && p.x != null);
@@ -326,7 +326,7 @@ function buildDatasets(seriesArr) {
         tension: 0,
         spanGaps: true,
         borderWidth: 2,
-        pointRadius: 4,
+        pointRadius: 3,
         pointHoverRadius: 7,
       });
 
@@ -346,7 +346,7 @@ function buildDatasets(seriesArr) {
         backgroundColor: "transparent",
         tension: 0.4,
         spanGaps: true,
-        borderWidth: 3,
+        borderWidth: 2,
         pointRadius: 0,
         pointHoverRadius: 0,
         borderDash: [6, 4],
@@ -457,6 +457,9 @@ function ensureChart() {
           title: {
             display: true,
             text: "Guilty rate (%)",
+          },
+          ticks: {
+            callback: (value) => `${value}%`,
           },
         },
       },
@@ -1754,6 +1757,39 @@ async function downloadSnapshotAsPDF() {
   pdf.save(`${safeTitle}-${exportFileTime}.pdf`);
 }
 
+function getYRangeFromSeries(seriesArr) {
+  const values = (seriesArr || [])
+    .flatMap((series) => series.data || [])
+    .flatMap((p) => {
+      const vals = [];
+      if (typeof p?.y === "number") vals.push(p.y);
+      if (typeof p?.low === "number") vals.push(p.low);
+      if (typeof p?.high === "number") vals.push(p.high);
+      return vals;
+    });
+
+  if (!values.length) {
+    return { min: 0, max: 100 };
+  }
+
+  let min = Math.min(...values);
+  let max = Math.max(...values);
+
+  const range = max - min || 5;
+  const padding = range * 0.15;
+
+  min = Math.max(0, min - padding);
+  max = Math.min(100, max + padding);
+
+  if (max - min < 5) {
+    const mid = (min + max) / 2;
+    min = Math.max(0, mid - 2.5);
+    max = Math.min(100, mid + 2.5);
+  }
+
+  return { min, max };
+}
+
 async function render() {
   ensureChart();
 
@@ -1770,6 +1806,7 @@ async function render() {
 
     if (!invalidGroup) {
       payload = await loadSeries();
+      console.log("Series sample:", payload.series?.[0]?.data?.[0]);
     }
 
     const noData =
@@ -1805,6 +1842,17 @@ async function render() {
         insightText: "No data available for the selected filters.",
         minN: null,
       });
+
+      const genderValue = document.getElementById("gender")?.value || "all";
+
+      if (genderValue === "all") {
+        const yRange = getYRangeFromSeries(payload.series);
+        chart.options.scales.y.min = yRange.min;
+        chart.options.scales.y.max = yRange.max;
+      } else {
+        chart.options.scales.y.min = 0;
+        chart.options.scales.y.max = 100;
+      }
 
       chart.update();
       return;

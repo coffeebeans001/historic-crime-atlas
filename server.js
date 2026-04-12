@@ -263,17 +263,36 @@ app.get("/api/trials/series", async (req, res) => {
 
       results.push({
         label: g.charAt(0).toUpperCase() + g.slice(1),
-        data: rows.map((r) => ({
-          x: r.year,
-          y: r.total ? r.guilty / r.total : 0,
-          n: r.total,
-        })),
+        data: rows.map((r) => {
+          const total = Number(r.total) || 0;
+          const guilty = Number(r.guilty) || 0;
+
+          if (!total) {
+            return {
+              x: r.year,
+              y: 0,
+              n: 0,
+              low: 0,
+              high: 0,
+            };
+          }
+
+          const p = guilty / total;
+          const z = 1.96; // 95% confidence
+          const margin = z * Math.sqrt((p * (1 - p)) / total);
+
+          return {
+            x: r.year,
+            y: p * 100,
+            n: total,
+            low: Math.max(0, (p - margin) * 100),
+            high: Math.min(100, (p + margin) * 100),
+          };
+        }),
       });
     }
 
     res.json({ series: results });
-
-    
   } catch (err) {
     console.error(err);
     res.status(500).send(String(err.message || err));
