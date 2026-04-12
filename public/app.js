@@ -255,6 +255,8 @@ function rgbaForLabel(label, alpha = 1) {
   };
 }
 
+const LOW_N_THRESHOLD = 5;
+
 function buildDatasets(seriesArr) {
   const datasets = [];
 
@@ -325,9 +327,41 @@ function buildDatasets(seriesArr) {
         backgroundColor: rgb,
         tension: 0,
         spanGaps: true,
-        borderWidth: 2,
-        pointRadius: 3,
+        borderWidth: 3,
+
+        segment: {
+          borderDash: (ctx) => {
+            const y0 = ctx.p0?.raw?.n;
+            const y1 = ctx.p1?.raw?.n;
+            return y0 < LOW_N_THRESHOLD || y1 < LOW_N_THRESHOLD ? [6, 4] : [];
+          },
+          borderColor: (ctx) => {
+            const y0 = ctx.p0?.raw?.n;
+            const y1 = ctx.p1?.raw?.n;
+            return y0 < LOW_N_THRESHOLD || y1 < LOW_N_THRESHOLD
+              ? "rgba(0,0,0,0.55)"
+              : rgb;
+          },
+        },
+
+        pointRadius: (ctx) => {
+          const n = ctx.raw?.n ?? 0;
+          return n < LOW_N_THRESHOLD ? 5 : 4;
+        },
+
         pointHoverRadius: 7,
+
+        pointBackgroundColor: (ctx) => {
+          const n = ctx.raw?.n ?? 0;
+          return n < LOW_N_THRESHOLD ? "#ffffff" : rgb;
+        },
+
+        pointBorderColor: rgb,
+
+        pointBorderWidth: (ctx) => {
+          const n = ctx.raw?.n ?? 0;
+          return n < LOW_N_THRESHOLD ? 2 : 1;
+        },
       });
 
       // 4) smoothed trend overlay
@@ -467,7 +501,23 @@ function ensureChart() {
       plugins: {
         // 🔥 this is where your title/legend/tooltip live
         title: { display: true, text: "Loading…" },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const p = ctx.raw;
 
+              const isLow = (p?.n ?? 0) < LOW_N_THRESHOLD;
+              const suffix = isLow ? " ⚠ low sample" : "";
+
+              return [
+                `${ctx.dataset.label}`,
+                `Conviction rate: ${p.y.toFixed(1)}%`,
+                `95% CI: ${p.low.toFixed(1)}–${p.high.toFixed(1)}%`,
+                `n = ${p.n} trials${suffix}`,
+              ];
+            },
+          },
+        },
         legend: {
           labels: {
             filter: (item) => {
