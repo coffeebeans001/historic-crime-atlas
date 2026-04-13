@@ -278,15 +278,29 @@ app.get("/api/trials/series", async (req, res) => {
           }
 
           const p = guilty / total;
-          const z = 1.96; // 95% confidence
+          const z = 1.96;
           const margin = z * Math.sqrt((p * (1 - p)) / total);
+
+          const yPct = p * 100;
+          const lowPct = Math.max(0, (p - margin) * 100);
+          const highPct = Math.min(100, (p + margin) * 100);
+
+          const MIN_CI_GAP = 1;
+
+          let lowAdj = lowPct;
+          let highAdj = highPct;
+
+          if (lowPct === highPct) {
+            lowAdj = Math.max(0, lowPct - MIN_CI_GAP);
+            highAdj = Math.min(100, highPct + MIN_CI_GAP);
+          }
 
           return {
             x: r.year,
-            y: p * 100,
+            y: yPct,
             n: total,
-            low: Math.max(0, (p - margin) * 100),
-            high: Math.min(100, (p + margin) * 100),
+            low: lowAdj,
+            high: highAdj,
           };
         }),
       });
