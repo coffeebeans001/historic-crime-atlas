@@ -501,6 +501,10 @@ function ensureChart() {
       plugins: {
         // 🔥 this is where your title/legend/tooltip live
         title: { display: true, text: "Loading…" },
+        subtitle: {
+          display: true,
+          text: "",
+        },
         legend: {
           labels: {
             filter: (item) => {
@@ -614,7 +618,6 @@ function writeUrlState({ push = false } = {}) {
   const ciEl = document.getElementById("toggle-ci");
   const genderEl = document.getElementById("gender");
 
-  //const radiusEl = document.getElementById("radius");
   const limitEl = document.getElementById("nearby-limit");
 
   // Chart params
@@ -677,7 +680,6 @@ function applyStateToUI(state) {
   }
 
   // Map controls
-  //const radiusEl = document.getElementById("radius");
   const limitEl = document.getElementById("nearby-limit");
 
   if (radiusEl && state.radius) radiusEl.value = state.radius;
@@ -1925,8 +1927,11 @@ async function render() {
       "All Defendants";
 
     // chart title (KEEP THIS)
-    chart.options.plugins.title.text = `${groupLabel} — Conviction Rate Over Time (${genderLabel})`;
+    const radius = Number(document.getElementById("radius")?.value || 2000);
 
+    chart.options.plugins.title.text = `${groupLabel} — Conviction Rate Over Time (${genderLabel}) • Radius ${radius}m`;
+
+    chart.options.plugins.subtitle.text = `Map center: ${currentCenter.lat.toFixed(4)}, ${currentCenter.lng.toFixed(4)}`;
     // 🔥 NEW unified panel logic (REPLACE old heading block with this)
     const insightText = generateInsight(payload.series);
 
@@ -2110,8 +2115,11 @@ function onMapClick(e) {
   updateRadiusCircle();
 
   // Clear list/marker active state
-  if (activeListBtn) activeListBtn.classList.remove("is-active");
-  activeListBtn = null;
+
+  if (window.__nearbyUI?.activeListBtn) {
+    window.__nearbyUI.activeListBtn.classList.remove("is-active");
+  }
+  window.__nearbyUI.activeListBtn = null;
 
   if (window.__nearbyUI?.pinnedMarker) {
     window.__nearbyUI.pinnedMarker.closePopup?.();
@@ -2122,11 +2130,6 @@ function onMapClick(e) {
     window.__nearbyUI.hoverMarker.closePopup?.();
   }
   window.__nearbyUI.hoverMarker = null;
-
-  if (window.__nearbyUI?.activeListBtn) {
-    window.__nearbyUI.activeListBtn.classList.remove("is-active");
-  }
-  window.__nearbyUI.activeListBtn = null;
 
   fetchNearby().catch(console.error);
   render().catch(console.error);
