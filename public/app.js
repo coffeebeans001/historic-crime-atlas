@@ -614,7 +614,7 @@ function writeUrlState({ push = false } = {}) {
   const ciEl = document.getElementById("toggle-ci");
   const genderEl = document.getElementById("gender");
 
-  const radiusEl = document.getElementById("radius");
+  //const radiusEl = document.getElementById("radius");
   const limitEl = document.getElementById("nearby-limit");
 
   // Chart params
@@ -677,7 +677,7 @@ function applyStateToUI(state) {
   }
 
   // Map controls
-  const radiusEl = document.getElementById("radius");
+  //const radiusEl = document.getElementById("radius");
   const limitEl = document.getElementById("nearby-limit");
 
   if (radiusEl && state.radius) radiusEl.value = state.radius;
@@ -2108,8 +2108,29 @@ function onMapClick(e) {
   currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
   centerMarker.setLatLng(e.latlng).openPopup();
   updateRadiusCircle();
-  fetchNearby().catch(console.error); // optional
+
+  // Clear list/marker active state
+  if (activeListBtn) activeListBtn.classList.remove("is-active");
+  activeListBtn = null;
+
+  if (window.__nearbyUI?.pinnedMarker) {
+    window.__nearbyUI.pinnedMarker.closePopup?.();
+  }
+  window.__nearbyUI.pinnedMarker = null;
+
+  if (window.__nearbyUI?.hoverMarker) {
+    window.__nearbyUI.hoverMarker.closePopup?.();
+  }
+  window.__nearbyUI.hoverMarker = null;
+
+  if (window.__nearbyUI?.activeListBtn) {
+    window.__nearbyUI.activeListBtn.classList.remove("is-active");
+  }
+  window.__nearbyUI.activeListBtn = null;
+
+  fetchNearby().catch(console.error);
   render().catch(console.error);
+  scheduleUrlSync();
 }
 
 function ensureMap() {
@@ -2174,27 +2195,10 @@ function ensureMap() {
       }, 120);
     });
 
-    map.on("click", (e) => {
-      currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
-      centerMarker.setLatLng(e.latlng).openPopup();
-      updateRadiusCircle();
-
-      // Clear list/marker "active" state on map click
-      if (activeListBtn) activeListBtn.classList.remove("is-active");
-      activeListBtn = null;
-
-      if (window.__nearbyUI?.pinnedMarker)
-        window.__nearbyUI.pinnedMarker.closePopup?.();
-      window.__nearbyUI.pinnedMarker = null;
-
-      if (window.__nearbyUI?.hoverMarker)
-        window.__nearbyUI.hoverMarker.closePopup?.();
-      window.__nearbyUI.hoverMarker = null;
-
-      if (window.__nearbyUI?.activeListBtn)
-        window.__nearbyUI.activeListBtn.classList.remove("is-active");
-      window.__nearbyUI.activeListBtn = null;
-    });
+    if (!mapClickBound) {
+      map.on("click", onMapClick);
+      mapClickBound = true;
+    }
   }
   window.map = map;
   window.markersLayer = markersLayer;
@@ -2207,22 +2211,6 @@ function ensureMap() {
   // Optional: expose for DevTools
   // window.__markersLayer = markersLayer;
   // window.__centerMarker = centerMarker;
-}
-
-function updateRadiusCircle() {
-  if (!map) return;
-
-  const radiusEl = document.getElementById("radius");
-  const r = Number(radiusEl && radiusEl.value ? radiusEl.value : 2000);
-
-  if (!radiusCircle) {
-    radiusCircle = L.circle([currentCenter.lat, currentCenter.lng], {
-      radius: r,
-    }).addTo(map);
-  } else {
-    radiusCircle.setLatLng([currentCenter.lat, currentCenter.lng]);
-    radiusCircle.setRadius(r);
-  }
 }
 
 function buildNearbyUrl() {
@@ -2258,6 +2246,7 @@ function updateRadiusCircle() {
     radiusCircle.setLatLng([currentCenter.lat, currentCenter.lng]);
     radiusCircle.setRadius(r);
   }
+
   window.markersLayer = markersLayer;
   window.radiusCircle = radiusCircle;
   window.centerMarker = centerMarker;
