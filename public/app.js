@@ -501,36 +501,15 @@ function ensureChart() {
       plugins: {
         // 🔥 this is where your title/legend/tooltip live
         title: { display: true, text: "Loading…" },
-        tooltip: {
-          callbacks: {
-            label: (ctx) => {
-              const p = ctx.raw;
-
-              const isLow = (p?.n ?? 0) < LOW_N_THRESHOLD;
-              const suffix = isLow ? " ⚠ low sample" : "";
-
-              return [
-                `${ctx.dataset.label}`,
-                `Conviction rate: ${p.y.toFixed(1)}%`,
-                `95% CI: ${p.low.toFixed(1)}–${p.high.toFixed(1)}%`,
-                `n = ${p.n} trials${suffix}`,
-              ];
-            },
-          },
-        },
         legend: {
           labels: {
             filter: (item) => {
               const t = item.text || "";
-              return (
-                !t.includes("(upper CI)") &&
-                !t.includes("(CI band)") &&
-                !t.includes("(trend)")
-              );
+
+              return !t.includes("(upper CI)") && !t.includes("(CI band)");
             },
           },
         },
-
         tooltip: {
           callbacks: {
             title: (ctx) => {
@@ -564,11 +543,15 @@ function ensureChart() {
               }
 
               if (low != null && high != null) {
-                lines.push(`95% CI: ${low}–${high}`);
+                lines.push(
+                  `95% CI: ${Number(low).toFixed(1)}–${Number(high).toFixed(1)}%`,
+                );
               }
 
               if (n != null) {
-                lines.push(`n = ${n} trials`);
+                const isLow = n < LOW_N_THRESHOLD;
+                const suffix = isLow ? " ⚠ low sample" : "";
+                lines.push(`n = ${n} trials${suffix}`);
               }
 
               return lines;
@@ -1856,7 +1839,6 @@ async function render() {
 
     if (!invalidGroup) {
       payload = await loadSeries();
-      console.log("Series sample:", payload.series?.[0]?.data?.[0]);
     }
 
     const noData =
