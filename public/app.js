@@ -470,6 +470,23 @@ function ensureChart() {
     type: "line",
     data: { datasets: [] },
     options: {
+      onHover: (_event, elements) => {
+        if (!elements.length) {
+          resetMarkerHighlight();
+          return;
+        }
+
+        const point = elements[0];
+        const data = point.element?.$context?.raw;
+        const year = data?.x;
+
+        console.log("Hovered chart year:", year);
+
+        if (year != null) {
+          highlightMarkersByYear(year);
+        }
+      },
+
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "nearest", intersect: false },
@@ -573,6 +590,9 @@ function ensureChart() {
   });
 
   setChartLoading(true); // starts in loading state
+  chart.canvas.addEventListener("mouseleave", () => {
+    resetMarkerHighlight();
+  });
 }
 
 function getGenderLabel() {
@@ -2074,42 +2094,12 @@ function clearHover() {
   hoverMarker = null;
 }
 
-// --- Marker hover/highlight helpers ---
-const markerState = new WeakMap();
-
-function setMarkerHighlight(marker, on) {
-  if (!marker) return;
-
-  // store defaults once
-  if (!markerState.has(marker)) {
-    markerState.set(marker, {
-      opacity: 1,
-      z: 0,
-    });
-  }
-
-  if (on) {
-    marker.setOpacity(1);
-    marker.setZIndexOffset(1000);
-
-    // optional tiny visual lift if DOM element exists
-    const el = marker.getElement && marker.getElement();
-    if (el) el.classList.add("marker-hover");
-  } else {
-    const st = markerState.get(marker) || { opacity: 1, z: 0 };
-    marker.setOpacity(st.opacity);
-    marker.setZIndexOffset(st.z);
-
-    const el = marker.getElement && marker.getElement();
-    if (el) el.classList.remove("marker-hover");
-  }
-}
-
 let currentCenter = { lat: 51.509865, lng: -0.118092 };
 
 let mapClickBound = false;
 
 function onMapClick(e) {
+  resetMarkerHighlight();
   currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
   centerMarker.setLatLng(e.latlng).openPopup();
   updateRadiusCircle();
@@ -2183,26 +2173,20 @@ function ensureMap() {
   if (!mapHandlersBound) {
     mapHandlersBound = true;
 
-    map.on("movestart", () => {
-      document
-        .querySelectorAll(".leaflet-popup.crime-popup")
-        .forEach((p) => (p.style.opacity = "0.25"));
-    });
-
-    map.on("moveend", () => {
-      clearTimeout(popupFadeTimer);
-      popupFadeTimer = setTimeout(() => {
-        document
-          .querySelectorAll(".leaflet-popup.crime-popup")
-          .forEach((p) => (p.style.opacity = "1"));
-      }, 120);
-    });
-
     if (!mapClickBound) {
       map.on("click", onMapClick);
       mapClickBound = true;
     }
+
+    map.on("movestart", () => {
+      resetMarkerHighlight();
+    });
+
+    map.on("zoomstart", () => {
+      resetMarkerHighlight();
+    });
   }
+
   window.map = map;
   window.markersLayer = markersLayer;
   window.centerMarker = centerMarker;
@@ -2214,6 +2198,72 @@ function ensureMap() {
   // Optional: expose for DevTools
   // window.__markersLayer = markersLayer;
   // window.__centerMarker = centerMarker;
+}
+
+function highlightMarkersByYear(year) {
+  if (!markersLayer) return;
+
+  const targetYear = Number(year);
+
+  markersLayer.eachLayer((layer) => {
+    const el = layer.getElement?.();
+    if (!el) return;
+
+    const markerYear = Number(layer.year);
+
+    if (!Number.isFinite(markerYear)) return;
+
+    if (markerYear === targetYear) {
+      el.classList.remove("marker-faded");
+      el.classList.add("marker-highlight");
+    } else {
+      el.classList.remove("marker-highlight");
+      el.classList.add("marker-faded");
+    }
+  });
+}
+
+function resetMarkerHighlight() {
+  if (!markersLayer) return;
+
+  markersLayer.eachLayer((layer) => {
+    const el = layer.getElement?.();
+    if (!el) return;
+
+    el.classList.remove("marker-faded");
+    el.classList.remove("marker-highlight");
+  });
+}
+
+// --- Marker hover/highlight helpers ---
+const markerState = new WeakMap();
+
+function setMarkerHighlight(marker, on) {
+  if (!marker) return;
+
+  // store defaults once
+  if (!markerState.has(marker)) {
+    markerState.set(marker, {
+      opacity: 1,
+      z: 0,
+    });
+  }
+
+  if (on) {
+    marker.setOpacity(1);
+    marker.setZIndexOffset(1000);
+
+    // optional tiny visual lift if DOM element exists
+    const el = marker.getElement && marker.getElement();
+    if (el) el.classList.add("marker-hover");
+  } else {
+    const st = markerState.get(marker) || { opacity: 1, z: 0 };
+    marker.setOpacity(st.opacity);
+    marker.setZIndexOffset(st.z);
+
+    const el = marker.getElement && marker.getElement();
+    if (el) el.classList.remove("marker-hover");
+  }
 }
 
 function buildNearbyUrl() {
@@ -2394,8 +2444,10 @@ async function fetchNearby() {
 
       // Create marker
       const marker = L.marker([lat, lng]);
-
-      // Popup for click/pin
+      //marker.year = new Date(r.trial_date).getFullYear(); // Popup for click/pin
+      marker.year = r.trial_date
+        ? Number(String(r.trial_date).slice(0, 4))
+        : null;
       marker.bindPopup(popupHTML, {
         className: "crime-popup",
         autoPan: false,

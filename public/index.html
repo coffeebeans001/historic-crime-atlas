@@ -241,6 +241,27 @@
         border: 1px solid #ccc;
         font: inherit;
       }
+
+      .leaflet-marker-icon.marker-faded {
+        opacity: 0.15 !important;
+        filter: grayscale(100%) brightness(0.55) !important;
+        transform: scale(0.9);
+        transition:
+          opacity 0.15s ease,
+          filter 0.15s ease,
+          transform 0.15s ease;
+      }
+
+      .leaflet-marker-icon.marker-highlight {
+        opacity: 1 !important;
+        filter: none !important;
+        transform: scale(1.18);
+        z-index: 1000 !important;
+        transition:
+          opacity 0.15s ease,
+          filter 0.15s ease,
+          transform 0.15s ease;
+      }
     </style>
 
     <script
