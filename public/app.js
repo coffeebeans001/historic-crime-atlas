@@ -2758,6 +2758,23 @@ if (copyLinkBtn) {
       }
     });
   }
+
+  const fromEl = document.getElementById("from");
+  const toEl = document.getElementById("to");
+  
+  if (fromEl) {
+    fromEl.addEventListener("input", () => {
+      render().catch(console.error);
+      fetchNearby().catch(console.error);
+    });
+  }
+
+  if (toEl) {
+    toEl.addEventListener("input", () => {
+      render().catch(console.error);
+      fetchNearby().catch(console.error);
+    });
+  }
 }
 
 const downloadSnapshotBtn = document.getElementById("download-snapshot-btn");
