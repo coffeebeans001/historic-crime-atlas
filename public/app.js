@@ -2206,14 +2206,25 @@ function highlightMarkersByYear(year) {
   const targetYear = Number(year);
 
   markersLayer.eachLayer((layer) => {
+    const markerYear = Number(layer.year);
+    if (!Number.isFinite(markerYear)) return;
+
+    const isMatch = markerYear === targetYear;
+
+    // 🔥 ALWAYS run logic (independent of DOM)
+    if (isMatch) {
+      layer.setZIndexOffset?.(1000);
+      layer.openPopup?.();
+    } else {
+      layer.setZIndexOffset?.(0);
+      layer.closePopup?.();
+    }
+
+    // 🎨 Only apply visual styles if element exists
     const el = layer.getElement?.();
     if (!el) return;
 
-    const markerYear = Number(layer.year);
-
-    if (!Number.isFinite(markerYear)) return;
-
-    if (markerYear === targetYear) {
+    if (isMatch) {
       el.classList.remove("marker-faded");
       el.classList.add("marker-highlight");
     } else {
@@ -2227,6 +2238,11 @@ function resetMarkerHighlight() {
   if (!markersLayer) return;
 
   markersLayer.eachLayer((layer) => {
+    // 🔥 always reset popup
+    layer.closePopup?.();
+    layer.setZIndexOffset?.(0);
+
+    // 🎨 reset visuals if element exists
     const el = layer.getElement?.();
     if (!el) return;
 
