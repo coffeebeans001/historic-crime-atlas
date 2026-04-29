@@ -153,8 +153,7 @@ function previewBestGroupMatch(groupInput) {
 function buildUrl() {
   const from = document.getElementById("from").value;
   const to = document.getElementById("to").value;
-  const bucket = document.getElementById("bucket").value;
-
+  const bucket = document.getElementById("bucket")?.value || "year";
   const z = String(Number(document.getElementById("confidence").value || 1.96));
   const params = new URLSearchParams({ bucket, from, to, format: "series", z });
   const gender = document.getElementById("gender")?.value || "all";
@@ -257,8 +256,13 @@ function rgbaForLabel(label, alpha = 1) {
 
 const LOW_N_THRESHOLD = 5;
 
-function buildDatasets(seriesArr) {
+function buildDatasets(seriesArr, bucket) {
   const datasets = [];
+
+  const getBucketX = (x) => {
+    const year = Number(x);
+    return bucket === "decade" ? Math.floor(year / 10) * 10 : year;
+  };
 
   (seriesArr || [])
     .filter((series) => series && Array.isArray(series.data))
@@ -282,7 +286,7 @@ function buildDatasets(seriesArr) {
       datasets.push({
         label: `${series.label} (upper CI)`,
         data: cleanPoints.map((p) => ({
-          x: p.x,
+          x: getBucketX(p.x),
           y: p.high,
         })),
         borderColor: "transparent",
@@ -299,7 +303,7 @@ function buildDatasets(seriesArr) {
       datasets.push({
         label: `${series.label} (CI band)`,
         data: cleanPoints.map((p) => ({
-          x: p.x,
+          x: getBucketX(p.x),
           y: p.low,
         })),
         fill: "-1",
@@ -317,7 +321,7 @@ function buildDatasets(seriesArr) {
       datasets.push({
         label: series.label,
         data: cleanPoints.map((p) => ({
-          x: p.x,
+          x: getBucketX(p.x),
           y: p.y,
           n: p.n,
           low: p.low,
@@ -367,7 +371,7 @@ function buildDatasets(seriesArr) {
       // 4) smoothed trend overlay
       const smoothedPoints = movingAveragePoints(
         cleanPoints.map((p) => ({
-          x: p.x,
+          x: getBucketX(p.x),
           y: p.y,
         })),
         5,
@@ -480,8 +484,6 @@ function ensureChart() {
         const data = point.element?.$context?.raw;
         const year = data?.x;
 
-        console.log("Hovered chart year:", year);
-
         if (year != null) {
           highlightMarkersByYear(year);
         }
@@ -491,8 +493,10 @@ function ensureChart() {
       maintainAspectRatio: false,
       interaction: { mode: "nearest", intersect: false },
       layout: { padding: { top: 12, bottom: 12 } },
-      animation: { duration: 400, easing: "easeOutQuart" },
-      transitions: { active: { animation: { duration: 0 } } },
+      animation: {
+        duration: 600,
+        easing: "easeInOutCubic",
+      },
 
       scales: {
         x: {
@@ -736,7 +740,6 @@ function writeUrlState() {
 
   const from = document.getElementById("from")?.value?.trim() || "";
   const to = document.getElementById("to")?.value?.trim() || "";
-  const bucket = document.getElementById("bucket")?.value || "";
   const gender = document.getElementById("gender")?.value || "all";
   const confidence = document.getElementById("confidence")?.value || "";
   const group = getValidatedGroup();
@@ -1913,9 +1916,8 @@ async function render() {
     }
 
     updateSampleWarning(payload.series);
-    const bucket = document.getElementById("bucket").value;
-
-    chart.data.datasets = buildDatasets(payload.series);
+    const bucket = document.getElementById("bucket")?.value || "year";
+    chart.data.datasets = buildDatasets(payload.series, bucket);
 
     const showCi = document.getElementById("toggle-ci").checked;
 
@@ -2700,6 +2702,14 @@ async function init() {
     applyBestGroupMatchAndRender(groupInput);
   });
 
+  const bucketEl = document.getElementById("bucket");
+
+  if (bucketEl) {
+    bucketEl.addEventListener("change", () => {
+      render().catch(console.error);
+    });
+  }
+
   const info = document.getElementById("confidence-info");
   const tooltip = document.getElementById("confidence-tooltip");
 
@@ -2761,7 +2771,7 @@ if (copyLinkBtn) {
 
   const fromEl = document.getElementById("from");
   const toEl = document.getElementById("to");
-  
+
   if (fromEl) {
     fromEl.addEventListener("input", () => {
       render().catch(console.error);
