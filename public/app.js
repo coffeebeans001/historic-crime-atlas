@@ -476,6 +476,8 @@ function ensureChart() {
     options: {
       onHover: (_event, elements) => {
         if (!elements.length) {
+          clearTimeout(chartHoverTimer);
+          lastHoveredChartYear = null;
           resetMarkerHighlight();
           return;
         }
@@ -484,9 +486,18 @@ function ensureChart() {
         const data = point.element?.$context?.raw;
         const year = data?.x;
 
-        if (year != null) {
-          highlightMarkersByYear(year);
-        }
+        if (year == null) return;
+
+        const targetYear = Number(year);
+
+        if (targetYear === lastHoveredChartYear) return;
+
+        clearTimeout(chartHoverTimer);
+
+        chartHoverTimer = setTimeout(() => {
+          lastHoveredChartYear = targetYear;
+          highlightMarkersByYear(targetYear);
+        }, 120);
       },
 
       responsive: true,
@@ -595,6 +606,8 @@ function ensureChart() {
 
   setChartLoading(true); // starts in loading state
   chart.canvas.addEventListener("mouseleave", () => {
+    clearTimeout(chartHoverTimer);
+    lastHoveredChartYear = null;
     resetMarkerHighlight();
   });
 }
@@ -2051,6 +2064,8 @@ let markerById = new Map();
 let baseTiles;
 let mapHandlersBound = false; // ✅ ADD THIS
 let popupFadeTimer = null;
+let lastHoveredChartYear = null;
+let chartHoverTimer = null;
 
 if (!window.__nearbyUI) {
   window.__nearbyUI = {
