@@ -186,6 +186,10 @@ async function loadSeries() {
     radius: String(radius),
   });
 
+  if (lockedYear != null) {
+    params.set("year", String(lockedYear));
+  }
+
   // ✅ only include group if valid
   if (group && group !== "__INVALID__") {
     params.set("group", group);
@@ -473,8 +477,11 @@ function ensureChart() {
   chart = new Chart(ctx, {
     type: "line",
     data: { datasets: [] },
+
     options: {
       onHover: (_event, elements) => {
+        if (lockedYear != null) return;
+
         if (!elements.length) {
           clearTimeout(chartHoverTimer);
           lastHoveredChartYear = null;
@@ -489,7 +496,6 @@ function ensureChart() {
         if (year == null) return;
 
         const targetYear = Number(year);
-
         if (targetYear === lastHoveredChartYear) return;
 
         clearTimeout(chartHoverTimer);
@@ -500,15 +506,39 @@ function ensureChart() {
         }, 120);
       },
 
+      onClick: (_event, elements) => {
+        if (!elements.length) return;
+
+        const point = elements[0];
+        const data = point.element?.$context?.raw;
+        const year = data?.x;
+
+        if (year == null) return;
+
+        const y = Number(year);
+
+        if (lockedYear === y) {
+          lockedYear = null;
+          resetMarkerHighlight();
+        } else {
+          lockedYear = y;
+          highlightMarkersByYear(y);
+        }
+
+        fetchNearby().catch(console.error);
+      },
+
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "nearest", intersect: false },
       layout: { padding: { top: 12, bottom: 12 } },
+
       animation: {
         duration: 600,
         easing: "easeInOutCubic",
       },
 
+      // ✅ KEEP THESE INSIDE options
       scales: {
         x: {
           type: "linear",
@@ -531,21 +561,22 @@ function ensureChart() {
       },
 
       plugins: {
-        // 🔥 this is where your title/legend/tooltip live
         title: { display: true, text: "Loading…" },
+
         subtitle: {
           display: true,
           text: "",
         },
+
         legend: {
           labels: {
             filter: (item) => {
               const t = item.text || "";
-
               return !t.includes("(upper CI)") && !t.includes("(CI band)");
             },
           },
         },
+
         tooltip: {
           callbacks: {
             title: (ctx) => {
@@ -556,7 +587,6 @@ function ensureChart() {
             label: (ctx) => {
               const dsLabel = ctx.dataset?.label || "";
 
-              // Hide CI helper datasets
               if (dsLabel.includes("CI")) return null;
 
               const raw = ctx.raw || {};
@@ -568,7 +598,6 @@ function ensureChart() {
 
               const lines = [];
 
-              // Group name (Male / Female)
               if (dsLabel) {
                 const group = dsLabel.split("-")[0].trim();
                 lines.push(`${group} defendants`);
@@ -595,7 +624,6 @@ function ensureChart() {
           },
         },
 
-        // 👇 plugin options live under its id
         loadingOverlay: {
           text: "Loading…",
           backdrop: "rgba(255,255,255,0.55)",
@@ -2066,6 +2094,7 @@ let mapHandlersBound = false; // ✅ ADD THIS
 let popupFadeTimer = null;
 let lastHoveredChartYear = null;
 let chartHoverTimer = null;
+let lockedYear = null;
 
 if (!window.__nearbyUI) {
   window.__nearbyUI = {
@@ -2784,6 +2813,15 @@ async function init() {
       tooltip.style.display = "none";
     });
   }
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      lockedYear = null;
+      resetMarkerHighlight();
+      fetchNearby().catch(console.error);
+    }
+  });
+  
   const downloadChartBtn = document.getElementById("download-chart-btn");
   if (downloadChartBtn) {
     downloadChartBtn.addEventListener("click", () => {
