@@ -1866,6 +1866,37 @@ async function render() {
       payload = await loadSeries();
     }
 
+    function fillMissingYears(seriesArr) {
+      return seriesArr.map((series) => {
+        const data = series.data;
+        if (!data.length) return series;
+
+        const years = data.map((d) => d.x);
+        const min = Math.min(...years);
+        const max = Math.max(...years);
+
+        const map = new Map(data.map((d) => [d.x, d]));
+
+        const filled = [];
+
+        for (let y = min; y <= max; y++) {
+          if (map.has(y)) {
+            filled.push(map.get(y));
+          } else {
+            filled.push({
+              x: y,
+              y: null, // important → gap
+              n: 0,
+              low: null,
+              high: null,
+            });
+          }
+        }
+
+        return { ...series, data: filled };
+      });
+    }
+
     const noData =
       invalidGroup ||
       !payload?.series ||
@@ -2571,6 +2602,11 @@ async function fetchNearby() {
       btn.textContent = prevText;
     }
   }
+  setTimeout(() => {
+    markersLayer.eachLayer((layer) => {
+      layer.getElement?.(); // forces render
+    });
+  }, 0);
 }
 
 const useGpsBtn = document.getElementById("use-gps");
