@@ -2247,10 +2247,13 @@ function highlightMarkersByYear(year) {
     // 🔥 ALWAYS run logic (independent of DOM)
     if (isMatch) {
       layer.setZIndexOffset?.(1000);
-      layer.openPopup?.();
-    } else {
-      layer.setZIndexOffset?.(0);
-      layer.closePopup?.();
+      if (markersLayer && typeof markersLayer.zoomToShowLayer === "function") {
+        markersLayer.zoomToShowLayer(layer, () => {
+          layer.openPopup?.();
+        });
+      } else {
+        layer.openPopup?.();
+      }
     }
 
     // 🎨 Only apply visual styles if element exists
@@ -2607,6 +2610,14 @@ async function fetchNearby() {
       layer.getElement?.(); // forces render
     });
   }, 0);
+
+  map.once("layeradd", () => {
+    map.invalidateSize();
+  });
+
+  map.whenReady(() => {
+    map.invalidateSize();
+  });
 }
 
 const useGpsBtn = document.getElementById("use-gps");
