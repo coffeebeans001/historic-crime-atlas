@@ -186,10 +186,6 @@ async function loadSeries() {
     radius: String(radius),
   });
 
-  if (lockedYear != null) {
-    params.set("year", String(lockedYear));
-  }
-
   // ✅ only include group if valid
   if (group && group !== "__INVALID__") {
     params.set("group", group);
@@ -466,6 +462,13 @@ function setChartLoading(on) {
   chart.update("none");
 }
 
+function getMainChartElement(elements) {
+  return elements.find((el) => {
+    const label = el.element?.$context?.dataset?.label || "";
+    return !label.includes("CI") && !label.includes("(trend)");
+  });
+}
+
 function ensureChart() {
   if (chart) return;
 
@@ -489,7 +492,8 @@ function ensureChart() {
           return;
         }
 
-        const point = elements[0];
+        const point = getMainChartElement(elements);
+        if (!point) return;
         const data = point.element?.$context?.raw;
         const year = data?.x;
 
@@ -507,9 +511,12 @@ function ensureChart() {
       },
 
       onClick: (_event, elements) => {
+        console.log("Chart clicked:", elements);
+
         if (!elements.length) return;
 
-        const point = elements[0];
+        const point = getMainChartElement(elements);
+        if (!point) return;
         const data = point.element?.$context?.raw;
         const year = data?.x;
 
@@ -531,8 +538,14 @@ function ensureChart() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "nearest", intersect: false },
-      layout: { padding: { top: 12, bottom: 12 } },
-
+      layout: {
+        padding: {
+          top: 40,
+          right: 24,
+          bottom: 40,
+          left: 24,
+        },
+      },
       animation: {
         duration: 600,
         easing: "easeInOutCubic",
@@ -587,7 +600,8 @@ function ensureChart() {
             label: (ctx) => {
               const dsLabel = ctx.dataset?.label || "";
 
-              if (dsLabel.includes("CI")) return null;
+              if (dsLabel.includes("CI") || dsLabel.includes("(trend)"))
+                return null;
 
               const raw = ctx.raw || {};
 
@@ -2286,30 +2300,17 @@ function highlightMarkersByYear(year) {
     const markerYear = Number(layer.year);
     if (!Number.isFinite(markerYear)) return;
 
-    const isMatch = markerYear === targetYear;
-
-    // 🔥 ALWAYS run logic (independent of DOM)
-    if (isMatch) {
-      layer.setZIndexOffset?.(1000);
-      if (markersLayer && typeof markersLayer.zoomToShowLayer === "function") {
-        markersLayer.zoomToShowLayer(layer, () => {
-          layer.openPopup?.();
-        });
-      } else {
-        layer.openPopup?.();
-      }
-    }
-
-    // 🎨 Only apply visual styles if element exists
     const el = layer.getElement?.();
     if (!el) return;
 
-    if (isMatch) {
+    if (markerYear === targetYear) {
       el.classList.remove("marker-faded");
       el.classList.add("marker-highlight");
+      layer.setZIndexOffset?.(1000);
     } else {
       el.classList.remove("marker-highlight");
       el.classList.add("marker-faded");
+      layer.setZIndexOffset?.(0);
     }
   });
 }
@@ -2318,16 +2319,12 @@ function resetMarkerHighlight() {
   if (!markersLayer) return;
 
   markersLayer.eachLayer((layer) => {
-    // 🔥 always reset popup
-    layer.closePopup?.();
-    layer.setZIndexOffset?.(0);
-
-    // 🎨 reset visuals if element exists
     const el = layer.getElement?.();
     if (!el) return;
 
     el.classList.remove("marker-faded");
     el.classList.remove("marker-highlight");
+    layer.setZIndexOffset?.(0);
   });
 }
 
@@ -2377,6 +2374,10 @@ function buildNearbyUrl() {
     radius: String(radius),
     limit: String(limit),
   });
+
+  //if (lockedYear != null) {
+  //params.set("year", String(lockedYear));
+  //}
 
   return `/api/trials/nearby?${params.toString()}`;
 }
@@ -2480,6 +2481,15 @@ function renderNearbyList(rows, markerById) {
 async function fetchNearby() {
   ensureMap();
   updateRadiusCircle();
+
+  resetMarkerHighlight();
+
+  markersLayer.clearLayers();
+
+  if (window.__nearbyUI) {
+    window.__nearbyUI.hoverMarker = null;
+    window.__nearbyUI.pinnedMarker = null;
+  }
 
   const btn = document.getElementById("nearby");
   const prevText = btn ? btn.textContent : "Find nearby";
@@ -2821,7 +2831,7 @@ async function init() {
       fetchNearby().catch(console.error);
     }
   });
-  
+
   const downloadChartBtn = document.getElementById("download-chart-btn");
   if (downloadChartBtn) {
     downloadChartBtn.addEventListener("click", () => {
