@@ -555,9 +555,8 @@ function ensureChart() {
       scales: {
         x: {
           type: "linear",
-          title: {
-            display: true,
-            text: "Year",
+          ticks: {
+            padding: 8,
           },
         },
         y: {
@@ -2019,7 +2018,11 @@ async function render() {
       setCiAlpha(DEFAULT_CI_ALPHA);
     }
 
-    chart.options.scales.x.title.text = bucket === "decade" ? "Decade" : "Year";
+    chart.options.scales.x.title = {
+      display: false,
+    };
+    chart.options.layout.padding.bottom = 20;
+    chart.update();
 
     const rawGroup = document.getElementById("group")?.value?.trim() || "";
 
@@ -2037,8 +2040,7 @@ async function render() {
     // chart title (KEEP THIS)
     const radius = Number(document.getElementById("radius")?.value || 2000);
 
-    chart.options.plugins.title.text = `${groupLabel} — Conviction Rate Over Time (${genderLabel}) • Radius ${radius}m`;
-
+    chart.options.plugins.title.text = `${groupLabel} — Conviction Rate by ${bucket === "decade" ? "Decade" : "Year"} (${genderLabel}) • Radius ${radius}m`;
     chart.options.plugins.subtitle.text = `Map center: ${currentCenter.lat.toFixed(4)}, ${currentCenter.lng.toFixed(4)}`;
     // 🔥 NEW unified panel logic (REPLACE old heading block with this)
     const insightText = generateInsight(payload.series);
