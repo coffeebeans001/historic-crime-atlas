@@ -469,6 +469,12 @@ function getMainChartElement(elements) {
   });
 }
 
+function clearChartYearLock() {
+  lockedChartYear = null;
+  resetMarkerHighlight();
+  fetchNearby().catch(console.error);
+}
+
 function ensureChart() {
   if (chart) return;
 
@@ -483,7 +489,7 @@ function ensureChart() {
 
     options: {
       onHover: (_event, elements) => {
-        if (lockedYear != null) return;
+        if (lockedChartYear != null) return;
 
         if (!elements.length) {
           clearTimeout(chartHoverTimer);
@@ -511,26 +517,25 @@ function ensureChart() {
       },
 
       onClick: (_event, elements) => {
-
         if (!elements.length) return;
 
         const point = getMainChartElement(elements);
         if (!point) return;
+
         const data = point.element?.$context?.raw;
         const year = data?.x;
 
         if (year == null) return;
 
-        const y = Number(year);
+        const clickedYear = Number(year);
 
-        if (lockedYear === y) {
-          lockedYear = null;
-          resetMarkerHighlight();
-        } else {
-          lockedYear = y;
-          highlightMarkersByYear(y);
+        if (lockedChartYear === clickedYear) {
+          clearChartYearLock();
+          return;
         }
 
+        lockedChartYear = clickedYear;
+        highlightMarkersByYear(clickedYear);
         fetchNearby().catch(console.error);
       },
 
@@ -2109,7 +2114,7 @@ let mapHandlersBound = false; // ✅ ADD THIS
 let popupFadeTimer = null;
 let lastHoveredChartYear = null;
 let chartHoverTimer = null;
-let lockedYear = null;
+let lockedChartYear = null;
 
 if (!window.__nearbyUI) {
   window.__nearbyUI = {
@@ -2128,20 +2133,7 @@ function safePanToMarker(marker, zoomToShow = true) {
   const ll = marker.getLatLng();
   if (!ll) return;
 
-  const doPan = () => {
-    // pan without forcing a new zoom / without Leaflet auto-pan fighting popups
-    //map.panTo(ll, { animate: true });
-  };
-
-  //if (
-  //zoomToShow &&
-  //markersLayer &&
-  //typeof markersLayer.zoomToShowLayer === "function"
-  //) {
-  //markersLayer.zoomToShowLayer(marker, doPan);
-  //} else {
-  //doPan();
-  //}
+  const doPan = () => {};
 }
 
 function setActive(marker, btn) {
@@ -2376,9 +2368,9 @@ function buildNearbyUrl() {
     limit: String(limit),
   });
 
-  //if (lockedYear != null) {
-  //params.set("year", String(lockedYear));
-  //}
+  if (lockedChartYear != null) {
+    params.set("year", String(lockedChartYear));
+  }
 
   return `/api/trials/nearby?${params.toString()}`;
 }
@@ -2528,7 +2520,6 @@ async function fetchNearby() {
 
     const payload = await res.json();
     const rows = payload.data || [];
-    
 
     const coordCounts = {};
 
@@ -2812,10 +2803,8 @@ async function init() {
   }
 
   window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      lockedYear = null;
-      resetMarkerHighlight();
-      fetchNearby().catch(console.error);
+    if (e.key === "Escape" && lockedChartYear != null) {
+      clearChartYearLock();
     }
   });
 
