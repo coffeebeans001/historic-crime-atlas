@@ -2134,15 +2134,15 @@ function safePanToMarker(marker, zoomToShow = true) {
     //map.panTo(ll, { animate: true });
   };
 
-  if (
-    zoomToShow &&
-    markersLayer &&
-    typeof markersLayer.zoomToShowLayer === "function"
-  ) {
-    markersLayer.zoomToShowLayer(marker, doPan);
-  } else {
-    doPan();
-  }
+  //if (
+  //zoomToShow &&
+  //markersLayer &&
+  //typeof markersLayer.zoomToShowLayer === "function"
+  //) {
+  //markersLayer.zoomToShowLayer(marker, doPan);
+  //} else {
+  //doPan();
+  //}
 }
 
 function setActive(marker, btn) {
@@ -2238,10 +2238,10 @@ function ensureMap() {
     markersLayer = L.markerClusterGroup({
       chunkedLoading: true,
       showCoverageOnHover: false,
-      spiderfyOnMaxZoom: false,
-      zoomToBoundsOnClick: false,
+      spiderfyOnMaxZoom: true,
+      zoomToBoundsOnClick: true,
       //disableClusteringAtZoom: 18,
-      maxClusterRadius: 60,
+      maxClusterRadius: 120,
     });
     map.addLayer(markersLayer);
   }
@@ -2486,12 +2486,23 @@ async function fetchNearby() {
 
   resetMarkerHighlight();
 
-  markersLayer.clearLayers();
-
   if (window.__nearbyUI) {
-    window.__nearbyUI.hoverMarker = null;
+    window.__nearbyUI.pinnedMarker?.closePopup?.();
+    window.__nearbyUI.hoverMarker?.closePopup?.();
+    window.__nearbyUI.activeMarker?.closePopup?.();
+
     window.__nearbyUI.pinnedMarker = null;
+    window.__nearbyUI.hoverMarker = null;
+    window.__nearbyUI.activeMarker = null;
+
+    if (window.__nearbyUI.activeListBtn) {
+      window.__nearbyUI.activeListBtn.classList.remove("is-active");
+    }
+
+    window.__nearbyUI.activeListBtn = null;
   }
+
+  markersLayer.clearLayers();
 
   const btn = document.getElementById("nearby");
   const prevText = btn ? btn.textContent : "Find nearby";
@@ -2520,6 +2531,15 @@ async function fetchNearby() {
     const rows = payload.data || [];
     console.log("Nearby rows returned:", rows.length);
     console.log("Nearby rows:", rows);
+
+    const coordCounts = {};
+
+    rows.forEach((r) => {
+      const key = `${r.latitude},${r.longitude}`;
+      coordCounts[key] = (coordCounts[key] || 0) + 1;
+    });
+
+    console.log("Unique coordinate counts:", coordCounts);
     // Reset marker lookup
     markerById = new Map();
 
@@ -2529,9 +2549,8 @@ async function fetchNearby() {
       const baseLng = Number(r.longitude);
       if (!Number.isFinite(baseLat) || !Number.isFinite(baseLng)) return;
 
-      const jitter = (i + 1) * 0.00015;
-      const lat = baseLat + jitter;
-      const lng = baseLng + jitter;
+      const lat = Number(r.latitude);
+      const lng = Number(r.longitude);
 
       const date = r.trial_date
         ? String(r.trial_date).slice(0, 10)
@@ -2553,6 +2572,7 @@ async function fetchNearby() {
 
       // Create marker
       const marker = L.marker([lat, lng]);
+      console.log("Marker position used:", lat, lng, r.id, r.trial_date);
       //marker.year = new Date(r.trial_date).getFullYear(); // Popup for click/pin
       marker.year = r.trial_date
         ? Number(String(r.trial_date).slice(0, 4))
@@ -2603,8 +2623,8 @@ async function fetchNearby() {
           pinMarker(marker);
 
           //markersLayer.zoomToShowLayer(marker, () => {
-            // map.panTo(marker.getLatLng(), { animate: true });
-            marker.openPopup();
+          // map.panTo(marker.getLatLng(), { animate: true });
+          marker.openPopup();
           //});
 
           btn?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -2622,14 +2642,14 @@ async function fetchNearby() {
     renderNearbyList(rows, markerById);
 
     // Auto-zoom (keep center in view too)
-    if (rows.length) {
-      const latLngs = rows
-        .map((r) => [Number(r.latitude), Number(r.longitude)])
-        .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
+    //if (rows.length) {
+      //const latLngs = rows
+        //.map((r) => [Number(r.latitude), Number(r.longitude)])
+        //.filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
 
-      latLngs.push([currentCenter.lat, currentCenter.lng]);
-      if (latLngs.length) map.fitBounds(L.latLngBounds(latLngs).pad(0.25));
-    }
+      //latLngs.push([currentCenter.lat, currentCenter.lng]);
+      //if (latLngs.length) map.fitBounds(L.latLngBounds(latLngs).pad(0.25));
+    //}
 
     // Optional debug (safe)
   } finally {
