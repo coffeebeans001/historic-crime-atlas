@@ -511,7 +511,6 @@ function ensureChart() {
       },
 
       onClick: (_event, elements) => {
-        console.log("Chart clicked:", elements);
 
         if (!elements.length) return;
 
@@ -2470,10 +2469,10 @@ function renderNearbyList(rows, markerById) {
       setActive(marker, btn);
       pinMarker(marker);
 
-      //markersLayer.zoomToShowLayer(marker, () => {
-      //map.panTo(marker.getLatLng(), { animate: true });
-      //marker.openPopup();
-      //});
+      markersLayer.zoomToShowLayer(marker, () => {
+        //map.panTo(marker.getLatLng(), { animate: true });
+        marker.openPopup();
+      });
 
       btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
@@ -2529,8 +2528,7 @@ async function fetchNearby() {
 
     const payload = await res.json();
     const rows = payload.data || [];
-    console.log("Nearby rows returned:", rows.length);
-    console.log("Nearby rows:", rows);
+    
 
     const coordCounts = {};
 
@@ -2539,7 +2537,6 @@ async function fetchNearby() {
       coordCounts[key] = (coordCounts[key] || 0) + 1;
     });
 
-    console.log("Unique coordinate counts:", coordCounts);
     // Reset marker lookup
     markerById = new Map();
 
@@ -2572,7 +2569,6 @@ async function fetchNearby() {
 
       // Create marker
       const marker = L.marker([lat, lng]);
-      console.log("Marker position used:", lat, lng, r.id, r.trial_date);
       //marker.year = new Date(r.trial_date).getFullYear(); // Popup for click/pin
       marker.year = r.trial_date
         ? Number(String(r.trial_date).slice(0, 4))
@@ -2622,10 +2618,7 @@ async function fetchNearby() {
           setActive(marker, btn);
           pinMarker(marker);
 
-          //markersLayer.zoomToShowLayer(marker, () => {
-          // map.panTo(marker.getLatLng(), { animate: true });
           marker.openPopup();
-          //});
 
           btn?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         });
@@ -2634,21 +2627,18 @@ async function fetchNearby() {
       // MarkerClusterGroup uses addLayer
       markersLayer.addLayer(marker);
     });
-    console.log("Markers added:", markersLayer.getLayers().length);
     markersLayer.refreshClusters?.();
-    console.log("Marker bounds:", markersLayer.getBounds().toBBoxString());
-    console.log("Map bounds:", map.getBounds().toBBoxString());
     // Render list AFTER markers exist
     renderNearbyList(rows, markerById);
 
     // Auto-zoom (keep center in view too)
     //if (rows.length) {
-      //const latLngs = rows
-        //.map((r) => [Number(r.latitude), Number(r.longitude)])
-        //.filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
+    //const latLngs = rows
+    //.map((r) => [Number(r.latitude), Number(r.longitude)])
+    //.filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
 
-      //latLngs.push([currentCenter.lat, currentCenter.lng]);
-      //if (latLngs.length) map.fitBounds(L.latLngBounds(latLngs).pad(0.25));
+    //latLngs.push([currentCenter.lat, currentCenter.lng]);
+    //if (latLngs.length) map.fitBounds(L.latLngBounds(latLngs).pad(0.25));
     //}
 
     // Optional debug (safe)
