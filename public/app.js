@@ -2131,7 +2131,7 @@ function safePanToMarker(marker, zoomToShow = true) {
 
   const doPan = () => {
     // pan without forcing a new zoom / without Leaflet auto-pan fighting popups
-    map.panTo(ll, { animate: true });
+    //map.panTo(ll, { animate: true });
   };
 
   if (
@@ -2238,8 +2238,9 @@ function ensureMap() {
     markersLayer = L.markerClusterGroup({
       chunkedLoading: true,
       showCoverageOnHover: false,
-      spiderfyOnMaxZoom: true,
-      disableClusteringAtZoom: 18,
+      spiderfyOnMaxZoom: false,
+      zoomToBoundsOnClick: false,
+      //disableClusteringAtZoom: 18,
       maxClusterRadius: 60,
     });
     map.addLayer(markersLayer);
@@ -2250,8 +2251,7 @@ function ensureMap() {
       draggable: true,
     })
       .addTo(map)
-      .bindPopup("Search center (drag me)")
-      .openPopup();
+      .bindPopup("Search center (drag me)");
 
     centerMarker.on("dragend", () => {
       const pos = centerMarker.getLatLng();
@@ -2470,10 +2470,10 @@ function renderNearbyList(rows, markerById) {
       setActive(marker, btn);
       pinMarker(marker);
 
-      markersLayer.zoomToShowLayer(marker, () => {
-        map.panTo(marker.getLatLng(), { animate: true });
-        marker.openPopup();
-      });
+      //markersLayer.zoomToShowLayer(marker, () => {
+      //map.panTo(marker.getLatLng(), { animate: true });
+      //marker.openPopup();
+      //});
 
       btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
     });
@@ -2518,7 +2518,8 @@ async function fetchNearby() {
 
     const payload = await res.json();
     const rows = payload.data || [];
-
+    console.log("Nearby rows returned:", rows.length);
+    console.log("Nearby rows:", rows);
     // Reset marker lookup
     markerById = new Map();
 
@@ -2586,33 +2587,6 @@ async function fetchNearby() {
       /* ---------------------------
   Click = PIN popup
 ---------------------------- */
-      marker.on("click", () => {
-        if (!window.__nearbyUI) return;
-        const ui = window.__nearbyUI;
-
-        // Close previously pinned marker
-        if (ui.pinnedMarker && ui.pinnedMarker !== marker) {
-          ui.pinnedMarker.closePopup?.();
-        }
-
-        // Set new pinned marker
-        ui.pinnedMarker = marker;
-
-        // Open + pan (cluster-safe)
-        markersLayer.zoomToShowLayer(marker, () => {
-          marker.openPopup();
-          map.panTo(marker.getLatLng(), { animate: true });
-        });
-      });
-
-      // CLICK = sticky select
-      marker.on("click", () => {
-        setActive(marker, null);
-        markersLayer.zoomToShowLayer(marker, () => {
-          marker.openPopup();
-          map.panTo(marker.getLatLng(), { animate: true });
-        });
-      });
 
       marker.bindPopup(popupHTML);
 
@@ -2628,10 +2602,10 @@ async function fetchNearby() {
           setActive(marker, btn);
           pinMarker(marker);
 
-          markersLayer.zoomToShowLayer(marker, () => {
-            map.panTo(marker.getLatLng(), { animate: true });
+          //markersLayer.zoomToShowLayer(marker, () => {
+            // map.panTo(marker.getLatLng(), { animate: true });
             marker.openPopup();
-          });
+          //});
 
           btn?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         });
@@ -2640,7 +2614,10 @@ async function fetchNearby() {
       // MarkerClusterGroup uses addLayer
       markersLayer.addLayer(marker);
     });
-
+    console.log("Markers added:", markersLayer.getLayers().length);
+    markersLayer.refreshClusters?.();
+    console.log("Marker bounds:", markersLayer.getBounds().toBBoxString());
+    console.log("Map bounds:", map.getBounds().toBBoxString());
     // Render list AFTER markers exist
     renderNearbyList(rows, markerById);
 
@@ -2691,9 +2668,7 @@ if (useGpsBtn)
         currentCenter = { lat: pos.coords.latitude, lng: pos.coords.longitude };
 
         map.setView([currentCenter.lat, currentCenter.lng], 15);
-        centerMarker
-          .setLatLng([currentCenter.lat, currentCenter.lng])
-          .openPopup();
+        centerMarker.setLatLng([currentCenter.lat, currentCenter.lng]);
 
         updateRadiusCircle();
 
