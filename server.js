@@ -126,6 +126,7 @@ app.get("/api/trials/nearby", async (req, res) => {
     const from = (req.query.from ?? "").toString().trim().slice(0, 10);
     const to = (req.query.to ?? "").toString().trim().slice(0, 10);
     const group = (req.query.group ?? "").toString().trim();
+    const year = (req.query.year ?? "").toString().trim();
 
     if (Number.isNaN(lat) || Number.isNaN(lng)) {
       return res
@@ -161,8 +162,9 @@ app.get("/api/trials/nearby", async (req, res) => {
       WHERE
         t.latitude IS NOT NULL
         AND t.longitude IS NOT NULL
-        AND t.trial_date BETWEEN ? AND ?
-        ${group ? "AND o.offence_group = ?" : ""}
+       AND t.trial_date BETWEEN ? AND ?
+${year ? "AND YEAR(t.trial_date) = ?" : ""}
+${group ? "AND o.offence_group = ?" : ""}
       HAVING distance_m <= ?
       ORDER BY distance_m ASC
       LIMIT ?;
@@ -174,13 +176,13 @@ app.get("/api/trials/nearby", async (req, res) => {
       lng,
       from,
       to,
+      ...(year ? [Number(year)] : []),
       ...(group ? [group] : []),
       radius,
       limit,
     ];
 
     const [rows] = await pool.query(sql, params);
-
     res.json({
       from,
       to,

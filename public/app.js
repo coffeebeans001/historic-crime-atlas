@@ -531,12 +531,14 @@ function ensureChart() {
 
         if (lockedChartYear === clickedYear) {
           clearChartYearLock();
+          console.log("New locked chart year:", lockedChartYear);
           return;
         }
 
         lockedChartYear = clickedYear;
         highlightMarkersByYear(clickedYear);
         fetchNearby().catch(console.error);
+        console.log("New locked chart year:", lockedChartYear);
       },
 
       responsive: true,
@@ -2512,6 +2514,7 @@ async function fetchNearby() {
     markersLayer.clearLayers();
 
     const url = buildNearbyUrl();
+    console.log("Nearby URL:", buildNearbyUrl());
     const res = await fetch(url);
     if (!res.ok) {
       const txt = await res.text();
@@ -2622,15 +2625,13 @@ async function fetchNearby() {
     // Render list AFTER markers exist
     renderNearbyList(rows, markerById);
 
-    // Auto-zoom (keep center in view too)
-    //if (rows.length) {
-    //const latLngs = rows
-    //.map((r) => [Number(r.latitude), Number(r.longitude)])
-    //.filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
+    if (lockedChartYear != null) {
+      const firstMarker = markersLayer.getLayers()[0];
 
-    //latLngs.push([currentCenter.lat, currentCenter.lng]);
-    //if (latLngs.length) map.fitBounds(L.latLngBounds(latLngs).pad(0.25));
-    //}
+      if (firstMarker) {
+        firstMarker.openPopup();
+      }
+    }
 
     // Optional debug (safe)
   } finally {
