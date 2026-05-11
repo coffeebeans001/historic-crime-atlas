@@ -531,14 +531,12 @@ function ensureChart() {
 
         if (lockedChartYear === clickedYear) {
           clearChartYearLock();
-          console.log("New locked chart year:", lockedChartYear);
           return;
         }
 
         lockedChartYear = clickedYear;
         highlightMarkersByYear(clickedYear);
         fetchNearby().catch(console.error);
-        console.log("New locked chart year:", lockedChartYear);
       },
 
       responsive: true,
@@ -2514,7 +2512,6 @@ async function fetchNearby() {
     markersLayer.clearLayers();
 
     const url = buildNearbyUrl();
-    console.log("Nearby URL:", buildNearbyUrl());
     const res = await fetch(url);
     if (!res.ok) {
       const txt = await res.text();
