@@ -1486,6 +1486,12 @@ async function buildResearchSnapshotCanvas() {
     rangeText = `Up to ${formatDisplayDate(dateTo)}`;
   }
 
+  const lockedYearChip = {
+    text: lockedChartYear ? `Locked year: ${lockedChartYear}` : "Unlocked",
+    bg: exportTheme === "dark" ? "#78350f" : "#fef3c7",
+    color: exportTheme === "dark" ? "#fef3c7" : "#92400e",
+  };
+
   const filterChips =
     exportTheme === "dark"
       ? [
@@ -1504,6 +1510,8 @@ async function buildResearchSnapshotCanvas() {
             bg: "#163826",
             color: "#bbf7d0",
           },
+
+          lockedYearChip,
         ]
       : [
           {
@@ -1521,6 +1529,8 @@ async function buildResearchSnapshotCanvas() {
             bg: "#dcfce7",
             color: "#166534",
           },
+
+          lockedYearChip,
         ];
 
   const chartImage = new Image();
@@ -1538,7 +1548,7 @@ async function buildResearchSnapshotCanvas() {
   const padding = 24;
   const lineHeight = 24;
   const sectionGap = 16;
-  const headerHeight = 150;
+  const headerHeight = 185;
 
   const textLines = [
     chartTitle,
@@ -1555,12 +1565,16 @@ async function buildResearchSnapshotCanvas() {
   const urlLines = wrapText(currentUrl, 110);
   const urlHeight = urlLines.length * 18 + 20;
 
+  const summaryHeight = 220;
+
   const height =
     padding +
     headerHeight +
     textHeight +
     sectionGap +
     chartCanvas.height +
+    sectionGap +
+    summaryHeight +
     sectionGap +
     urlHeight +
     padding;
@@ -1707,6 +1721,26 @@ async function buildResearchSnapshotCanvas() {
   // chart image
   ctx.drawImage(chartImage, padding, y, chartCanvas.width, chartCanvas.height);
   y += chartCanvas.height + sectionGap;
+  y += 24;
+  
+  // summary
+  const summary = buildSnapshotSummary();
+
+  ctx.fillStyle = theme.textPrimary;
+  ctx.font = "bold 18px Arial";
+  ctx.fillText("Summary", padding, y);
+
+  y += 26;
+
+  ctx.fillStyle = theme.textSecondary;
+  ctx.font = "14px Arial";
+
+  for (const line of summary) {
+    ctx.fillText(`• ${line}`, padding + 8, y);
+    y += 20;
+  }
+
+  y += sectionGap;
 
   // footer separator
   y += 10;
@@ -1904,6 +1938,27 @@ function getYRangeFromSeries(seriesArr) {
   }
 
   return { min, max };
+}
+
+function buildSnapshotSummary() {
+  const offence =
+    document.getElementById("group")?.value?.trim() || "All offences";
+
+  const gender = document.getElementById("gender")?.value?.trim() || "All";
+
+  const bucket = document.getElementById("bucket")?.value || "year";
+
+  const nearbyCount = markersLayer?.getLayers?.().length || 0;
+
+  return [
+    `Offence: ${offence}`,
+    `Gender: ${gender}`,
+    `Bucket: ${bucket}`,
+    `Locked year: ${lockedChartYear != null ? lockedChartYear : "None"}`,
+    `Nearby records: ${nearbyCount}`,
+    `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
+    "Confidence interval visible",
+  ];
 }
 
 async function render() {
