@@ -1565,7 +1565,7 @@ async function buildResearchSnapshotCanvas() {
   const urlLines = wrapText(currentUrl, 110);
   const urlHeight = urlLines.length * 18 + 20;
 
-  const summaryHeight = 220;
+  const summaryHeight = 300;
 
   const height =
     padding +
@@ -1722,7 +1722,7 @@ async function buildResearchSnapshotCanvas() {
   ctx.drawImage(chartImage, padding, y, chartCanvas.width, chartCanvas.height);
   y += chartCanvas.height + sectionGap;
   y += 24;
-  
+
   // summary
   const summary = buildSnapshotSummary();
 
@@ -1737,6 +1737,24 @@ async function buildResearchSnapshotCanvas() {
 
   for (const line of summary) {
     ctx.fillText(`• ${line}`, padding + 8, y);
+    y += 20;
+  }
+
+  y += 20;
+
+  const notes = buildResearchNotes();
+
+  ctx.fillStyle = theme.textPrimary;
+  ctx.font = "bold 18px Arial";
+  ctx.fillText("Research notes", padding, y);
+
+  y += 26;
+
+  ctx.fillStyle = theme.textSecondary;
+  ctx.font = "14px Arial";
+
+  for (const note of notes) {
+    ctx.fillText(`• ${note}`, padding + 8, y);
     y += 20;
   }
 
@@ -1782,6 +1800,25 @@ async function buildResearchSnapshotCanvas() {
     .toLowerCase();
 
   return exportCanvas;
+}
+
+function buildResearchNotes() {
+  const notes = [];
+
+  if (lockedChartYear != null) {
+    notes.push(
+      `This snapshot is focused on the locked year ${lockedChartYear}.`,
+    );
+  }
+
+  notes.push(
+    "Low sample sizes mean individual years should be interpreted cautiously.",
+  );
+  notes.push(
+    "Spatial results are limited to the selected radius and map centre.",
+  );
+
+  return notes;
 }
 
 async function downloadResearchSnapshot() {
