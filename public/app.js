@@ -472,6 +472,7 @@ function getMainChartElement(elements) {
 function clearChartYearLock() {
   lockedChartYear = null;
   resetMarkerHighlight();
+  updateLockButton();
   fetchNearby().catch(console.error);
 }
 
@@ -535,6 +536,7 @@ function ensureChart() {
         }
 
         lockedChartYear = clickedYear;
+        updateLockButton();
         highlightMarkersByYear(clickedYear);
         fetchNearby().catch(console.error);
       },
@@ -2001,6 +2003,17 @@ function buildSnapshotSummary() {
   ];
 }
 
+function updateLockButton() {
+  const btn = document.getElementById("clear-lock-btn");
+  if (!btn) return;
+
+  btn.hidden = lockedChartYear == null;
+  btn.textContent =
+    lockedChartYear != null
+      ? `Clear locked year: ${lockedChartYear}`
+      : "Clear locked year";
+}
+
 async function render() {
   ensureChart();
 
@@ -2945,6 +2958,10 @@ if (copyLinkBtn) {
       } catch (err) {
         console.error("PDF download failed:", err);
       }
+    });
+
+    document.getElementById("clear-lock-btn")?.addEventListener("click", () => {
+      clearChartYearLock();
     });
   }
 
