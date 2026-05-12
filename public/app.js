@@ -1565,7 +1565,7 @@ async function buildResearchSnapshotCanvas() {
   const urlLines = wrapText(currentUrl, 110);
   const urlHeight = urlLines.length * 18 + 20;
 
-  const summaryHeight = 300;
+  const summaryHeight = 320;
 
   const height =
     padding +
@@ -1816,6 +1816,9 @@ function buildResearchNotes() {
   );
   notes.push(
     "Spatial results are limited to the selected radius and map centre.",
+  );
+  notes.push(
+    `Map centre used: ${currentCenter.lat.toFixed(4)}, ${currentCenter.lng.toFixed(4)}.`,
   );
 
   return notes;
