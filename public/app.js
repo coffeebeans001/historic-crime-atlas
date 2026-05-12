@@ -1568,7 +1568,7 @@ async function buildResearchSnapshotCanvas() {
   const urlLines = wrapText(currentUrl, 110);
   const urlHeight = urlLines.length * 18 + 20;
 
-  const summaryHeight = 320;
+  const summaryHeight = 360;
 
   const height =
     padding +
@@ -1807,6 +1807,11 @@ async function buildResearchSnapshotCanvas() {
 
 function buildResearchNotes() {
   const notes = [];
+  const customNote = document.getElementById("research-note")?.value?.trim();
+
+  if (customNote) {
+    notes.push(customNote);
+  }
 
   if (lockedChartYear != null) {
     notes.push(
@@ -1987,7 +1992,7 @@ function buildSnapshotSummary() {
   const offence =
     document.getElementById("group")?.value?.trim() || "All offences";
 
-  const gender = document.getElementById("gender")?.value?.trim() || "All";
+  const gender = document.getElementById("gender")?.value?.trim() || "all";
 
   const bucket = document.getElementById("bucket")?.value || "year";
 
@@ -1997,6 +2002,9 @@ function buildSnapshotSummary() {
     `Offence: ${offence}`,
     `Gender: ${gender}`,
     `Bucket: ${bucket}`,
+    gender === "all"
+      ? ["Comparison mode: Male and Female trends visible."]
+      : [],
     `Locked year: ${lockedChartYear != null ? lockedChartYear : "None"}`,
     `Nearby records: ${nearbyCount}`,
     `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
