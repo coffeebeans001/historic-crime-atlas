@@ -470,6 +470,7 @@ function getMainChartElement(elements) {
 }
 
 function clearChartYearLock() {
+  stopTimelinePlayback();
   lockedChartYear = null;
   resetMarkerHighlight();
   updateLockButton();
@@ -2014,6 +2015,62 @@ function updateLockButton() {
       : "Clear locked year";
 }
 
+function getChartYears() {
+  if (!chart) return [];
+
+  const years = chart.data.datasets
+    .filter((ds) => {
+      const label = ds.label || "";
+      return !label.includes("CI") && !label.includes("(trend)");
+    })
+    .flatMap((ds) => ds.data || [])
+    .map((p) => Number(p.x))
+    .filter((x) => Number.isFinite(x));
+
+  return [...new Set(years)].sort((a, b) => a - b);
+}
+
+function updateTimelineButtons(isPlaying) {
+  const playBtn = document.getElementById("play-timeline-btn");
+  const stopBtn = document.getElementById("stop-timeline-btn");
+
+  if (playBtn) playBtn.hidden = isPlaying;
+  if (stopBtn) stopBtn.hidden = !isPlaying;
+}
+
+function stopTimelinePlayback() {
+  clearInterval(timelineTimer);
+  timelineTimer = null;
+  timelineIndex = 0;
+  updateTimelineButtons(false);
+}
+
+function startTimelinePlayback() {
+  timelineYears = getChartYears();
+
+  if (!timelineYears.length) return;
+
+  stopTimelinePlayback();
+  updateTimelineButtons(true);
+
+  timelineIndex = 0;
+
+  timelineTimer = setInterval(() => {
+    const year = timelineYears[timelineIndex];
+
+    lockedChartYear = year;
+    updateLockButton();
+    highlightMarkersByYear(year);
+    fetchNearby().catch(console.error);
+
+    timelineIndex += 1;
+
+    if (timelineIndex >= timelineYears.length) {
+      stopTimelinePlayback();
+    }
+  }, 1000);
+}
+
 async function render() {
   ensureChart();
 
@@ -2223,6 +2280,9 @@ let popupFadeTimer = null;
 let lastHoveredChartYear = null;
 let chartHoverTimer = null;
 let lockedChartYear = null;
+let timelineTimer = null;
+let timelineYears = [];
+let timelineIndex = 0;
 
 if (!window.__nearbyUI) {
   window.__nearbyUI = {
@@ -2963,6 +3023,18 @@ if (copyLinkBtn) {
     document.getElementById("clear-lock-btn")?.addEventListener("click", () => {
       clearChartYearLock();
     });
+
+    document
+      .getElementById("play-timeline-btn")
+      ?.addEventListener("click", () => {
+        startTimelinePlayback();
+      });
+
+    document
+      .getElementById("stop-timeline-btn")
+      ?.addEventListener("click", () => {
+        stopTimelinePlayback();
+      });
   }
 
   const fromEl = document.getElementById("from");
