@@ -258,7 +258,7 @@ const LOW_N_THRESHOLD = 5;
 
 function buildDatasets(seriesArr, bucket) {
   const datasets = [];
-
+  const largestGapYear = getLargestGenderGapYear(seriesArr);
   const getBucketX = (x) => {
     const year = Number(x);
     return bucket === "decade" ? Math.floor(year / 10) * 10 : year;
@@ -349,12 +349,16 @@ function buildDatasets(seriesArr, bucket) {
         },
 
         pointRadius: (ctx) => {
-          const n = ctx.raw?.n ?? 0;
-          return n < LOW_N_THRESHOLD ? 5 : 4;
+          const x = Number(ctx.raw?.x);
+          return largestGapYear != null && x === Number(largestGapYear) ? 7 : 4;
         },
 
-        pointHoverRadius: 7,
-
+        pointHoverRadius: (ctx) => {
+          const x = Number(ctx.raw?.x);
+          return largestGapYear != null && x === Number(largestGapYear)
+            ? 10
+            : 7;
+        },
         pointBackgroundColor: (ctx) => {
           const n = ctx.raw?.n ?? 0;
           return n < LOW_N_THRESHOLD ? "#ffffff" : rgb;
@@ -2007,6 +2011,23 @@ function buildSnapshotSummary() {
 
   const nearbyCount = markersLayer?.getLayers?.().length || 0;
 
+  const genderValue = document.getElementById("gender")?.value?.trim() || "all";
+
+  let genderGapLine = null;
+
+  if (genderValue === "all" && chart?.data?.datasets) {
+    const seriesArr = ["Male", "Female"].map((label) => ({
+      label,
+      data: chart.data.datasets.find((ds) => ds.label === label)?.data || [],
+    }));
+
+    const gap = findLargestGenderGap(seriesArr);
+
+    if (gap) {
+      genderGapLine = `Largest gender gap: ${gap.year} — Male ${gap.male.toFixed(1)}%, Female ${gap.female.toFixed(1)}%, gap ${gap.gap.toFixed(1)}pp`;
+    }
+  }
+
   return [
     `Offence: ${offence}`,
     `Gender: ${gender}`,
@@ -2015,7 +2036,7 @@ function buildSnapshotSummary() {
     ...(gender === "all"
       ? ["Comparison mode: Male and Female trends visible."]
       : []),
-
+    ...(genderGapLine ? [genderGapLine] : []),
     `Locked year: ${lockedChartYear != null ? lockedChartYear : "None"}`,
     `Nearby records: ${nearbyCount}`,
     `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
@@ -2133,6 +2154,14 @@ function findLargestGenderGap(seriesArr) {
   }
 
   return best;
+}
+
+function getLargestGenderGapYear(seriesArr) {
+  const genderValue = document.getElementById("gender")?.value || "all";
+  if (genderValue !== "all") return null;
+
+  const gap = findLargestGenderGap(seriesArr);
+  return gap?.year ?? null;
 }
 
 async function render() {
