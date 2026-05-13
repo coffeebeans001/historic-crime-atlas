@@ -2040,7 +2040,20 @@ function getChartYears() {
   const years = chart.data.datasets
     .filter((ds) => {
       const label = ds.label || "";
-      return !label.includes("CI") && !label.includes("(trend)");
+      const gender = document.getElementById("gender")?.value?.trim() || "all";
+
+      if (label.includes("CI")) return false;
+      if (label.includes("(trend)")) return false;
+
+      if (gender === "male") {
+        return label === "Male";
+      }
+
+      if (gender === "female") {
+        return label === "Female";
+      }
+
+      return true;
     })
     .flatMap((ds) => ds.data || [])
     .map((p) => Number(p.x))
@@ -2548,6 +2561,7 @@ function buildNearbyUrl() {
 
   const radius = Number(document.getElementById("radius").value || 2000);
   const limit = Number(document.getElementById("nearby-limit").value || 5);
+  const gender = document.getElementById("gender")?.value || "all";
 
   const params = new URLSearchParams({
     lat: String(currentCenter.lat),
@@ -2556,6 +2570,7 @@ function buildNearbyUrl() {
     to,
     radius: String(radius),
     limit: String(limit),
+    gender,
   });
 
   if (lockedChartYear != null) {
@@ -3057,6 +3072,27 @@ if (copyLinkBtn) {
       ?.addEventListener("click", () => {
         stopTimelinePlayback();
       });
+
+    ["from", "to"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      const refreshDateFilters = () => {
+        clearChartYearLock();
+        render().catch(console.error);
+        fetchNearby().catch(console.error);
+      };
+
+      el.addEventListener("change", refreshDateFilters);
+
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          el.blur(); // forces the browser to commit the date value
+          refreshDateFilters();
+        }
+      });
+    });
   }
 
   const fromEl = document.getElementById("from");

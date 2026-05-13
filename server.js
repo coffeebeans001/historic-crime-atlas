@@ -127,6 +127,7 @@ app.get("/api/trials/nearby", async (req, res) => {
     const to = (req.query.to ?? "").toString().trim().slice(0, 10);
     const group = (req.query.group ?? "").toString().trim();
     const year = (req.query.year ?? "").toString().trim();
+    const gender = (req.query.gender ?? "all").toString().trim();
 
     if (Number.isNaN(lat) || Number.isNaN(lng)) {
       return res
@@ -162,9 +163,10 @@ app.get("/api/trials/nearby", async (req, res) => {
       WHERE
         t.latitude IS NOT NULL
         AND t.longitude IS NOT NULL
-       AND t.trial_date BETWEEN ? AND ?
-${year ? "AND YEAR(t.trial_date) = ?" : ""}
-${group ? "AND o.offence_group = ?" : ""}
+        AND t.trial_date BETWEEN ? AND ?
+        ${gender !== "all" ? "AND LOWER(d.gender) = LOWER(?)" : ""}
+        ${year ? "AND YEAR(t.trial_date) = ?" : ""}
+        ${group ? "AND o.offence_group = ?" : ""}
       HAVING distance_m <= ?
       ORDER BY distance_m ASC
       LIMIT ?;
@@ -176,6 +178,7 @@ ${group ? "AND o.offence_group = ?" : ""}
       lng,
       from,
       to,
+      ...(gender !== "all" ? [gender] : []),
       ...(year ? [Number(year)] : []),
       ...(group ? [group] : []),
       radius,
