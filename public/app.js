@@ -1522,6 +1522,27 @@ async function buildResearchSnapshotCanvas() {
     color: exportTheme === "dark" ? "#bfdbfe" : "#1d4ed8",
   };
 
+  const largestGapChip = (() => {
+    const genderValue = document.getElementById("gender")?.value || "all";
+
+    if (genderValue !== "all") return null;
+
+    const seriesArr = ["Male", "Female"].map((label) => ({
+      label,
+      data: chart.data.datasets.find((ds) => ds.label === label)?.data || [],
+    }));
+
+    const gap = findLargestGenderGap(seriesArr);
+
+    if (!gap) return null;
+
+    return {
+      text: `Largest gap: ${gap.year}`,
+      bg: exportTheme === "dark" ? "#312e81" : "#e0e7ff",
+      color: exportTheme === "dark" ? "#c7d2fe" : "#3730a3",
+    };
+  })();
+
   const filterChips =
     exportTheme === "dark"
       ? [
@@ -1543,6 +1564,7 @@ async function buildResearchSnapshotCanvas() {
 
           lockedYearChip,
           playbackChip,
+          ...(largestGapChip ? [largestGapChip] : []),
         ]
       : [
           {
@@ -1563,6 +1585,7 @@ async function buildResearchSnapshotCanvas() {
 
           lockedYearChip,
           playbackChip,
+          ...(largestGapChip ? [largestGapChip] : []),
         ];
 
   const chartImage = new Image();
@@ -1840,6 +1863,23 @@ function buildResearchNotes() {
 
   if (customNote) {
     notes.push(customNote);
+  }
+
+  const genderValue = document.getElementById("gender")?.value?.trim() || "all";
+
+  if (genderValue === "all" && chart?.data?.datasets) {
+    const seriesArr = ["Male", "Female"].map((label) => ({
+      label,
+      data: chart.data.datasets.find((ds) => ds.label === label)?.data || [],
+    }));
+
+    const gap = findLargestGenderGap(seriesArr);
+
+    if (gap) {
+      notes.push(
+        `The largest Male/Female conviction-rate gap appears in ${gap.year}, with a difference of ${gap.gap.toFixed(1)} percentage points.`,
+      );
+    }
   }
 
   if (lockedChartYear != null) {
@@ -2180,6 +2220,50 @@ function getLargestGenderGapYear(seriesArr) {
   return gap?.year ?? null;
 }
 
+function updateGenderGapNote(seriesArr) {
+  const el = document.getElementById("gender-gap-note");
+  if (!el) return;
+
+  const genderValue = document.getElementById("gender")?.value || "all";
+
+  if (genderValue !== "all") {
+    el.textContent = "";
+    return;
+  }
+
+  const gap = findLargestGenderGap(seriesArr);
+
+  el.textContent = gap
+    ? `Largest Male/Female gap: ${gap.year} — Male ${gap.male.toFixed(
+        1,
+      )}%, Female ${gap.female.toFixed(1)}% (gap ${gap.gap.toFixed(1)}pp)`
+    : "";
+}
+
+function updateGenderGapBadge(seriesArr) {
+  const badge = document.getElementById("gender-gap-badge");
+  if (!badge) return;
+
+  const genderValue = document.getElementById("gender")?.value || "all";
+
+  if (genderValue !== "all") {
+    badge.hidden = true;
+    badge.textContent = "";
+    return;
+  }
+
+  const gap = findLargestGenderGap(seriesArr);
+
+  if (!gap) {
+    badge.hidden = true;
+    badge.textContent = "";
+    return;
+  }
+
+  badge.hidden = false;
+  badge.textContent = `Largest gap: ${gap.year}`;
+}
+
 async function render() {
   ensureChart();
 
@@ -2262,6 +2346,9 @@ async function render() {
         insightText: "No data available for the selected filters.",
         minN: null,
       });
+
+      updateGenderGapNote([]);
+      updateGenderGapBadge([]);
 
       const genderValue = document.getElementById("gender")?.value || "all";
 
@@ -2350,6 +2437,9 @@ async function render() {
       insightText,
       minN,
     });
+
+    updateGenderGapNote(payload.series);
+    updateGenderGapBadge(payload.series);
 
     chart.update();
     writeUrlState();
