@@ -2204,6 +2204,8 @@ function findLargestGenderGap(seriesArr) {
         year: m.x,
         male: m.y,
         female: f.y,
+        maleN: m.n,
+        femaleN: f.n,
         gap,
       };
     }
@@ -2233,10 +2235,17 @@ function updateGenderGapNote(seriesArr) {
 
   const gap = findLargestGenderGap(seriesArr);
 
+  const lowSample =
+    (gap.maleN ?? 0) < LOW_N_THRESHOLD || (gap.femaleN ?? 0) < LOW_N_THRESHOLD;
+
   el.textContent = gap
     ? `Largest Male/Female gap: ${gap.year} — Male ${gap.male.toFixed(
         1,
-      )}%, Female ${gap.female.toFixed(1)}% (gap ${gap.gap.toFixed(1)}pp)`
+      )}% (n=${gap.maleN}), Female ${gap.female.toFixed(
+        1,
+      )}% (n=${gap.femaleN}) — gap ${gap.gap.toFixed(1)}pp${
+        lowSample ? " ⚠ low sample" : ""
+      }`
     : "";
 }
 
