@@ -1577,7 +1577,7 @@ async function buildResearchSnapshotCanvas() {
   const urlLines = wrapText(currentUrl, 110);
   const urlHeight = urlLines.length * 18 + 20;
 
-  const summaryHeight = 360;
+  const summaryHeight = 380;
 
   const height =
     padding +
@@ -2106,6 +2106,35 @@ function startTimelinePlayback() {
   }, 1000);
 }
 
+function findLargestGenderGap(seriesArr) {
+  const male = seriesArr.find((s) => s.label === "Male");
+  const female = seriesArr.find((s) => s.label === "Female");
+
+  if (!male || !female) return null;
+
+  const femaleByYear = new Map(female.data.map((p) => [p.x, p]));
+
+  let best = null;
+
+  for (const m of male.data) {
+    const f = femaleByYear.get(m.x);
+    if (!f || m.y == null || f.y == null) continue;
+
+    const gap = Math.abs(m.y - f.y);
+
+    if (!best || gap > best.gap) {
+      best = {
+        year: m.x,
+        male: m.y,
+        female: f.y,
+        gap,
+      };
+    }
+  }
+
+  return best;
+}
+
 async function render() {
   ensureChart();
 
@@ -2247,7 +2276,19 @@ async function render() {
     chart.options.plugins.title.text = `${groupLabel} — Conviction Rate by ${bucket === "decade" ? "Decade" : "Year"} (${genderLabel}) • Radius ${radius}m`;
     chart.options.plugins.subtitle.text = `Map center: ${currentCenter.lat.toFixed(4)}, ${currentCenter.lng.toFixed(4)}`;
     // 🔥 NEW unified panel logic (REPLACE old heading block with this)
-    const insightText = generateInsight(payload.series);
+    let insightText = generateInsight(payload.series);
+
+    const genderValue = document.getElementById("gender")?.value || "all";
+
+    if (genderValue === "all") {
+      const gap = findLargestGenderGap(payload.series);
+
+      if (gap) {
+        insightText += ` Largest gender gap appears in ${gap.year}: Male ${gap.male.toFixed(
+          1,
+        )}%, Female ${gap.female.toFixed(1)}%, gap ${gap.gap.toFixed(1)} percentage points.`;
+      }
+    }
 
     const pointsForConfidence = (payload.series || [])
       .flatMap((s) => s.data || [])
