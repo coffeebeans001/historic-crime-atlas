@@ -1495,6 +1495,13 @@ async function buildResearchSnapshotCanvas() {
     color: exportTheme === "dark" ? "#fef3c7" : "#92400e",
   };
 
+  const playbackChip = {
+    text: timelineTimer != null ? `Playback active` : "Playback stopped",
+
+    bg: exportTheme === "dark" ? "#1e293b" : "#dbeafe",
+    color: exportTheme === "dark" ? "#bfdbfe" : "#1d4ed8",
+  };
+
   const filterChips =
     exportTheme === "dark"
       ? [
@@ -1515,6 +1522,7 @@ async function buildResearchSnapshotCanvas() {
           },
 
           lockedYearChip,
+          playbackChip,
         ]
       : [
           {
@@ -1534,6 +1542,7 @@ async function buildResearchSnapshotCanvas() {
           },
 
           lockedYearChip,
+          playbackChip,
         ];
 
   const chartImage = new Image();
@@ -2069,6 +2078,9 @@ function startTimelinePlayback() {
     const year = timelineYears[timelineIndex];
 
     lockedChartYear = year;
+    chart.options.plugins.subtitle.text = `Playback year: ${year}`;
+
+    chart.update("none");
     updateLockButton();
     highlightMarkersByYear(year);
     fetchNearby().catch(console.error);
