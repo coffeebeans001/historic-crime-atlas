@@ -2002,9 +2002,11 @@ function buildSnapshotSummary() {
     `Offence: ${offence}`,
     `Gender: ${gender}`,
     `Bucket: ${bucket}`,
-    gender === "all"
+
+    ...(gender === "all"
       ? ["Comparison mode: Male and Female trends visible."]
-      : [],
+      : []),
+
     `Locked year: ${lockedChartYear != null ? lockedChartYear : "None"}`,
     `Nearby records: ${nearbyCount}`,
     `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
