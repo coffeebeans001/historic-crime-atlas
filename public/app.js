@@ -615,6 +615,15 @@ function ensureChart() {
 
               const raw = ctx.raw || {};
 
+              const largestGapYear = getLargestGenderGapYear(
+                chart?.data?.datasets
+                  ?.filter((ds) => ds.label === "Male" || ds.label === "Female")
+                  .map((ds) => ({
+                    label: ds.label,
+                    data: ds.data || [],
+                  })) || [],
+              );
+
               const rate = raw.y != null ? Number(raw.y).toFixed(1) : null;
               const n = raw.n;
               const low = raw.low;
@@ -641,6 +650,13 @@ function ensureChart() {
                 const isLow = n < LOW_N_THRESHOLD;
                 const suffix = isLow ? " ⚠ low sample" : "";
                 lines.push(`n = ${n} trials${suffix}`);
+              }
+
+              if (
+                largestGapYear != null &&
+                Number(raw.x) === Number(largestGapYear)
+              ) {
+                lines.push("Largest Male/Female gap year");
               }
 
               return lines;
@@ -1581,7 +1597,7 @@ async function buildResearchSnapshotCanvas() {
   const urlLines = wrapText(currentUrl, 110);
   const urlHeight = urlLines.length * 18 + 20;
 
-  const summaryHeight = 380;
+  const summaryHeight = 410;
 
   const height =
     padding +
