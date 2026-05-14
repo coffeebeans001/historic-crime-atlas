@@ -2238,15 +2238,13 @@ function updateGenderGapNote(seriesArr) {
   const lowSample =
     (gap.maleN ?? 0) < LOW_N_THRESHOLD || (gap.femaleN ?? 0) < LOW_N_THRESHOLD;
 
-  el.textContent = gap
-    ? `Largest Male/Female gap: ${gap.year} — Male ${gap.male.toFixed(
-        1,
-      )}% (n=${gap.maleN}), Female ${gap.female.toFixed(
-        1,
-      )}% (n=${gap.femaleN}) — gap ${gap.gap.toFixed(1)}pp${
-        lowSample ? " ⚠ low sample" : ""
-      }`
-    : "";
+  genderGapLine = `Largest gender gap: ${gap.year} — Male ${gap.male.toFixed(
+    1,
+  )}% (n=${gap.maleN}), Female ${gap.female.toFixed(
+    1,
+  )}% (n=${gap.femaleN}), gap ${gap.gap.toFixed(1)}pp${
+    lowSample ? " ⚠ low sample" : ""
+  }`;
 }
 
 function updateGenderGapBadge(seriesArr) {
