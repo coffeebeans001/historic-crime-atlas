@@ -1536,10 +1536,30 @@ async function buildResearchSnapshotCanvas() {
 
     if (!gap) return null;
 
+    const lowSample =
+      (gap.maleN ?? 0) < LOW_N_THRESHOLD ||
+      (gap.femaleN ?? 0) < LOW_N_THRESHOLD;
+
     return {
-      text: `Largest gap: ${gap.year}`,
-      bg: exportTheme === "dark" ? "#312e81" : "#e0e7ff",
-      color: exportTheme === "dark" ? "#c7d2fe" : "#3730a3",
+      text: lowSample
+        ? `Largest gap: ${gap.year} ⚠`
+        : `Largest gap: ${gap.year}`,
+
+      bg: lowSample
+        ? exportTheme === "dark"
+          ? "#78350f"
+          : "#fef3c7"
+        : exportTheme === "dark"
+          ? "#312e81"
+          : "#e0e7ff",
+
+      color: lowSample
+        ? exportTheme === "dark"
+          ? "#fef3c7"
+          : "#92400e"
+        : exportTheme === "dark"
+          ? "#c7d2fe"
+          : "#3730a3",
     };
   })();
 
@@ -1617,9 +1637,9 @@ async function buildResearchSnapshotCanvas() {
 
   const textHeight = textLines.length * lineHeight;
   const width = Math.max(chartCanvas.width + padding * 2, 1200);
-  const urlLines = wrapText(currentUrl, 110);
-  const urlHeight = urlLines.length * 18 + 20;
 
+  const estimatedUrlLines = wrapText(currentUrl, 80);
+  const urlHeight = estimatedUrlLines.length * 18 + 20;
   const summaryHeight = 410;
 
   const height =
@@ -1843,6 +1863,11 @@ async function buildResearchSnapshotCanvas() {
 
   y += 20;
 
+  ctx.font = "13px Arial";
+
+  const maxUrlWidth = width - padding * 2;
+  const urlLines = wrapCanvasText(ctx, currentUrl, maxUrlWidth);
+
   for (const line of urlLines) {
     ctx.fillText(line, padding, y);
     y += 18;
@@ -1855,6 +1880,27 @@ async function buildResearchSnapshotCanvas() {
     .toLowerCase();
 
   return exportCanvas;
+}
+
+function wrapCanvasText(ctx, text, maxWidth) {
+  const chars = String(text || "").split("");
+  const lines = [];
+  let line = "";
+
+  for (const char of chars) {
+    const testLine = line + char;
+
+    if (ctx.measureText(testLine).width > maxWidth && line) {
+      lines.push(line);
+      line = char;
+    } else {
+      line = testLine;
+    }
+  }
+
+  if (line) lines.push(line);
+
+  return lines;
 }
 
 function buildResearchNotes() {
@@ -2250,7 +2296,6 @@ function updateGenderGapNote(seriesArr) {
 function updateGenderGapBadge(seriesArr) {
   const badge = document.getElementById("gender-gap-badge");
   if (!badge) return;
-
   const genderValue = document.getElementById("gender")?.value || "all";
 
   if (genderValue !== "all") {
@@ -2266,9 +2311,22 @@ function updateGenderGapBadge(seriesArr) {
     badge.textContent = "";
     return;
   }
+  const lowSample =
+    (gap.maleN ?? 0) < LOW_N_THRESHOLD || (gap.femaleN ?? 0) < LOW_N_THRESHOLD;
 
   badge.hidden = false;
-  badge.textContent = `Largest gap: ${gap.year}`;
+
+  badge.textContent = lowSample
+    ? `Largest gap: ${gap.year} ⚠`
+    : `Largest gap: ${gap.year}`;
+
+  badge.style.background = lowSample ? "#fef3c7" : "#dbeafe";
+  badge.style.color = lowSample ? "#92400e" : "#1d4ed8";
+  badge.style.padding = "4px 10px";
+  badge.style.borderRadius = "999px";
+  badge.style.fontSize = "13px";
+  badge.style.fontWeight = "600";
+  badge.style.display = "inline-block";
 }
 
 async function render() {
