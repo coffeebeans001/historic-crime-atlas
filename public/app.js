@@ -821,6 +821,7 @@ function writeUrlState() {
 
   const from = document.getElementById("from")?.value?.trim() || "";
   const to = document.getElementById("to")?.value?.trim() || "";
+  const bucket = document.getElementById("bucket")?.value || "year";
   const gender = document.getElementById("gender")?.value || "all";
   const confidence = document.getElementById("confidence")?.value || "";
   const group = getValidatedGroup();
@@ -828,7 +829,7 @@ function writeUrlState() {
   if (from) params.set("from", from);
   if (to) params.set("to", to);
   if (bucket) params.set("bucket", bucket);
-  if (gender && gender !== "all") params.set("gender", gender);
+  params.set("gender", gender);
   if (confidence) params.set("confidence", confidence);
   if (group) params.set("group", group);
 
@@ -3322,6 +3323,21 @@ if (copyLinkBtn) {
       .getElementById("stop-timeline-btn")
       ?.addEventListener("click", () => {
         stopTimelinePlayback();
+      });
+
+    document
+      .getElementById("copy-snapshot-url-btn")
+      ?.addEventListener("click", async () => {
+        try {
+          writeUrlState();
+
+          await navigator.clipboard.writeText(window.location.href);
+
+          alert("Snapshot URL copied.");
+        } catch (err) {
+          console.error(err);
+          alert("Could not copy snapshot URL.");
+        }
       });
 
     ["from", "to"].forEach((id) => {
