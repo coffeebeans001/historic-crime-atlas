@@ -1957,10 +1957,20 @@ async function downloadResearchSnapshot() {
 
   const { file: exportFileTime } = getExportDateTime();
 
-  const safeTitle = (chartTitle || "research-snapshot")
-    .replace(/[^\w\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "_")
+  const offence =
+    document.getElementById("group")?.value?.trim() || "all-offences";
+
+  const gender = document.getElementById("gender")?.value?.trim() || "all";
+
+  const bucket = document.getElementById("bucket")?.value || "year";
+
+  const lockPart =
+    lockedChartYear != null ? `locked-${lockedChartYear}` : "unlocked";
+
+  const safeTitle = ["research-snapshot", offence, gender, bucket, lockPart]
+    .join("-")
+    .replace(/[^\w-]/g, "")
+    .replace(/-+/g, "-")
     .toLowerCase();
 
   exportCanvas.toBlob((blob) => {
