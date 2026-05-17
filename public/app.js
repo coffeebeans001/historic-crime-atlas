@@ -755,6 +755,17 @@ function writeUrlState({ push = false } = {}) {
     p.set("lng", String(currentCenter.lng));
   if (radiusEl?.value) p.set("radius", String(radiusEl.value));
   if (limitEl?.value) p.set("limit", String(limitEl.value));
+  if (lockedChartYear != null) {
+    p.set("lockedYear", String(lockedChartYear));
+  } else {
+    p.delete("lockedYear");
+  }
+
+  if (timelineTimer != null) {
+    p.set("playback", "1");
+  } else {
+    p.delete("playback");
+  }
 
   const qs = p.toString();
   const url = qs ? `?${qs}` : location.pathname;
@@ -785,6 +796,7 @@ function applyStateToUI(state) {
   }
 
   // Map controls
+  const radiusEl = document.getElementById("radius");
   const limitEl = document.getElementById("nearby-limit");
 
   if (radiusEl && state.radius) radiusEl.value = state.radius;
@@ -796,58 +808,32 @@ function applyStateToUI(state) {
   if (Number.isFinite(lat) && Number.isFinite(lng)) {
     currentCenter = { lat, lng };
   }
-}
+  const groupInput = document.getElementById("group");
 
-const groupInput = document.getElementById("group");
+  if (groupInput) {
+    const best = getBestMatchingGroup(groupInput.value.trim());
 
-if (groupInput) {
-  const best = getBestMatchingGroup(groupInput.value.trim());
-
-  if (best) {
-    groupInput.value = best;
-  } else if (groupInput.value.trim() !== "") {
-    groupInput.value = "";
+    if (best) {
+      groupInput.value = best;
+    } else if (groupInput.value.trim() !== "") {
+      groupInput.value = "";
+    }
   }
+
+  const lockedYear = state.lockedYear != null ? Number(state.lockedYear) : null;
+
+  if (Number.isFinite(lockedYear)) {
+    lockedChartYear = lockedYear;
+  }
+
+  const playbackEnabled = state.playback === "1";
+  return { playbackEnabled };
 }
 
 let _urlSyncTimer = null;
 function scheduleUrlSync({ push = false } = {}) {
   if (_urlSyncTimer) clearTimeout(_urlSyncTimer);
   _urlSyncTimer = setTimeout(() => writeUrlState({ push }), 120);
-}
-
-function writeUrlState() {
-  const params = new URLSearchParams();
-
-  const from = document.getElementById("from")?.value?.trim() || "";
-  const to = document.getElementById("to")?.value?.trim() || "";
-  const bucket = document.getElementById("bucket")?.value || "year";
-  const gender = document.getElementById("gender")?.value || "all";
-  const confidence = document.getElementById("confidence")?.value || "";
-  const group = getValidatedGroup();
-
-  if (from) params.set("from", from);
-  if (to) params.set("to", to);
-  if (bucket) params.set("bucket", bucket);
-  params.set("gender", gender);
-  if (confidence) params.set("confidence", confidence);
-  if (group) params.set("group", group);
-
-  const lat = currentCenter?.lat;
-  const lng = currentCenter?.lng;
-  const radius = document.getElementById("radius")?.value || "";
-  const limit = document.getElementById("nearby-limit")?.value || "";
-
-  if (lat != null) params.set("lat", String(lat));
-  if (lng != null) params.set("lng", String(lng));
-  if (radius) params.set("radius", radius);
-  if (limit) params.set("limit", limit);
-
-  const ciToggle = document.getElementById("toggle-ci");
-  if (ciToggle) params.set("ci", ciToggle.checked ? "1" : "0");
-
-  const newUrl = `${window.location.pathname}?${params.toString()}`;
-  window.history.replaceState({}, "", newUrl);
 }
 
 function updateSampleWarning(seriesArr) {
@@ -1453,6 +1439,7 @@ async function buildResearchSnapshotCanvas() {
   const chartTitle =
     chart.options?.plugins?.title?.text?.toString().trim() ||
     "Conviction chart";
+  writeUrlState();
   const currentUrl = window.location.href;
   const { display: exportDateTime, file: exportFileTime } = getExportDateTime();
   const chartCanvas = document.getElementById("chart");
@@ -1639,8 +1626,8 @@ async function buildResearchSnapshotCanvas() {
   const textHeight = textLines.length * lineHeight;
   const width = Math.max(chartCanvas.width + padding * 2, 1200);
 
-  const estimatedUrlLines = wrapText(currentUrl, 80);
-  const urlHeight = estimatedUrlLines.length * 18 + 20;
+  const estimatedUrlLines = wrapText(currentUrl, 65);
+  const urlHeight = estimatedUrlLines.length * 18 + 50;
   const summaryHeight = 410;
 
   const height =
@@ -3284,121 +3271,132 @@ async function init() {
       }
     });
   }
-}
-const copyLinkBtn = document.getElementById("copy-link-btn");
-if (copyLinkBtn) {
-  copyLinkBtn.addEventListener("click", async () => {
-    try {
-      await copyShareableLink();
-      copyLinkBtn.textContent = "Copied link";
-      setTimeout(() => {
-        copyLinkBtn.textContent = "Copy shareable link";
-      }, 1200);
-    } catch (err) {
-      console.error(err);
-    }
-  });
-  const pdfBtn = document.getElementById("download-pdf-btn");
-
-  if (pdfBtn) {
-    pdfBtn.addEventListener("click", async () => {
+  const copyLinkBtn = document.getElementById("copy-link-btn");
+  if (copyLinkBtn) {
+    copyLinkBtn.addEventListener("click", async () => {
       try {
-        await downloadSnapshotAsPDF();
+        await copyShareableLink();
+        copyLinkBtn.textContent = "Copied link";
+        setTimeout(() => {
+          copyLinkBtn.textContent = "Copy shareable link";
+        }, 1200);
       } catch (err) {
-        console.error("PDF download failed:", err);
+        console.error(err);
       }
     });
+    const pdfBtn = document.getElementById("download-pdf-btn");
 
-    document.getElementById("clear-lock-btn")?.addEventListener("click", () => {
-      clearChartYearLock();
-    });
-
-    document
-      .getElementById("play-timeline-btn")
-      ?.addEventListener("click", () => {
-        startTimelinePlayback();
-      });
-
-    document
-      .getElementById("stop-timeline-btn")
-      ?.addEventListener("click", () => {
-        stopTimelinePlayback();
-      });
-
-    document
-      .getElementById("copy-snapshot-url-btn")
-      ?.addEventListener("click", async () => {
+    if (pdfBtn) {
+      pdfBtn.addEventListener("click", async () => {
         try {
-          writeUrlState();
-
-          await navigator.clipboard.writeText(window.location.href);
-
-          alert("Snapshot URL copied.");
+          await downloadSnapshotAsPDF();
         } catch (err) {
-          console.error(err);
-          alert("Could not copy snapshot URL.");
+          console.error("PDF download failed:", err);
         }
       });
 
-    ["from", "to"].forEach((id) => {
-      const el = document.getElementById(id);
-      if (!el) return;
+      document
+        .getElementById("clear-lock-btn")
+        ?.addEventListener("click", () => {
+          clearChartYearLock();
+        });
 
-      const refreshDateFilters = () => {
-        clearChartYearLock();
+      document
+        .getElementById("play-timeline-btn")
+        ?.addEventListener("click", () => {
+          startTimelinePlayback();
+        });
+
+      document
+        .getElementById("stop-timeline-btn")
+        ?.addEventListener("click", () => {
+          stopTimelinePlayback();
+        });
+
+      document
+        .getElementById("copy-snapshot-url-btn")
+        ?.addEventListener("click", async () => {
+          try {
+            writeUrlState();
+
+            await navigator.clipboard.writeText(window.location.href);
+
+            alert("Snapshot URL copied.");
+          } catch (err) {
+            console.error(err);
+            alert("Could not copy snapshot URL.");
+          }
+        });
+
+      ["from", "to"].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        const refreshDateFilters = () => {
+          clearChartYearLock();
+          render().catch(console.error);
+          fetchNearby().catch(console.error);
+        };
+
+        el.addEventListener("change", refreshDateFilters);
+
+        el.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            el.blur(); // forces the browser to commit the date value
+            refreshDateFilters();
+          }
+        });
+      });
+    }
+
+    const fromEl = document.getElementById("from");
+    const toEl = document.getElementById("to");
+
+    if (fromEl) {
+      fromEl.addEventListener("input", () => {
         render().catch(console.error);
         fetchNearby().catch(console.error);
-      };
-
-      el.addEventListener("change", refreshDateFilters);
-
-      el.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          el.blur(); // forces the browser to commit the date value
-          refreshDateFilters();
-        }
       });
-    });
-  }
-
-  const fromEl = document.getElementById("from");
-  const toEl = document.getElementById("to");
-
-  if (fromEl) {
-    fromEl.addEventListener("input", () => {
-      render().catch(console.error);
-      fetchNearby().catch(console.error);
-    });
-  }
-
-  if (toEl) {
-    toEl.addEventListener("input", () => {
-      render().catch(console.error);
-      fetchNearby().catch(console.error);
-    });
-  }
-}
-
-const downloadSnapshotBtn = document.getElementById("download-snapshot-btn");
-if (downloadSnapshotBtn) {
-  downloadSnapshotBtn.addEventListener("click", async () => {
-    try {
-      await downloadResearchSnapshot();
-    } catch (err) {
-      console.error(err);
     }
-  });
+
+    if (toEl) {
+      toEl.addEventListener("input", () => {
+        render().catch(console.error);
+        fetchNearby().catch(console.error);
+      });
+    }
+  }
+
+  const downloadSnapshotBtn = document.getElementById("download-snapshot-btn");
+  if (downloadSnapshotBtn) {
+    downloadSnapshotBtn.addEventListener("click", async () => {
+      try {
+        await downloadResearchSnapshot();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+  }
+
+  const state = readUrlState();
+  const { playbackEnabled } = applyStateToUI(state);
+
+  ensureMap();
+  updateRadiusCircle();
+
+  await render().catch(console.error);
+  await fetchNearby().catch(console.error);
+
+  if (lockedChartYear != null) {
+    highlightMarkersByYear(lockedChartYear);
+    updateLockButton();
+  }
+
+  if (playbackEnabled) {
+    startTimelinePlayback();
+  }
 }
-
-initFromUrl();
-
-// Map base + center + radius
-ensureMap();
-updateRadiusCircle();
-
-// Populate markers + list on page load
-fetchNearby().catch(console.error);
 
 // DevTools helpers (optional but useful)
 window.__markersLayer = markersLayer;
@@ -3408,26 +3406,4 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
-}
-function initFromUrl() {
-  const state = readUrlState();
-  applyStateToUI(state);
-
-  const groupInput = document.getElementById("group");
-  if (groupInput) {
-    const best = getBestMatchingGroup(groupInput.value.trim());
-    if (best) {
-      groupInput.value = best;
-    } else if (groupInput.value.trim() !== "") {
-      groupInput.value = "";
-    }
-  }
-
-  ensureMap();
-  updateRadiusCircle();
-  render().catch(console.error);
-
-  if (state.nearby === "1") {
-    fetchNearby().catch(console.error);
-  }
 }
