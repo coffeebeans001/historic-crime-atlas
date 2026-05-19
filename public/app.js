@@ -3413,6 +3413,37 @@ async function init() {
           }
         });
 
+      const reloadBtn = document.getElementById("reload");
+
+      if (reloadBtn) {
+        reloadBtn.addEventListener("click", async () => {
+          console.log("Reload clicked");
+
+          const previousText = reloadBtn.textContent;
+
+          reloadBtn.disabled = true;
+          reloadBtn.textContent = "Reloading…";
+
+          try {
+            stopTimelinePlayback();
+
+            lockedChartYear = null;
+            resetMarkerHighlight();
+            updateLockButton();
+
+            await render();
+            await fetchNearby();
+
+            writeUrlState();
+          } catch (err) {
+            console.error(err);
+          } finally {
+            reloadBtn.disabled = false;
+            reloadBtn.textContent = previousText || "Reload";
+          }
+        });
+      }
+
       ["from", "to"].forEach((id) => {
         const el = document.getElementById(id);
         if (!el) return;
