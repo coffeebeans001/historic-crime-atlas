@@ -1575,6 +1575,14 @@ async function buildResearchSnapshotCanvas() {
     };
   })();
 
+  const mapQualityChip = hasSharedMarkerLocations()
+    ? {
+        text: "Shared map locations",
+        bg: exportTheme === "dark" ? "#422006" : "#ffedd5",
+        color: exportTheme === "dark" ? "#fed7aa" : "#9a3412",
+      }
+    : null;
+
   const filterChips =
     exportTheme === "dark"
       ? [
@@ -1597,6 +1605,7 @@ async function buildResearchSnapshotCanvas() {
           lockedYearChip,
           playbackChip,
           ...(largestGapChip ? [largestGapChip] : []),
+          ...(mapQualityChip ? [mapQualityChip] : []),
         ]
       : [
           {
@@ -1618,6 +1627,7 @@ async function buildResearchSnapshotCanvas() {
           lockedYearChip,
           playbackChip,
           ...(largestGapChip ? [largestGapChip] : []),
+          ...(mapQualityChip ? [mapQualityChip] : []),
         ];
 
   const chartImage = new Image();
@@ -1950,7 +1960,7 @@ function buildResearchNotes() {
         "Multiple nearby trials share the same mapped location; clustered markers may represent overlapping records.",
       );
     }
-    
+
     if (gap) {
       notes.push(
         `The largest Male/Female conviction-rate gap appears in ${gap.year}, with a difference of ${gap.gap.toFixed(1)} percentage points.`,
@@ -2371,6 +2381,20 @@ function updateGenderGapBadge(seriesArr) {
   badge.style.fontSize = "13px";
   badge.style.fontWeight = "600";
   badge.style.display = "inline-block";
+}
+
+function hasSharedMarkerLocations() {
+  const markerCoords = markersLayer
+    ?.getLayers?.()
+    .map((marker) => {
+      const ll = marker.getLatLng?.();
+      return ll ? `${ll.lat.toFixed(6)},${ll.lng.toFixed(6)}` : null;
+    })
+    .filter(Boolean);
+
+  if (!markerCoords?.length) return false;
+
+  return new Set(markerCoords).size < markerCoords.length;
 }
 
 async function render() {
