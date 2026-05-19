@@ -134,7 +134,9 @@ function applyBestGroupMatchAndRender(groupInput) {
   }
 
   updateGroupInputState();
-  render().catch(console.error);
+  Promise.all([render(), fetchNearby()])
+    .then(updateLastUpdatedLabel)
+    .catch(console.error);
 }
 
 function previewBestGroupMatch(groupInput) {
@@ -3233,16 +3235,10 @@ if (useGpsBtn)
 // Initialise map immediately (optional)
 ensureMap();
 
-document.getElementById("reload").addEventListener("click", () => {
-  render().catch((err) => {
-    console.error(err);
-    alert(err.message);
-  });
-});
-
 document.getElementById("bucket").addEventListener("change", () => {
   scheduleUrlSync();
-  render().catch(console.error);
+
+  render().then(updateLastUpdatedLabel).catch(console.error);
 });
 
 document.getElementById("confidence").addEventListener("change", () => {
@@ -3258,7 +3254,8 @@ document.getElementById("toggle-ci").addEventListener("change", () => {
 
 document.getElementById("gender")?.addEventListener("change", () => {
   scheduleUrlSync();
-  render().catch(console.error);
+
+  render().then(updateLastUpdatedLabel).catch(console.error);
 });
 
 const radiusEl = document.getElementById("radius");
@@ -3466,8 +3463,9 @@ async function init() {
 
         const refreshDateFilters = () => {
           clearChartYearLock();
-          render().catch(console.error);
-          fetchNearby().catch(console.error);
+          Promise.all([render(), fetchNearby()])
+            .then(updateLastUpdatedLabel)
+            .catch(console.error);
         };
 
         el.addEventListener("change", refreshDateFilters);
@@ -3479,23 +3477,6 @@ async function init() {
             refreshDateFilters();
           }
         });
-      });
-    }
-
-    const fromEl = document.getElementById("from");
-    const toEl = document.getElementById("to");
-
-    if (fromEl) {
-      fromEl.addEventListener("input", () => {
-        render().catch(console.error);
-        fetchNearby().catch(console.error);
-      });
-    }
-
-    if (toEl) {
-      toEl.addEventListener("input", () => {
-        render().catch(console.error);
-        fetchNearby().catch(console.error);
       });
     }
   }
