@@ -1934,6 +1934,23 @@ function buildResearchNotes() {
 
     const gap = findLargestGenderGap(seriesArr);
 
+    const markerCoords = markersLayer
+      ?.getLayers?.()
+      .map((marker) => {
+        const ll = marker.getLatLng?.();
+        return ll ? `${ll.lat.toFixed(6)},${ll.lng.toFixed(6)}` : null;
+      })
+      .filter(Boolean);
+
+    const sharedLocationCount =
+      markerCoords?.length - new Set(markerCoords || []).size;
+
+    if (sharedLocationCount > 0) {
+      notes.push(
+        "Multiple nearby trials share the same mapped location; clustered markers may represent overlapping records.",
+      );
+    }
+    
     if (gap) {
       notes.push(
         `The largest Male/Female conviction-rate gap appears in ${gap.year}, with a difference of ${gap.gap.toFixed(1)} percentage points.`,
@@ -3015,13 +3032,6 @@ async function fetchNearby() {
         ? "Note: Multiple trials may share the same mapped location."
         : "";
     }
-
-    const coordCounts = {};
-
-    rows.forEach((r) => {
-      const key = `${r.latitude},${r.longitude}`;
-      coordCounts[key] = (coordCounts[key] || 0) + 1;
-    });
 
     // Reset marker lookup
     markerById = new Map();
