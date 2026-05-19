@@ -555,7 +555,7 @@ function ensureChart() {
           top: 40,
           right: 24,
           bottom: 40,
-          left: 24,
+          left: 70,
         },
       },
       animation: {
@@ -574,9 +574,13 @@ function ensureChart() {
         y: {
           min: 0,
           max: 100,
+
+          afterFit: (scale) => {
+            scale.width += 30;
+          },
           title: {
             display: true,
-            text: "Guilty rate (%)",
+            text: "Rate (%)",
           },
           ticks: {
             callback: (value) => `${value}%`,
@@ -1335,7 +1339,26 @@ function getClosestGroupSuggestion(raw) {
 function downloadChartAsPng() {
   if (!chart) return;
 
+  const exportTheme = document.getElementById("export-theme")?.value || "light";
+
+  const bg = exportTheme === "dark" ? "#111827" : "#ffffff";
+
+  const sourceCanvas = chart.canvas;
+  const extraLeftSpace = 70;
+  const extraBottomSpace = 50;
+
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = sourceCanvas.width + extraLeftSpace;
+  exportCanvas.height = sourceCanvas.height + extraBottomSpace;
+
+  const ctx = exportCanvas.getContext("2d");
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+  ctx.drawImage(sourceCanvas, extraLeftSpace, 0);
   const link = document.createElement("a");
+
   const safeTitle = (chart.options?.plugins?.title?.text || "conviction-chart")
     .toString()
     .replace(/[^\w\s-]/g, "")
@@ -1343,7 +1366,7 @@ function downloadChartAsPng() {
     .replace(/\s+/g, "_")
     .toLowerCase();
 
-  link.href = chart.toBase64Image("image/png", 1);
+  link.href = exportCanvas.toDataURL("image/png", 1);
   link.download = `${safeTitle || "conviction-chart"}.png`;
   link.click();
 }
@@ -2455,7 +2478,10 @@ async function render() {
     chart.options.scales.x.title = {
       display: false,
     };
-    chart.options.layout.padding.bottom = 20;
+
+    chart.options.layout.padding.bottom = 40;
+    chart.options.layout.padding.left = 70;
+
     chart.update();
 
     const rawGroup = document.getElementById("group")?.value?.trim() || "";
@@ -2970,6 +2996,25 @@ async function fetchNearby() {
 
     const payload = await res.json();
     const rows = payload.data || [];
+
+    const mapQualityNote = document.getElementById("map-quality-note");
+
+    if (mapQualityNote) {
+      const coordCounts = {};
+
+      rows.forEach((r) => {
+        const key = `${r.latitude},${r.longitude}`;
+        coordCounts[key] = (coordCounts[key] || 0) + 1;
+      });
+
+      const hasSharedLocations = Object.values(coordCounts).some(
+        (count) => count > 1,
+      );
+
+      mapQualityNote.textContent = hasSharedLocations
+        ? "Note: Multiple trials may share the same mapped location."
+        : "";
+    }
 
     const coordCounts = {};
 
