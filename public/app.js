@@ -2,6 +2,7 @@ let chart; // single chart reference
 const LOW_SAMPLE_THRESHOLD = 5;
 const DEFAULT_CI_ALPHA = 0.18;
 const LINE_TENSION = 0.2;
+const APP_VERSION = "Old Bailey Analytics v0.1";
 
 function isCiDataset(ds) {
   return ds.label.includes("CI band") || ds.label.includes("upper CI");
@@ -1838,11 +1839,12 @@ async function buildResearchSnapshotCanvas() {
   // set font ONCE here
   ctx.font = "14px Arial";
 
-  // timestamp
+  // timestamp 
   ctx.fillStyle = theme.footerText;
   ctx.font = "italic 13px Arial";
   ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
-
+  ctx.fillText(APP_VERSION, width - padding - 190, y);
+  
   y += 18;
 
   // URL section
