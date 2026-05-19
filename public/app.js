@@ -2397,6 +2397,18 @@ function hasSharedMarkerLocations() {
   return new Set(markerCoords).size < markerCoords.length;
 }
 
+function updateLastUpdatedLabel() {
+  const el = document.getElementById("last-updated");
+  if (!el) return;
+
+  const now = new Date();
+
+  el.textContent = `Last updated: ${now.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
+}
+
 async function render() {
   ensureChart();
 
@@ -3417,7 +3429,6 @@ async function init() {
 
       if (reloadBtn) {
         reloadBtn.addEventListener("click", async () => {
-
           const previousText = reloadBtn.textContent;
 
           reloadBtn.disabled = true;
@@ -3432,6 +3443,8 @@ async function init() {
 
             await render();
             await fetchNearby();
+
+            updateLastUpdatedLabel();
 
             writeUrlState();
           } catch (err) {
@@ -3506,6 +3519,7 @@ async function init() {
 
   await render().catch(console.error);
   await fetchNearby().catch(console.error);
+  updateLastUpdatedLabel();
 
   if (lockedChartYear != null) {
     highlightMarkersByYear(lockedChartYear);
