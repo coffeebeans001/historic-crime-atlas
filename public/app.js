@@ -1839,12 +1839,12 @@ async function buildResearchSnapshotCanvas() {
   // set font ONCE here
   ctx.font = "14px Arial";
 
-  // timestamp 
+  // timestamp
   ctx.fillStyle = theme.footerText;
   ctx.font = "italic 13px Arial";
   ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
   ctx.fillText(APP_VERSION, width - padding - 190, y);
-  
+
   y += 18;
 
   // URL section
@@ -1947,6 +1947,11 @@ async function downloadResearchSnapshot() {
 
   const { file: exportFileTime } = getExportDateTime();
 
+  const versionSlug = APP_VERSION.replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .toLowerCase();
+
   const offence =
     document.getElementById("group")?.value?.trim() || "all-offences";
 
@@ -1972,8 +1977,7 @@ async function downloadResearchSnapshot() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${safeTitle}-${exportFileTime}.png`;
-
+    link.download = `${safeTitle}-${versionSlug}-${exportFileTime}.png`;
     document.body.appendChild(link);
     link.click();
     link.remove();
