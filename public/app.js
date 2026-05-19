@@ -3417,7 +3417,6 @@ async function init() {
 
       if (reloadBtn) {
         reloadBtn.addEventListener("click", async () => {
-          console.log("Reload clicked");
 
           const previousText = reloadBtn.textContent;
 
@@ -3438,8 +3437,12 @@ async function init() {
           } catch (err) {
             console.error(err);
           } finally {
-            reloadBtn.disabled = false;
-            reloadBtn.textContent = previousText || "Reload";
+            reloadBtn.textContent = "Updated ✓";
+
+            setTimeout(() => {
+              reloadBtn.disabled = false;
+              reloadBtn.textContent = previousText || "Reload";
+            }, 900);
           }
         });
       }
