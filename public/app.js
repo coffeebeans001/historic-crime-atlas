@@ -3587,12 +3587,27 @@ async function init() {
   }
 
   const downloadSnapshotBtn = document.getElementById("download-snapshot-btn");
+
   if (downloadSnapshotBtn) {
     downloadSnapshotBtn.addEventListener("click", async () => {
+      const previousText = downloadSnapshotBtn.textContent;
+
+      downloadSnapshotBtn.disabled = true;
+      downloadSnapshotBtn.textContent = "Exporting…";
+
       try {
         await downloadResearchSnapshot();
+
+        downloadSnapshotBtn.textContent = "Exported ✓";
       } catch (err) {
         console.error(err);
+        downloadSnapshotBtn.textContent = "Export failed";
+      } finally {
+        setTimeout(() => {
+          downloadSnapshotBtn.disabled = false;
+          downloadSnapshotBtn.textContent =
+            previousText || "Download research snapshot";
+        }, 900);
       }
     });
   }
