@@ -3428,6 +3428,19 @@ async function init() {
         }
       });
 
+      const researchNoteEl = document.getElementById("research-note");
+      const researchNoteStatus = document.getElementById(
+        "research-note-status",
+      );
+
+      researchNoteEl?.addEventListener("input", () => {
+        if (!researchNoteStatus) return;
+
+        researchNoteStatus.textContent = researchNoteEl.value.trim()
+          ? "Custom note will be included in exports."
+          : "";
+      });
+
       document
         .getElementById("clear-lock-btn")
         ?.addEventListener("click", () => {
