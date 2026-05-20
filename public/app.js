@@ -126,8 +126,6 @@ function populateGroupOptions(groups) {
 }
 
 function applyBestGroupMatchAndRender(groupInput) {
-  console.log("Offence helper fired:", groupInput.value);
-
   const raw = groupInput.value.trim();
   const best = getBestMatchingGroup(raw);
 
@@ -143,7 +141,6 @@ function applyBestGroupMatchAndRender(groupInput) {
 
   Promise.all([render(), fetchNearby()])
     .then(() => {
-      console.log("Offence refresh complete");
       updateLastUpdatedLabel();
     })
     .catch(console.error);
@@ -3050,7 +3047,6 @@ async function fetchNearby() {
 
   try {
     // Clear old markers
-    console.log("fetchNearby started");
 
     markersLayer.clearLayers();
 
@@ -3187,8 +3183,6 @@ async function fetchNearby() {
 
     // Optional debug (safe)
   } finally {
-    console.log("fetchNearby finally ran");
-
     if (btn) {
       btn.disabled = false;
       btn.textContent = prevText;
