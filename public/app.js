@@ -3433,12 +3433,27 @@ async function init() {
         "research-note-status",
       );
 
+      const maxNoteChars = 240;
+      const researchNoteCount = document.getElementById("research-note-count");
+
       researchNoteEl?.addEventListener("input", () => {
         if (!researchNoteStatus) return;
+
+        const value = researchNoteEl.value;
+
+        if (value.length > maxNoteChars) {
+          researchNoteEl.value = value.slice(0, maxNoteChars);
+        }
+
+        const length = researchNoteEl.value.length;
 
         researchNoteStatus.textContent = researchNoteEl.value.trim()
           ? "Custom note will be included in exports."
           : "";
+
+        if (researchNoteCount) {
+          researchNoteCount.textContent = `${length}/${maxNoteChars}`;
+        }
       });
 
       document
