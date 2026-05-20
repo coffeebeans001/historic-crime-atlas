@@ -857,6 +857,7 @@ function applyStateToUI(state) {
   if (researchNoteEl && state.note) {
     researchNoteEl.value = state.note;
   }
+  researchNoteEl?.dispatchEvent(new Event("input"));
 }
 
 let _urlSyncTimer = null;
