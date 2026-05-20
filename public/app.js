@@ -3509,10 +3509,20 @@ async function init() {
         .getElementById("clear-research-note-btn")
         ?.addEventListener("click", () => {
           const note = document.getElementById("research-note");
+          const status = document.getElementById("research-note-status");
+
           if (!note) return;
 
           note.value = "";
           note.dispatchEvent(new Event("input"));
+
+          if (status) {
+            status.textContent = "Note cleared ✓";
+
+            setTimeout(() => {
+              status.textContent = "";
+            }, 900);
+          }
 
           writeUrlState();
         });
