@@ -786,6 +786,15 @@ function writeUrlState({ push = false } = {}) {
 
   if (push) history.pushState(null, "", url);
   else history.replaceState(null, "", url);
+
+  const researchNote =
+    document.getElementById("research-note")?.value?.trim() || "";
+
+  if (researchNote) {
+    p.set("note", researchNote);
+  } else {
+    p.delete("note");
+  }
 }
 
 function applyStateToUI(state) {
@@ -842,6 +851,12 @@ function applyStateToUI(state) {
 
   const playbackEnabled = state.playback === "1";
   return { playbackEnabled };
+
+  const researchNoteEl = document.getElementById("research-note");
+
+  if (researchNoteEl && state.note) {
+    researchNoteEl.value = state.note;
+  }
 }
 
 let _urlSyncTimer = null;
