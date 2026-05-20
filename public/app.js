@@ -3505,6 +3505,18 @@ async function init() {
           }
         });
 
+      document
+        .getElementById("clear-research-note-btn")
+        ?.addEventListener("click", () => {
+          const note = document.getElementById("research-note");
+          if (!note) return;
+
+          note.value = "";
+          note.dispatchEvent(new Event("input"));
+
+          writeUrlState();
+        });
+
       const reloadBtn = document.getElementById("reload");
 
       if (reloadBtn) {
