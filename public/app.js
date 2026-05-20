@@ -126,6 +126,8 @@ function populateGroupOptions(groups) {
 }
 
 function applyBestGroupMatchAndRender(groupInput) {
+  console.log("Offence helper fired:", groupInput.value);
+
   const raw = groupInput.value.trim();
   const best = getBestMatchingGroup(raw);
 
@@ -134,8 +136,16 @@ function applyBestGroupMatchAndRender(groupInput) {
   }
 
   updateGroupInputState();
+
+  lockedChartYear = null;
+  resetMarkerHighlight();
+  updateLockButton();
+
   Promise.all([render(), fetchNearby()])
-    .then(updateLastUpdatedLabel)
+    .then(() => {
+      console.log("Offence refresh complete");
+      updateLastUpdatedLabel();
+    })
     .catch(console.error);
 }
 
@@ -3040,6 +3050,8 @@ async function fetchNearby() {
 
   try {
     // Clear old markers
+    console.log("fetchNearby started");
+
     markersLayer.clearLayers();
 
     const url = buildNearbyUrl();
@@ -3175,6 +3187,8 @@ async function fetchNearby() {
 
     // Optional debug (safe)
   } finally {
+    console.log("fetchNearby finally ran");
+
     if (btn) {
       btn.disabled = false;
       btn.textContent = prevText;
@@ -3300,14 +3314,9 @@ async function init() {
   // Chart
   await loadGroupOptions().catch(console.error);
 
-  const groupInput = document.getElementById("group");
+  // offence search input: live preview + apply on blur/enter
 
-  groupInput.addEventListener("input", (e) => {
-    if (!e.inputType || !e.inputType.startsWith("delete")) {
-      previewBestGroupMatch(groupInput);
-    }
-    updateGroupInputState();
-  });
+  const groupInput = document.getElementById("group");
 
   groupInput.addEventListener("change", () => {
     applyBestGroupMatchAndRender(groupInput);
@@ -3315,6 +3324,42 @@ async function init() {
 
   groupInput.addEventListener("blur", () => {
     applyBestGroupMatchAndRender(groupInput);
+  });
+
+  groupInput.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+
+    e.preventDefault();
+
+    setTimeout(() => {
+      const best = getBestMatchingGroup(groupInput.value.trim());
+
+      if (best) {
+        groupInput.value = best;
+        groupInput.setSelectionRange(best.length, best.length);
+        applyBestGroupMatchAndRender(groupInput);
+      }
+    }, 0);
+  });
+
+  groupInput.addEventListener("input", (e) => {
+    const isDeleting = e.inputType && e.inputType.startsWith("delete");
+
+    if (!isDeleting) {
+      previewBestGroupMatch(groupInput);
+    }
+
+    updateGroupInputState();
+
+    const value = groupInput.value.trim();
+
+    const exactMatch = Array.from(
+      document.getElementById("groupOptions")?.options || [],
+    ).some((option) => option.value === value);
+
+    if (!isDeleting && exactMatch) {
+      applyBestGroupMatchAndRender(groupInput);
+    }
   });
 
   const bucketEl = document.getElementById("bucket");
