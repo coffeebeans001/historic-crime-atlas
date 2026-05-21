@@ -781,6 +781,14 @@ function writeUrlState({ push = false } = {}) {
     p.delete("playback");
   }
 
+  const exportTheme = document.getElementById("export-theme")?.value || "light";
+
+  if (exportTheme) {
+    p.set("exportTheme", exportTheme);
+  } else {
+    p.delete("exportTheme");
+  }
+
   const qs = p.toString();
   const url = qs ? `?${qs}` : location.pathname;
 
@@ -806,6 +814,7 @@ function applyStateToUI(state) {
   const confEl = document.getElementById("confidence");
   const ciEl = document.getElementById("toggle-ci");
   const genderEl = document.getElementById("gender");
+  const exportThemeEl = document.getElementById("export-theme");
 
   if (fromEl && state.from) fromEl.value = state.from;
   if (toEl && state.to) toEl.value = state.to;
@@ -813,6 +822,9 @@ function applyStateToUI(state) {
   if (bucketEl && state.bucket) bucketEl.value = state.bucket;
   if (confEl && state.confidence) confEl.value = state.confidence;
   if (genderEl && state.gender) genderEl.value = state.gender;
+  if (exportThemeEl && state.exportTheme) {
+    exportThemeEl.value = state.exportTheme;
+  }
 
   if (ciEl && (state.ci === "0" || state.ci === "1")) {
     ciEl.checked = state.ci === "1";
@@ -2783,7 +2795,6 @@ function ensureMap() {
       showCoverageOnHover: false,
       spiderfyOnMaxZoom: true,
       zoomToBoundsOnClick: true,
-      //disableClusteringAtZoom: 18,
       maxClusterRadius: 120,
     });
     map.addLayer(markersLayer);
@@ -3526,6 +3537,12 @@ async function init() {
 
           writeUrlState();
         });
+
+      const exportThemeEl = document.getElementById("export-theme");
+
+      exportThemeEl?.addEventListener("change", () => {
+        writeUrlState();
+      });
 
       const reloadBtn = document.getElementById("reload");
 
