@@ -2446,6 +2446,14 @@ function updateLastUpdatedLabel() {
   })}`;
 }
 
+function updateExportThemeStatus() {
+  const theme = document.getElementById("export-theme")?.value || "light";
+  const el = document.getElementById("export-theme-status");
+  if (!el) return;
+
+  el.textContent = `Export theme: ${theme}`;
+}
+
 async function render() {
   ensureChart();
 
@@ -3331,6 +3339,33 @@ if (nearbyBtn) {
   });
 }
 
+function initFromUrl() {
+  const state = readUrlState();
+
+  applyStateToUI(state);
+  updateExportThemeStatus(); // <-- HERE
+
+  const groupInput = document.getElementById("group");
+
+  if (groupInput) {
+    const best = getBestMatchingGroup(groupInput.value.trim());
+
+    if (best) {
+      groupInput.value = best;
+    } else if (groupInput.value.trim() !== "") {
+      groupInput.value = "";
+    }
+  }
+
+  ensureMap();
+  updateRadiusCircle();
+  render().catch(console.error);
+
+  if (state.nearby === "1") {
+    fetchNearby().catch(console.error);
+  }
+}
+
 async function init() {
   // Chart
   await loadGroupOptions().catch(console.error);
@@ -3541,6 +3576,8 @@ async function init() {
       const exportThemeEl = document.getElementById("export-theme");
 
       exportThemeEl?.addEventListener("change", () => {
+        updateExportThemeStatus();
+
         writeUrlState();
       });
 
