@@ -3596,9 +3596,12 @@ async function init() {
       downloadSnapshotBtn.textContent = "Exporting…";
 
       try {
+        const start = performance.now();
+
         await downloadResearchSnapshot();
 
-        downloadSnapshotBtn.textContent = "Exported ✓";
+        const duration = ((performance.now() - start) / 1000).toFixed(1);
+        downloadSnapshotBtn.textContent = `Exported ✓ (${duration}s)`;
       } catch (err) {
         console.error(err);
         downloadSnapshotBtn.textContent = "Export failed";
