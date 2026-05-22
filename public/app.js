@@ -2033,6 +2033,10 @@ function buildResearchNotes() {
   );
 
   notes.push(
+    "Filters, date range, map radius, and locked-year state are recorded in the snapshot URL for reproducibility.",
+  );
+
+  notes.push(
     "Interpretations are based on the currently filtered sample and should not be treated as the full historical population.",
   );
 
