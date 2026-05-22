@@ -1571,6 +1571,23 @@ async function buildResearchSnapshotCanvas() {
     color: exportTheme === "dark" ? "#bfdbfe" : "#1d4ed8",
   };
 
+  const mapQualityChip = hasSharedMarkerLocations()
+    ? {
+        text: "Shared map locations",
+        bg: exportTheme === "dark" ? "#422006" : "#ffedd5",
+        color: exportTheme === "dark" ? "#fed7aa" : "#9a3412",
+      }
+    : null;
+
+  const selectedConfidence =
+    document.getElementById("confidence")?.selectedOptions?.[0]?.text || "95%";
+
+  const confidenceChip = {
+    text: `CI ${selectedConfidence || "95%"}`,
+    bg: exportTheme === "dark" ? "#0f172a" : "#ecfeff",
+    color: exportTheme === "dark" ? "#67e8f9" : "#155e75",
+  };
+
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
 
@@ -1612,14 +1629,6 @@ async function buildResearchSnapshotCanvas() {
     };
   })();
 
-  const mapQualityChip = hasSharedMarkerLocations()
-    ? {
-        text: "Shared map locations",
-        bg: exportTheme === "dark" ? "#422006" : "#ffedd5",
-        color: exportTheme === "dark" ? "#fed7aa" : "#9a3412",
-      }
-    : null;
-
   const filterChips =
     exportTheme === "dark"
       ? [
@@ -1643,6 +1652,7 @@ async function buildResearchSnapshotCanvas() {
           playbackChip,
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
+          confidenceChip,
         ]
       : [
           {
@@ -1665,6 +1675,7 @@ async function buildResearchSnapshotCanvas() {
           playbackChip,
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
+          confidenceChip,
         ];
 
   const chartImage = new Image();
