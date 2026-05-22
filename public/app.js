@@ -1917,6 +1917,17 @@ async function buildResearchSnapshotCanvas() {
 
   y += 18;
 
+  ctx.fillStyle = theme.footerText;
+  ctx.font = "11px Arial";
+
+  ctx.fillText(
+    "Generated from Old Bailey Analytics research workspace",
+    padding,
+    y,
+  );
+
+  y += 16;
+
   // URL section
   ctx.fillStyle = theme.urlText;
   ctx.fillText("Shareable URL:", padding, y);
