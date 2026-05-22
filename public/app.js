@@ -2032,6 +2032,10 @@ function buildResearchNotes() {
     `Map centre used: ${currentCenter.lat.toFixed(4)}, ${currentCenter.lng.toFixed(4)}.`,
   );
 
+  notes.push(
+    "Interpretations are based on the currently filtered sample and should not be treated as the full historical population.",
+  );
+
   return notes;
 }
 
