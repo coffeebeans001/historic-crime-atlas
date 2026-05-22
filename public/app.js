@@ -1580,10 +1580,12 @@ async function buildResearchSnapshotCanvas() {
     : null;
 
   const selectedConfidence =
-    document.getElementById("confidence")?.selectedOptions?.[0]?.text || "95%";
+  document.getElementById("confidence")?.selectedOptions?.[0]?.text ||
+  "95%";
+  const ciVisible = document.getElementById("toggle-ci")?.checked ?? true;
 
   const confidenceChip = {
-    text: `CI ${selectedConfidence || "95%"}`,
+    text: ciVisible ? `CI ${selectedConfidence} visible` : "CI hidden",
     bg: exportTheme === "dark" ? "#0f172a" : "#ecfeff",
     color: exportTheme === "dark" ? "#67e8f9" : "#155e75",
   };
