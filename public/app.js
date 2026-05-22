@@ -3339,33 +3339,6 @@ if (nearbyBtn) {
   });
 }
 
-function initFromUrl() {
-  const state = readUrlState();
-
-  applyStateToUI(state);
-  updateExportThemeStatus(); // <-- HERE
-
-  const groupInput = document.getElementById("group");
-
-  if (groupInput) {
-    const best = getBestMatchingGroup(groupInput.value.trim());
-
-    if (best) {
-      groupInput.value = best;
-    } else if (groupInput.value.trim() !== "") {
-      groupInput.value = "";
-    }
-  }
-
-  ensureMap();
-  updateRadiusCircle();
-  render().catch(console.error);
-
-  if (state.nearby === "1") {
-    fetchNearby().catch(console.error);
-  }
-}
-
 async function init() {
   // Chart
   await loadGroupOptions().catch(console.error);
@@ -3576,9 +3549,8 @@ async function init() {
       const exportThemeEl = document.getElementById("export-theme");
 
       exportThemeEl?.addEventListener("change", () => {
-        updateExportThemeStatus();
-
         writeUrlState();
+        updateExportThemeStatus();
       });
 
       const reloadBtn = document.getElementById("reload");
@@ -3672,6 +3644,8 @@ async function init() {
   const state = readUrlState();
   const { playbackEnabled } = applyStateToUI(state);
 
+  updateExportThemeStatus();
+
   ensureMap();
   updateRadiusCircle();
 
@@ -3697,4 +3671,31 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
   init();
+}
+
+function initFromUrl() {
+  const state = readUrlState();
+
+  applyStateToUI(state);
+  updateExportThemeStatus(); // <-- HERE
+
+  const groupInput = document.getElementById("group");
+
+  if (groupInput) {
+    const best = getBestMatchingGroup(groupInput.value.trim());
+
+    if (best) {
+      groupInput.value = best;
+    } else if (groupInput.value.trim() !== "") {
+      groupInput.value = "";
+    }
+  }
+
+  ensureMap();
+  updateRadiusCircle();
+  render().catch(console.error);
+
+  if (state.nearby === "1") {
+    fetchNearby().catch(console.error);
+  }
 }
