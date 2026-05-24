@@ -1580,8 +1580,7 @@ async function buildResearchSnapshotCanvas() {
     : null;
 
   const selectedConfidence =
-  document.getElementById("confidence")?.selectedOptions?.[0]?.text ||
-  "95%";
+    document.getElementById("confidence")?.selectedOptions?.[0]?.text || "95%";
   const ciVisible = document.getElementById("toggle-ci")?.checked ?? true;
 
   const confidenceChip = {
@@ -2494,9 +2493,21 @@ function updateCiStatus() {
   const selectedConfidence =
     document.getElementById("confidence")?.selectedOptions?.[0]?.text || "95%";
 
-  el.textContent = ciVisible
-    ? `CI ${selectedConfidence} visible`
-    : "CI hidden";
+  el.textContent = ciVisible ? `CI ${selectedConfidence} visible` : "CI hidden";
+}
+
+function showConfidenceStatus() {
+  const el = document.getElementById("confidence-status");
+  if (!el) return;
+
+  const label =
+    document.getElementById("confidence")?.selectedOptions?.[0]?.text || "95%";
+
+  el.textContent = `Confidence set to ${label}`;
+
+  setTimeout(() => {
+    el.textContent = "";
+  }, 1200);
 }
 
 async function render() {
@@ -3330,9 +3341,16 @@ document.getElementById("bucket").addEventListener("change", () => {
   render().then(updateLastUpdatedLabel).catch(console.error);
 });
 
-document.getElementById("confidence").addEventListener("change", () => {
+document.getElementById("confidence")?.addEventListener("change", () => {
   scheduleUrlSync();
-  render().catch(console.error);
+  updateCiStatus();
+
+  render()
+    .then(() => {
+      updateLastUpdatedLabel();
+      showConfidenceStatus();
+    })
+    .catch(console.error);
 });
 
 document.getElementById("toggle-ci").addEventListener("change", () => {
