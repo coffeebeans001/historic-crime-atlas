@@ -2486,11 +2486,25 @@ function updateExportThemeStatus() {
   el.textContent = `Export theme: ${theme}`;
 }
 
+function updateCiStatus() {
+  const el = document.getElementById("ci-status");
+  if (!el) return;
+
+  const ciVisible = document.getElementById("toggle-ci")?.checked ?? true;
+  const selectedConfidence =
+    document.getElementById("confidence")?.selectedOptions?.[0]?.text || "95%";
+
+  el.textContent = ciVisible
+    ? `CI ${selectedConfidence} visible`
+    : "CI hidden";
+}
+
 async function render() {
   ensureChart();
 
   showNoDataOverlay(false);
   setChartLoading(true);
+  updateCiStatus();
 
   try {
     const validatedGroup = getValidatedGroup();
@@ -3323,6 +3337,7 @@ document.getElementById("confidence").addEventListener("change", () => {
 
 document.getElementById("toggle-ci").addEventListener("change", () => {
   scheduleUrlSync();
+  updateCiStatus();
   if (!chart) return;
   animateCi(document.getElementById("toggle-ci").checked, 250);
 });
