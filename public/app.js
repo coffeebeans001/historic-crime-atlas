@@ -3690,6 +3690,7 @@ async function init() {
 
   const state = readUrlState();
   const { playbackEnabled } = applyStateToUI(state);
+  updateCiStatus();
 
   updateExportThemeStatus();
 
