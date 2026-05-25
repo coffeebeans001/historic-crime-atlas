@@ -547,6 +547,8 @@ function ensureChart() {
 
         if (lockedChartYear === clickedYear) {
           clearChartYearLock();
+          updateLastUpdatedLabel();
+          writeUrlState();
           return;
         }
 
@@ -554,6 +556,8 @@ function ensureChart() {
         updateLockButton();
         highlightMarkersByYear(clickedYear);
         fetchNearby().catch(console.error);
+        updateLastUpdatedLabel();
+        writeUrlState();
       },
 
       responsive: true,
@@ -3353,11 +3357,13 @@ document.getElementById("confidence")?.addEventListener("change", () => {
     .catch(console.error);
 });
 
-document.getElementById("toggle-ci").addEventListener("change", () => {
+document.getElementById("toggle-ci")?.addEventListener("change", () => {
   scheduleUrlSync();
   updateCiStatus();
-  if (!chart) return;
-  animateCi(document.getElementById("toggle-ci").checked, 250);
+
+  render()
+    .then(updateLastUpdatedLabel)
+    .catch(console.error);
 });
 
 document.getElementById("gender")?.addEventListener("change", () => {
