@@ -138,6 +138,7 @@ function applyBestGroupMatchAndRender(groupInput) {
   lockedChartYear = null;
   resetMarkerHighlight();
   updateLockButton();
+  updateChartLockStatus();
 
   Promise.all([render(), fetchNearby()])
     .then(() => {
@@ -488,6 +489,7 @@ function clearChartYearLock() {
   lockedChartYear = null;
   resetMarkerHighlight();
   updateLockButton();
+  updateChartLockStatus();
   fetchNearby().catch(console.error);
 }
 
@@ -558,6 +560,7 @@ function ensureChart() {
         fetchNearby().catch(console.error);
         updateLastUpdatedLabel();
         writeUrlState();
+        updateChartLockStatus();
       },
 
       responsive: true,
@@ -2514,6 +2517,16 @@ function showConfidenceStatus() {
   }, 1200);
 }
 
+function updateChartLockStatus() {
+  const el = document.getElementById("chart-lock-status");
+  if (!el) return;
+
+  el.textContent =
+    lockedChartYear != null
+      ? `Locked year: ${lockedChartYear}`
+      : "No year locked";
+}
+
 async function render() {
   ensureChart();
 
@@ -3728,6 +3741,7 @@ async function init() {
   if (lockedChartYear != null) {
     highlightMarkersByYear(lockedChartYear);
     updateLockButton();
+    updateChartLockStatus(); 
   }
 
   if (playbackEnabled) {
