@@ -2268,7 +2268,11 @@ function buildSnapshotSummary() {
       ? ["Comparison mode: Male and Female trends visible."]
       : []),
     ...(genderGapLine ? [genderGapLine] : []),
-    `Locked year: ${lockedChartYear != null ? lockedChartYear : "None"}`,
+    `Chart lock: ${
+      lockedChartYear != null
+        ? `Locked to ${lockedChartYear}`
+        : "No year locked"
+    }`,
     `Nearby records: ${nearbyCount}`,
     `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
     "Confidence interval visible",
@@ -3374,9 +3378,7 @@ document.getElementById("toggle-ci")?.addEventListener("change", () => {
   scheduleUrlSync();
   updateCiStatus();
 
-  render()
-    .then(updateLastUpdatedLabel)
-    .catch(console.error);
+  render().then(updateLastUpdatedLabel).catch(console.error);
 });
 
 document.getElementById("gender")?.addEventListener("change", () => {
@@ -3741,7 +3743,7 @@ async function init() {
   if (lockedChartYear != null) {
     highlightMarkersByYear(lockedChartYear);
     updateLockButton();
-    updateChartLockStatus(); 
+    updateChartLockStatus();
   }
 
   if (playbackEnabled) {
