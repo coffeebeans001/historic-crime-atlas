@@ -1721,7 +1721,7 @@ async function buildResearchSnapshotCanvas() {
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 410;
+  const summaryHeight = 430;
 
   const height =
     padding +
@@ -3716,7 +3716,14 @@ async function init() {
         await downloadResearchSnapshot();
 
         const duration = ((performance.now() - start) / 1000).toFixed(1);
-        downloadSnapshotBtn.textContent = `Exported ✓ (${duration}s)`;
+        const exportTime =
+  new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+downloadSnapshotBtn.textContent =
+  `Exported ✓ ${exportTime} (${duration}s)`;
       } catch (err) {
         console.error(err);
         downloadSnapshotBtn.textContent = "Export failed";
