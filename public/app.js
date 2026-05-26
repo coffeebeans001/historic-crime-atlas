@@ -490,6 +490,7 @@ function clearChartYearLock() {
   resetMarkerHighlight();
   updateLockButton();
   updateChartLockStatus();
+  updateSessionStatus();
   fetchNearby().catch(console.error);
 }
 
@@ -556,6 +557,7 @@ function ensureChart() {
 
         lockedChartYear = clickedYear;
         updateLockButton();
+        updateSessionStatus();
         highlightMarkersByYear(clickedYear);
         fetchNearby().catch(console.error);
         updateLastUpdatedLabel();
@@ -2288,9 +2290,7 @@ function updateLockButton() {
 
   btn.hidden = lockedChartYear == null;
   btn.textContent =
-    lockedChartYear != null
-      ? `Clear locked year: ${lockedChartYear}`
-      : "Clear locked year";
+    lockedChartYear != null ? `Clear lock: ${lockedChartYear}` : "Clear lock";
 }
 
 function getChartYears() {
@@ -2532,6 +2532,22 @@ function updateChartLockStatus() {
     lockedChartYear != null
       ? `Locked year: ${lockedChartYear}`
       : "No year locked";
+}
+
+function updateSessionStatus() {
+  const el = document.getElementById("session-status");
+  if (!el) return;
+
+  const locked =
+    lockedChartYear != null ? `Locked year ${lockedChartYear}` : "No lock";
+
+  const ci = document.getElementById("toggle-ci")?.checked ? "CI on" : "CI off";
+
+  const note = document.getElementById("research-note")?.value?.trim()
+    ? "Note added"
+    : "No note";
+
+  el.textContent = `${locked} • ${ci} • ${note}`;
 }
 
 async function render() {
@@ -3380,6 +3396,7 @@ document.getElementById("confidence")?.addEventListener("change", () => {
 document.getElementById("toggle-ci")?.addEventListener("change", () => {
   scheduleUrlSync();
   updateCiStatus();
+  updateSessionStatus();
 
   render().then(updateLastUpdatedLabel).catch(console.error);
 });
@@ -3578,6 +3595,8 @@ async function init() {
         if (researchNoteCount) {
           researchNoteCount.textContent = `${length}/${maxNoteChars}`;
         }
+
+        updateSessionStatus();
       });
 
       document
@@ -3657,6 +3676,7 @@ async function init() {
             lockedChartYear = null;
             resetMarkerHighlight();
             updateLockButton();
+            updateSessionStatus();
 
             await render();
             await fetchNearby();
