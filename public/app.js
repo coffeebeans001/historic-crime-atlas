@@ -1566,7 +1566,10 @@ async function buildResearchSnapshotCanvas() {
   }
 
   const lockedYearChip = {
-    text: lockedChartYear ? `Locked year: ${lockedChartYear}` : "Unlocked",
+    text:
+      lockedChartYear != null
+        ? `Locked year: ${lockedChartYear}`
+        : "No locked year",
     bg: exportTheme === "dark" ? "#78350f" : "#fef3c7",
     color: exportTheme === "dark" ? "#fef3c7" : "#92400e",
   };
@@ -2268,11 +2271,11 @@ function buildSnapshotSummary() {
       ? ["Comparison mode: Male and Female trends visible."]
       : []),
     ...(genderGapLine ? [genderGapLine] : []),
-    `Chart lock: ${
-      lockedChartYear != null
-        ? `Locked to ${lockedChartYear}`
-        : "No year locked"
-    }`,
+    `Locked year: ${
+  lockedChartYear != null
+    ? lockedChartYear
+    : "None"
+}`,
     `Nearby records: ${nearbyCount}`,
     `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
     "Confidence interval visible",
