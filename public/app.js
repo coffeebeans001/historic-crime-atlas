@@ -3621,20 +3621,33 @@ async function init() {
           stopTimelinePlayback();
         });
 
-      document
-        .getElementById("copy-snapshot-url-btn")
-        ?.addEventListener("click", async () => {
-          try {
-            writeUrlState();
+      const copySnapshotUrlBtn = document.getElementById(
+        "copy-snapshot-url-btn",
+      );
 
-            await navigator.clipboard.writeText(window.location.href);
+      copySnapshotUrlBtn?.addEventListener("click", async () => {
+        const previousText = copySnapshotUrlBtn.textContent;
 
-            alert("Snapshot URL copied.");
-          } catch (err) {
-            console.error(err);
-            alert("Could not copy snapshot URL.");
-          }
-        });
+        copySnapshotUrlBtn.disabled = true;
+        copySnapshotUrlBtn.textContent = "Copying…";
+
+        try {
+          writeUrlState();
+
+          await navigator.clipboard.writeText(window.location.href);
+
+          copySnapshotUrlBtn.textContent = "Copied ✓";
+        } catch (err) {
+          console.error(err);
+          copySnapshotUrlBtn.textContent = "Copy failed";
+        } finally {
+          setTimeout(() => {
+            copySnapshotUrlBtn.disabled = false;
+            copySnapshotUrlBtn.textContent =
+              previousText || "Copy snapshot URL";
+          }, 900);
+        }
+      });
 
       document
         .getElementById("clear-research-note-btn")
