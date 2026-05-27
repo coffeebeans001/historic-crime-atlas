@@ -2556,8 +2556,12 @@ function updateSessionStatus() {
 
   const ci = document.getElementById("toggle-ci")?.checked ? "CI on" : "CI off";
 
-  const note = document.getElementById("research-note")?.value?.trim()
-    ? "Note added"
+ const noteText =
+  document.getElementById("research-note")?.value?.trim() || "";
+
+const note =
+  noteText
+    ? `Note added (${noteText.length} chars)`
     : "No note";
 
 const updated =
