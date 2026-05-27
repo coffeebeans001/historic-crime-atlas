@@ -2554,7 +2554,19 @@ const updated =
 
 el.textContent = `${locked} • ${ci} • ${note}${updated ? ` • ${updated}` : ""}`;}
 
+function showResearchNoteSaved() {
+  const el = document.getElementById(
+    "research-note-save-status",
+  );
 
+  if (!el) return;
+
+  el.textContent = "Saved ✓";
+
+  setTimeout(() => {
+    el.textContent = "";
+  }, 1000);
+}
 
 async function render() {
   ensureChart();
@@ -3601,7 +3613,8 @@ async function init() {
         if (researchNoteCount) {
           researchNoteCount.textContent = `${length}/${maxNoteChars}`;
         }
-
+        writeUrlState();
+        showResearchNoteSaved();
         updateSessionStatus();
       });
 
