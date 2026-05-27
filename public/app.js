@@ -1515,6 +1515,8 @@ async function buildResearchSnapshotCanvas() {
   const chartCanvas = document.getElementById("chart");
   if (!chartCanvas) return;
 
+ 
+
   const exportTheme = document.getElementById("export-theme")?.value || "light";
   const theme =
     exportTheme === "dark"
@@ -1601,6 +1603,15 @@ async function buildResearchSnapshotCanvas() {
     color: exportTheme === "dark" ? "#67e8f9" : "#155e75",
   };
 
+  const noteChip = {
+    text: document.getElementById("research-note")?.value?.trim()
+    ? "Research note added"
+    : "No research note",
+
+    bg: exportTheme === "dark" ? "#3f1d0b" : "#fff7ed",
+    color: exportTheme === "dark" ? "#fdba74" : "#9a3412",
+  };
+
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
 
@@ -1666,6 +1677,7 @@ async function buildResearchSnapshotCanvas() {
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
           confidenceChip,
+          noteChip,
         ]
       : [
           {
@@ -1689,6 +1701,7 @@ async function buildResearchSnapshotCanvas() {
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
           confidenceChip,
+          noteChip,
         ];
 
   const chartImage = new Image();
