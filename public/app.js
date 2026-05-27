@@ -2554,6 +2554,8 @@ const updated =
 
 el.textContent = `${locked} • ${ci} • ${note}${updated ? ` • ${updated}` : ""}`;}
 
+
+
 async function render() {
   ensureChart();
 
@@ -3602,6 +3604,34 @@ async function init() {
 
         updateSessionStatus();
       });
+
+      const copySessionStatusBtn = document.getElementById(
+  "copy-session-status-btn",
+);
+
+copySessionStatusBtn?.addEventListener("click", async () => {
+  const previousText = copySessionStatusBtn.textContent;
+  const status =
+    document.getElementById("session-status")?.textContent || "";
+
+  copySessionStatusBtn.disabled = true;
+  copySessionStatusBtn.textContent = "Copying…";
+
+  try {
+    await navigator.clipboard.writeText(status);
+
+    copySessionStatusBtn.textContent = "Copied ✓";
+  } catch (err) {
+    console.error(err);
+    copySessionStatusBtn.textContent = "Copy failed";
+  } finally {
+    setTimeout(() => {
+      copySessionStatusBtn.disabled = false;
+      copySessionStatusBtn.textContent =
+        previousText || "Copy status";
+    }, 900);
+  }
+});
 
       document
         .getElementById("clear-lock-btn")
