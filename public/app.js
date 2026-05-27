@@ -2547,8 +2547,12 @@ function updateSessionStatus() {
     ? "Note added"
     : "No note";
 
-  el.textContent = `${locked} • ${ci} • ${note}`;
-}
+const updated =
+  document
+    .getElementById("last-updated")
+    ?.textContent?.replace("Updated: ", "") || "";
+
+el.textContent = `${locked} • ${ci} • ${note}${updated ? ` • ${updated}` : ""}`;}
 
 async function render() {
   ensureChart();
