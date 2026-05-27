@@ -3633,6 +3633,29 @@ copySessionStatusBtn?.addEventListener("click", async () => {
   }
 });
 
+const copyResearchNoteBtn = document.getElementById("copy-research-note-btn");
+
+copyResearchNoteBtn?.addEventListener("click", async () => {
+  const note = document.getElementById("research-note")?.value?.trim() || "";
+  const previousText = copyResearchNoteBtn.textContent;
+
+  copyResearchNoteBtn.disabled = true;
+  copyResearchNoteBtn.textContent = "Copying…";
+
+  try {
+    await navigator.clipboard.writeText(note);
+    copyResearchNoteBtn.textContent = note ? "Copied ✓" : "No note";
+  } catch (err) {
+    console.error(err);
+    copyResearchNoteBtn.textContent = "Copy failed";
+  } finally {
+    setTimeout(() => {
+      copyResearchNoteBtn.disabled = false;
+      copyResearchNoteBtn.textContent = previousText || "Copy note";
+    }, 900);
+  }
+});
+
       document
         .getElementById("clear-lock-btn")
         ?.addEventListener("click", () => {
