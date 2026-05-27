@@ -1736,7 +1736,7 @@ async function buildResearchSnapshotCanvas() {
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 450;
+  const summaryHeight = 470;
 
   const height =
     padding +
@@ -1894,8 +1894,20 @@ async function buildResearchSnapshotCanvas() {
   y += chartCanvas.height + sectionGap;
   y += 24;
 
+  const sessionStatus =
+   document.getElementById("session-status")?.textContent?.trim() || "";
+
+
+
   // summary
   const summary = buildSnapshotSummary();
+
+  if (sessionStatus) {
+  ctx.fillStyle = theme.textSecondary;
+  ctx.font = "13px Arial";
+  ctx.fillText(`Session: ${sessionStatus}`, padding, y);
+  y += 24;
+}
 
   ctx.fillStyle = theme.textPrimary;
   ctx.font = "bold 18px Arial";
