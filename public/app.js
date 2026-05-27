@@ -1723,7 +1723,7 @@ async function buildResearchSnapshotCanvas() {
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 430;
+  const summaryHeight = 450;
 
   const height =
     padding +
