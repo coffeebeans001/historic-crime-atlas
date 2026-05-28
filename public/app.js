@@ -1898,8 +1898,6 @@ async function buildResearchSnapshotCanvas() {
    document.getElementById("session-status")?.textContent?.trim() || "";
   
   
-
-
   // summary
   const summary = buildSnapshotSummary();
 
@@ -1910,14 +1908,8 @@ async function buildResearchSnapshotCanvas() {
   y += 24;
 }
 
- ctx.strokeStyle = theme.border || "#d1d5db";
-  ctx.lineWidth = 1;
-
-  ctx.beginPath();
-  ctx.moveTo(padding, y - 10);
-  ctx.lineTo(exportCanvas.width - padding, y - 10);  ctx.stroke();
-
-  y += 8; 
+  drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
+  y += 8;
 
   ctx.fillStyle = theme.textPrimary;
   ctx.font = "bold 18px Arial";
@@ -2239,6 +2231,8 @@ async function downloadSnapshotAsPDF() {
   pdf.save(`${safeTitle}-${exportFileTime}.pdf`);
 }
 
+
+
 function getYRangeFromSeries(seriesArr) {
   const values = (seriesArr || [])
     .flatMap((series) => series.data || [])
@@ -2270,6 +2264,16 @@ function getYRangeFromSeries(seriesArr) {
   }
 
   return { min, max };
+}
+
+function drawSnapshotDivider(ctx, exportCanvas, padding, y, theme) {
+  ctx.strokeStyle = theme.border || theme.divider || "#d1d5db";
+  ctx.lineWidth = 1;
+
+  ctx.beginPath();
+  ctx.moveTo(padding, y);
+  ctx.lineTo(exportCanvas.width - padding, y);
+  ctx.stroke();
 }
 
 function buildSnapshotSummary() {
