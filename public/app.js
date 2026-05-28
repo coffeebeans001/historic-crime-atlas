@@ -1959,10 +1959,7 @@ async function buildResearchSnapshotCanvas() {
   ctx.stroke();
 
   y += 20;
-
-  // set font ONCE here
-  ctx.font = "14px Arial";
-
+  
   // timestamp
   ctx.fillStyle = theme.footerText;
   ctx.font = "italic 13px Arial";
@@ -1973,7 +1970,6 @@ async function buildResearchSnapshotCanvas() {
 
   ctx.fillStyle = theme.footerText;
   ctx.font = "11px Arial";
-
   ctx.fillText(
     "Generated from Old Bailey Analytics research workspace",
     padding,
@@ -1982,12 +1978,16 @@ async function buildResearchSnapshotCanvas() {
 
   y += 16;
 
+  drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
+  y += 10;
+
   // URL section
   ctx.fillStyle = theme.urlText;
   ctx.fillText("Shareable URL:", padding, y);
 
   y += 20;
 
+  ctx.fillStyle = theme.urlText;
   ctx.font = "13px Arial";
 
   const maxUrlWidth = width - padding * 2;
@@ -2270,7 +2270,7 @@ function getYRangeFromSeries(seriesArr) {
 }
 
 function drawSnapshotDivider(ctx, exportCanvas, padding, y, theme) {
-  ctx.strokeStyle = theme.border || theme.divider || "#d1d5db";
+  ctx.strokeStyle = theme.border || theme.divider || "#303840";
   ctx.lineWidth = 1;
 
   ctx.beginPath();
