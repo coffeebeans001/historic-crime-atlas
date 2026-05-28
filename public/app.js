@@ -1736,7 +1736,7 @@ async function buildResearchSnapshotCanvas() {
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 490;
+  const summaryHeight = 510;
 
   const height =
     padding +
@@ -1966,6 +1966,17 @@ async function buildResearchSnapshotCanvas() {
   ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
   ctx.fillText(APP_VERSION, width - padding - 190, y);
 
+  const stateId = btoa(currentUrl)
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(0, 8);
+
+  ctx.font = "11px Arial";
+  ctx.fillText(
+    `State ID: ${stateId}`,
+    width - padding - 190,
+    y + 16,
+  );
+
   y += 18;
 
   ctx.fillStyle = theme.footerText;
@@ -1987,9 +1998,12 @@ async function buildResearchSnapshotCanvas() {
 
   y += 20;
 
+  
+
   ctx.fillStyle = theme.urlText;
   ctx.font = "13px Arial";
 
+  
   const maxUrlWidth = width - padding * 2;
   const urlLines = wrapCanvasText(ctx, currentUrl, maxUrlWidth);
 
@@ -1997,6 +2011,9 @@ async function buildResearchSnapshotCanvas() {
     ctx.fillText(line, padding, y);
     y += 18;
   }
+
+  
+
 
   const safeTitle = (chartTitle || "research-snapshot")
     .replace(/[^\w\s-]/g, "")
