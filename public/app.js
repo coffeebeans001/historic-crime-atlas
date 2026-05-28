@@ -1736,7 +1736,7 @@ async function buildResearchSnapshotCanvas() {
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 470;
+  const summaryHeight = 490;
 
   const height =
     padding +
@@ -1928,6 +1928,9 @@ async function buildResearchSnapshotCanvas() {
   y += 20;
 
   const notes = buildResearchNotes();
+  
+  drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
+  y += 8;
 
   ctx.fillStyle = theme.textPrimary;
   ctx.font = "bold 18px Arial";
