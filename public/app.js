@@ -1896,7 +1896,8 @@ async function buildResearchSnapshotCanvas() {
 
   const sessionStatus =
    document.getElementById("session-status")?.textContent?.trim() || "";
-
+  
+  
 
 
   // summary
@@ -1908,6 +1909,15 @@ async function buildResearchSnapshotCanvas() {
   ctx.fillText(`Session: ${sessionStatus}`, padding, y);
   y += 24;
 }
+
+ ctx.strokeStyle = theme.border || "#d1d5db";
+  ctx.lineWidth = 1;
+
+  ctx.beginPath();
+  ctx.moveTo(padding, y - 10);
+  ctx.lineTo(exportCanvas.width - padding, y - 10);  ctx.stroke();
+
+  y += 8; 
 
   ctx.fillStyle = theme.textPrimary;
   ctx.font = "bold 18px Arial";
