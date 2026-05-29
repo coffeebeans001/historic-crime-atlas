@@ -2230,8 +2230,8 @@ async function downloadResearchSnapshot() {
     const link = document.createElement("a");
     link.href = url;
    
-    link.download = `${safeTitle}-${stateId}-${versionSlug}-${exportFileTime}.png`;    
-    document.body.appendChild(link);
+    link.download =
+      `${safeTitle}-export-${exportCount}-${stateId}-${versionSlug}-${exportFileTime}.png`;    document.body.appendChild(link);
     link.click();
     link.remove();
 
