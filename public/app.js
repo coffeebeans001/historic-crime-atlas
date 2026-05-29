@@ -2007,23 +2007,26 @@ if (y + footerSafetySpace > exportCanvas.height) {
   ctx.stroke();
 
   y += 20;
+
+  const stateId = btoa(currentUrl)
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(0, 8);
   
   // timestamp
   ctx.fillStyle = theme.footerText;
   ctx.font = "italic 13px Arial";
   ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
-  ctx.fillText(APP_VERSION, width - padding - 190, y);
 
-  const stateId = btoa(currentUrl)
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .slice(0, 8);
+  const footerMetaX = width - padding - 190;
+
+  ctx.fillText(APP_VERSION, footerMetaX, y);
 
   ctx.font = "11px Arial";
   ctx.fillText(
-    `State ID: ${stateId}`,
-    width - padding - 190,
-    y + 16,
-  );
+  `State ID: ${stateId}`,
+  footerMetaX,
+  y + 16,
+);
 
   y += 18;
 
