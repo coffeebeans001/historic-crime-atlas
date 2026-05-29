@@ -2191,6 +2191,14 @@ async function downloadResearchSnapshot() {
     .replace(/-+/g, "-")
     .toLowerCase();
 
+     writeUrlState();
+
+    const currentUrl = window.location.href;
+
+    const stateId = btoa(currentUrl)
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .slice(0, 8);
+
   exportCanvas.toBlob((blob) => {
     if (!blob) {
       console.error("Failed to create export blob");
@@ -2200,7 +2208,8 @@ async function downloadResearchSnapshot() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${safeTitle}-${versionSlug}-${exportFileTime}.png`;
+   
+    link.download = `${safeTitle}-${stateId}-${versionSlug}-${exportFileTime}.png`;    
     document.body.appendChild(link);
     link.click();
     link.remove();
