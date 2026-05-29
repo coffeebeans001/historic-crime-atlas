@@ -1755,7 +1755,7 @@ function drawChip(ctx, text, x, y, options = {}) {
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 590;
+  const summaryHeight = 610;
 
   const height =
     padding +
@@ -2013,6 +2013,8 @@ const stateId = btoa(currentUrl)
   .slice(0, 8);
 
 const footerMetaX = width - padding - 190;
+const exportCount =
+  localStorage.getItem("snapshotExportCount") || "1";
 
 // timestamp
 ctx.fillStyle = theme.footerText;
@@ -2023,7 +2025,14 @@ ctx.fillText(APP_VERSION, footerMetaX, y);
 ctx.font = "11px Arial";
 ctx.fillText(`State ID: ${stateId}`, footerMetaX, y + 16);
 
-y += 34;
+ctx.font = "11px Arial";
+ctx.fillText(
+  `Export #${exportCount}`,
+  footerMetaX,
+  y + 32,
+);
+
+y += 48;
 
   ctx.fillStyle = theme.footerText;
   ctx.font = "11px Arial";
@@ -2202,6 +2211,14 @@ async function downloadResearchSnapshot() {
     const stateId = btoa(currentUrl)
       .replace(/[^a-zA-Z0-9]/g, "")
       .slice(0, 8);
+
+  const exportCount =
+     Number(localStorage.getItem("snapshotExportCount") || 0) + 1;
+
+  localStorage.setItem(
+    "snapshotExportCount",
+    exportCount,
+  );
 
   exportCanvas.toBlob((blob) => {
     if (!blob) {
