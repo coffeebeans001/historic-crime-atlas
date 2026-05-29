@@ -1619,10 +1619,13 @@ async function buildResearchSnapshotCanvas() {
   };
 
   const layoutChip = {
-  text: "Report layout",
-  bg: exportTheme === "dark" ? "#111827" : "#f3f4f6",
-  color: exportTheme === "dark" ? "#e5e7eb" : "#374151",
-};
+    text:
+       exportTheme === "dark"
+      ? "Report layout · Dark"
+      : "Report layout · Light",
+    bg: exportTheme === "dark" ? "#111827" : "#f3f4f6",
+    color: exportTheme === "dark" ? "#e5e7eb" : "#374151",
+  };
 
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
