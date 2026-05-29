@@ -1736,7 +1736,7 @@ async function buildResearchSnapshotCanvas() {
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 510;
+  const summaryHeight = 550;
 
   const height =
     padding +
@@ -1827,6 +1827,18 @@ async function buildResearchSnapshotCanvas() {
   ctx.fillStyle = theme.textPrimary;
   ctx.font = "bold 28px Arial";
   ctx.fillText(chartTitle, padding, y);
+
+  y += 26;
+
+  ctx.fillStyle = theme.textSecondary;
+  ctx.font = "14px Arial";
+  ctx.fillText(
+  "Historical criminal justice analytics • Old Bailey research workspace",
+  padding,
+  y,
+ );
+
+    y += 18;
 
   y += lineHeight * 2;
 
