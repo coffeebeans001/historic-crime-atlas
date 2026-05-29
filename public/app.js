@@ -1979,6 +1979,15 @@ y += 10;
   // footer separator
   y += 10;
 
+  const footerSafetySpace = 160;
+
+if (y + footerSafetySpace > exportCanvas.height) {
+  console.warn("Snapshot content may overflow footer area", {
+    y,
+    canvasHeight: exportCanvas.height,
+  });
+}
+
   ctx.strokeStyle = theme.divider;
   ctx.lineWidth = 1;
   ctx.beginPath();
