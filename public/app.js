@@ -1497,7 +1497,7 @@ function drawChip(ctx, text, x, y, options = {}) {
   return { chipWidth, chipHeight };
 }
 
-async function buildResearchSnapshotCanvas() {
+  async function buildResearchSnapshotCanvas() {
   if (!chart) return;
 
   const heading =
@@ -2161,8 +2161,12 @@ function buildResearchNotes() {
 }
 
 async function downloadResearchSnapshot() {
+  const start = performance.now();
+
   const exportCanvas = await buildResearchSnapshotCanvas();
-  if (!exportCanvas) return;
+
+  const duration = ((performance.now() - start) / 1000).toFixed(1);
+    if (!exportCanvas) return;
 
   const chartTitle =
     chart.options?.plugins?.title?.text?.toString().trim() ||
