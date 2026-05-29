@@ -1618,6 +1618,12 @@ async function buildResearchSnapshotCanvas() {
     color: exportTheme === "dark" ? "#c7d2fe" : "#3730a3",
   };
 
+  const layoutChip = {
+  text: "Report layout",
+  bg: exportTheme === "dark" ? "#111827" : "#f3f4f6",
+  color: exportTheme === "dark" ? "#e5e7eb" : "#374151",
+};
+
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
 
@@ -1679,6 +1685,7 @@ async function buildResearchSnapshotCanvas() {
           },
           
           snapshotTypeChip,
+          layoutChip,
           lockedYearChip,
           playbackChip,
           ...(largestGapChip ? [largestGapChip] : []),
@@ -1704,6 +1711,7 @@ async function buildResearchSnapshotCanvas() {
           },
           
           snapshotTypeChip,
+          layoutChip,
           lockedYearChip,
           playbackChip,
           ...(largestGapChip ? [largestGapChip] : []),
