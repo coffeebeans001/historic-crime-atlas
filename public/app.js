@@ -1736,7 +1736,7 @@ async function buildResearchSnapshotCanvas() {
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 550;
+  const summaryHeight = 570;
 
   const height =
     padding +
@@ -1779,14 +1779,20 @@ async function buildResearchSnapshotCanvas() {
 
   ctx.textAlign = "left";
 
-  // title (shifted right)
-  ctx.fillStyle = theme.textPrimary;
-  ctx.font = "bold 26px Arial";
-  ctx.fillText("Old Bailey Research Snapshot", padding + 50, y + 28);
+ // title
+ctx.fillStyle = theme.textPrimary;
+ctx.font = "bold 26px Arial";
+ctx.fillText("Old Bailey Research Snapshot", padding + 50, y + 28);
 
-  ctx.fillStyle = theme.textSecondary;
-  ctx.font = "14px Arial";
-  ctx.fillText("Historic criminal case insight export", padding + 50, y + 52);
+ctx.fillStyle = theme.textSecondary;
+ctx.font = "14px Arial";
+ctx.fillText(
+  "Historic criminal case insight export",
+  padding + 50,
+  y + 52,
+);
+
+y += 10;
 
   let chipX = padding;
   let chipY = y + 72;
@@ -1837,6 +1843,8 @@ async function buildResearchSnapshotCanvas() {
   padding,
   y,
  );
+
+ 
 
     y += 18;
 
