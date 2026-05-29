@@ -1755,7 +1755,7 @@ async function buildResearchSnapshotCanvas() {
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 570;
+  const summaryHeight = 590;
 
   const height =
     padding +
@@ -2008,27 +2008,22 @@ if (y + footerSafetySpace > exportCanvas.height) {
 
   y += 20;
 
-  const stateId = btoa(currentUrl)
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .slice(0, 8);
-  
-  // timestamp
-  ctx.fillStyle = theme.footerText;
-  ctx.font = "italic 13px Arial";
-  ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
+const stateId = btoa(currentUrl)
+  .replace(/[^a-zA-Z0-9]/g, "")
+  .slice(0, 8);
 
-  const footerMetaX = width - padding - 190;
+const footerMetaX = width - padding - 190;
 
-  ctx.fillText(APP_VERSION, footerMetaX, y);
+// timestamp
+ctx.fillStyle = theme.footerText;
+ctx.font = "italic 13px Arial";
+ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
+ctx.fillText(APP_VERSION, footerMetaX, y);
 
-  ctx.font = "11px Arial";
-  ctx.fillText(
-  `State ID: ${stateId}`,
-  footerMetaX,
-  y + 16,
-);
+ctx.font = "11px Arial";
+ctx.fillText(`State ID: ${stateId}`, footerMetaX, y + 16);
 
-  y += 18;
+y += 34;
 
   ctx.fillStyle = theme.footerText;
   ctx.font = "11px Arial";
