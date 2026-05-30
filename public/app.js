@@ -3832,6 +3832,14 @@ resetExportCountBtn?.addEventListener("click", () => {
   localStorage.removeItem("snapshotExportCount");
   updateExportCountStatus();
 
+  const exportCountStatus =
+  document.getElementById("export-count-status");
+
+if (exportCountStatus) {
+  exportCountStatus.textContent =
+    "Exports reset. Next export will be #1.";
+}
+
   resetExportCountBtn.textContent = "Reset ✓";
 
   setTimeout(() => {
