@@ -2180,11 +2180,6 @@ function buildResearchNotes() {
 async function downloadResearchSnapshot() {
   const start = performance.now();
 
-  const exportCanvas = await buildResearchSnapshotCanvas();
-
-  const duration = ((performance.now() - start) / 1000).toFixed(1);
-    if (!exportCanvas) return;
-
   const chartTitle =
     chart.options?.plugins?.title?.text?.toString().trim() ||
     "research-snapshot";
@@ -2229,6 +2224,24 @@ async function downloadResearchSnapshot() {
   );
   updateExportCountStatus();
   updateSessionStatus();
+
+  const exportTime = new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  localStorage.setItem(
+  "lastSnapshotExportTime",
+  exportTime,
+);
+
+  updateLastExportStatus();
+
+  const exportCanvas =
+  await buildResearchSnapshotCanvas();
+  
+  if (!exportCanvas) return;
+ 
 
   exportCanvas.toBlob((blob) => {
     if (!blob) {
@@ -2730,6 +2743,18 @@ function updateExportCountStatus() {
 
   const count = localStorage.getItem("snapshotExportCount") || "0";
   el.textContent = `Exports created: ${count}`;
+}
+
+function updateLastExportStatus() {
+  const el = document.getElementById("last-export-status");
+  if (!el) return;
+
+  const lastExport =
+    localStorage.getItem("lastSnapshotExportTime");
+
+  el.textContent = lastExport
+    ? `Last export: ${lastExport}`
+    : "No exports yet";
 }
 
 async function render() {
