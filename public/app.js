@@ -2217,8 +2217,9 @@ async function downloadResearchSnapshot() {
 
   localStorage.setItem(
     "snapshotExportCount",
-    exportCount,
+    exportCount, 
   );
+  updateExportCountStatus();
 
   exportCanvas.toBlob((blob) => {
     if (!blob) {
@@ -2705,6 +2706,14 @@ function showResearchNoteSaved() {
   setTimeout(() => {
     el.textContent = "";
   }, 1000);
+}
+
+function updateExportCountStatus() {
+  const el = document.getElementById("export-count-status");
+  if (!el) return;
+
+  const count = localStorage.getItem("snapshotExportCount") || "0";
+  el.textContent = `Exports created: ${count}`;
 }
 
 async function render() {
@@ -3808,6 +3817,20 @@ copyResearchNoteBtn?.addEventListener("click", async () => {
   }
 });
 
+const resetExportCountBtn =
+  document.getElementById("reset-export-count-btn");
+
+resetExportCountBtn?.addEventListener("click", () => {
+  localStorage.removeItem("snapshotExportCount");
+  updateExportCountStatus();
+
+  resetExportCountBtn.textContent = "Reset ✓";
+
+  setTimeout(() => {
+    resetExportCountBtn.textContent = "Reset export count";
+  }, 900);
+});
+
       document
         .getElementById("clear-lock-btn")
         ?.addEventListener("click", () => {
@@ -3902,8 +3925,8 @@ copyResearchNoteBtn?.addEventListener("click", async () => {
 
             await render();
             await fetchNearby();
-
             updateLastUpdatedLabel();
+            updateExportCountStatus();
 
             writeUrlState();
           } catch (err) {
