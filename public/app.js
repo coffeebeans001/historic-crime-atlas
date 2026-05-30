@@ -2228,6 +2228,7 @@ async function downloadResearchSnapshot() {
     exportCount, 
   );
   updateExportCountStatus();
+  updateSessionStatus();
 
   exportCanvas.toBlob((blob) => {
     if (!blob) {
@@ -2700,7 +2701,14 @@ const updated =
     .getElementById("last-updated")
     ?.textContent?.replace("Updated: ", "") || "";
 
-el.textContent = `${locked} • ${ci} • ${note}${updated ? ` • ${updated}` : ""}`;}
+const exportCount =
+  localStorage.getItem("snapshotExportCount") || "0";    
+
+el.textContent =
+  `${locked} • ${ci} • ${note} • Exports ${exportCount}${
+    updated ? ` • ${updated}` : ""
+  }`;
+}
 
 function showResearchNoteSaved() {
   const el = document.getElementById(
@@ -3831,6 +3839,7 @@ const resetExportCountBtn =
 resetExportCountBtn?.addEventListener("click", () => {
   localStorage.removeItem("snapshotExportCount");
   updateExportCountStatus();
+  updateSessionStatus();
 
   const exportCountStatus =
   document.getElementById("export-count-status");
