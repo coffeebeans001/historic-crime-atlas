@@ -1635,11 +1635,17 @@ function drawChip(ctx, text, x, y, options = {}) {
     color: exportTheme === "dark" ? "#bbf7d0" : "#166534",
   };
 
-  const exportCountChip = {
-    text: `Export #${localStorage.getItem("snapshotExportCount") || "1"}`,
-    bg: exportTheme === "dark" ? "#172554" : "#dbeafe",
-    color: exportTheme === "dark" ? "#bfdbfe" : "#1d4ed8",
-  };
+  const exportCount =
+  localStorage.getItem("snapshotExportCount") || "0";
+
+  const exportCountChip =
+  exportCount && Number(exportCount) > 0
+    ? {
+        text: `Export #${exportCount}`,
+        bg: exportTheme === "dark" ? "#172554" : "#dbeafe",
+        color: exportTheme === "dark" ? "#bfdbfe" : "#1d4ed8",
+      }
+    : null;
 
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
@@ -2033,8 +2039,6 @@ const stateId = btoa(currentUrl)
   .slice(0, 8);
 
 const footerMetaX = width - padding - 190;
-const exportCount =
-  localStorage.getItem("snapshotExportCount") || "1";
 
 // timestamp
 ctx.fillStyle = theme.footerText;
@@ -3882,18 +3886,20 @@ const resetExportCountBtn =
   document.getElementById("reset-export-count-btn");
 
 resetExportCountBtn?.addEventListener("click", () => {
- localStorage.removeItem("lastSnapshotExportTime");
+  localStorage.setItem("snapshotExportCount", "0");
+  localStorage.removeItem("lastSnapshotExportTime");
+
   updateExportCountStatus();
   updateLastExportStatus();
   updateSessionStatus();
 
   const exportCountStatus =
-  document.getElementById("export-count-status");
+    document.getElementById("export-count-status");
 
-if (exportCountStatus) {
-  exportCountStatus.textContent =
-    "Exports reset. Next export will be #1.";
-}
+  if (exportCountStatus) {
+    exportCountStatus.textContent =
+      "Exports reset. Next export will be #1.";
+  }
 
   resetExportCountBtn.textContent = "Reset ✓";
 
