@@ -2721,6 +2721,14 @@ el.textContent =
   `${locked} • ${ci} • ${note} • Exports ${exportCount}${
     updated ? ` • ${updated}` : ""
   }`;
+
+  const lastExport =
+  localStorage.getItem("lastSnapshotExportTime");
+
+  el.textContent =
+  `${locked} • ${ci} • ${note} • Exports ${exportCount}${
+    lastExport ? ` • Last export ${lastExport}` : ""
+  }${updated ? ` • ${updated}` : ""}`;
 }
 
 function showResearchNoteSaved() {
