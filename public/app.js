@@ -1627,6 +1627,12 @@ function drawChip(ctx, text, x, y, options = {}) {
     color: exportTheme === "dark" ? "#e5e7eb" : "#374151",
   };
 
+  const sessionChip = {
+    text: "Session state captured",
+    bg: exportTheme === "dark" ? "#022c22" : "#dcfce7",
+    color: exportTheme === "dark" ? "#bbf7d0" : "#166534",
+  };
+
   const exportCountChip = {
     text: `Export #${localStorage.getItem("snapshotExportCount") || "1"}`,
     bg: exportTheme === "dark" ? "#172554" : "#dbeafe",
@@ -1694,8 +1700,9 @@ function drawChip(ctx, text, x, y, options = {}) {
           },
           
           snapshotTypeChip,
-          exportCountChip,
           layoutChip,
+          sessionChip,
+          exportCountChip,
           lockedYearChip,
           playbackChip,
           ...(largestGapChip ? [largestGapChip] : []),
@@ -1721,8 +1728,9 @@ function drawChip(ctx, text, x, y, options = {}) {
           },
           
           snapshotTypeChip,
-          exportCountChip,
           layoutChip,
+          sessionChip,
+          exportCountChip,
           lockedYearChip,
           playbackChip,
           ...(largestGapChip ? [largestGapChip] : []),
