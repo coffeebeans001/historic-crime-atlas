@@ -1569,14 +1569,14 @@ function drawChip(ctx, text, x, y, options = {}) {
     rangeText = `Up to ${formatDisplayDate(dateTo)}`;
   }
 
-  const lockedYearChip = {
-    text:
-      lockedChartYear != null
-        ? `Locked year: ${lockedChartYear}`
-        : "No locked year",
-    bg: exportTheme === "dark" ? "#78350f" : "#fef3c7",
-    color: exportTheme === "dark" ? "#fef3c7" : "#92400e",
-  };
+  const lockedYearChip  =
+  lockedChartYear != null
+    ? {
+        text: `Locked year ${lockedChartYear}`,
+        bg: exportTheme === "dark" ? "#1e293b" : "#dbeafe",
+        color: exportTheme === "dark" ? "#bfdbfe" : "#1d4ed8",
+      }
+    : null;
 
   const playbackChip = {
     text: timelineTimer != null ? `Playback active` : "Playback stopped",
@@ -1739,6 +1739,8 @@ function drawChip(ctx, text, x, y, options = {}) {
           noteChip,
         ];
 
+  const visibleChips = filterChips.filter(Boolean);
+
   const chartImage = new Image();
   chartImage.src = chart.toBase64Image("image/png", 1);
   await new Promise((resolve, reject) => {
@@ -1834,7 +1836,7 @@ y += 10;
   const chipGap = 10;
   const chipRowHeight = 34;
 
-  for (const chip of filterChips) {
+  for (const chip of visibleChips) {
     ctx.font = "13px Arial";
     const estimatedWidth = ctx.measureText(chip.text).width + 20;
 
