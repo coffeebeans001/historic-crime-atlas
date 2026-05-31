@@ -798,6 +798,15 @@ function writeUrlState({ push = false } = {}) {
     p.delete("exportTheme");
   }
 
+  const exportCount =
+  localStorage.getItem("snapshotExportCount") || "0";
+
+  if (Number(exportCount) > 0) {
+    p.set("exports", exportCount);
+  } else {
+    p.delete("exports");
+  }
+
   const qs = p.toString();
   const url = qs ? `?${qs}` : location.pathname;
 
@@ -3892,6 +3901,7 @@ resetExportCountBtn?.addEventListener("click", () => {
   updateExportCountStatus();
   updateLastExportStatus();
   updateSessionStatus();
+  writeUrlState();
 
   const exportCountStatus =
     document.getElementById("export-count-status");
@@ -4115,7 +4125,6 @@ if (document.readyState === "loading") {
 
 function initFromUrl() {
   const state = readUrlState();
-
   applyStateToUI(state);
   updateExportThemeStatus(); // <-- HERE
 
