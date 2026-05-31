@@ -1578,12 +1578,14 @@ function drawChip(ctx, text, x, y, options = {}) {
       }
     : null;
 
-  const playbackChip = {
-    text: timelineTimer != null ? `Playback active` : "Playback stopped",
-
-    bg: exportTheme === "dark" ? "#1e293b" : "#dbeafe",
-    color: exportTheme === "dark" ? "#bfdbfe" : "#1d4ed8",
-  };
+  const playbackChip =
+  timelineTimer != null
+    ? {
+        text: "Playback active",
+        bg: exportTheme === "dark" ? "#1e293b" : "#dbeafe",
+        color: exportTheme === "dark" ? "#bfdbfe" : "#1d4ed8",
+      }
+    : null;
 
   const mapQualityChip = hasSharedMarkerLocations()
     ? {
