@@ -799,7 +799,7 @@ function writeUrlState({ push = false } = {}) {
   }
 
   cleanDeprecatedUrlParams(p);
-  
+
   const qs = p.toString();
   const url = qs ? `?${qs}` : location.pathname;
 
@@ -2788,7 +2788,14 @@ function updateLastExportStatus() {
 }
 
 function cleanDeprecatedUrlParams(p) {
-  p.delete("exports");
+  const deprecatedParams = ["exports"];
+
+  deprecatedParams.forEach((param) => {
+    if (p.has(param)) {
+      console.info(`Removed deprecated URL param: ${param}`);
+      p.delete(param);
+    }
+  });
 }
 
 async function render() {
