@@ -824,6 +824,9 @@ function writeUrlState({ push = false } = {}) {
 }
 
 function applyStateToUI(state) {
+  if (state.exports != null) {
+  localStorage.setItem("snapshotExportCount", state.exports);
+}
   // Chart controls
   const fromEl = document.getElementById("from");
   const toEl = document.getElementById("to");
@@ -888,6 +891,8 @@ function applyStateToUI(state) {
     researchNoteEl.value = state.note;
   }
   researchNoteEl?.dispatchEvent(new Event("input"));
+
+
 }
 
 let _urlSyncTimer = null;
@@ -2249,7 +2254,8 @@ async function downloadResearchSnapshot() {
   );
   updateExportCountStatus();
   updateSessionStatus();
-
+  updateLastExportStatus();
+  
   const exportTime = new Date().toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
