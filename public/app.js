@@ -798,8 +798,8 @@ function writeUrlState({ push = false } = {}) {
     p.delete("exportTheme");
   }
 
-  p.delete("exports");
-
+  cleanDeprecatedUrlParams(p);
+  
   const qs = p.toString();
   const url = qs ? `?${qs}` : location.pathname;
 
@@ -2785,6 +2785,10 @@ function updateLastExportStatus() {
   el.textContent = lastExport
     ? `Last export: ${lastExport}`
     : "No exports yet";
+}
+
+function cleanDeprecatedUrlParams(p) {
+  p.delete("exports");
 }
 
 async function render() {
