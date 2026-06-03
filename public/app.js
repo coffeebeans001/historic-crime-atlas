@@ -798,14 +798,7 @@ function writeUrlState({ push = false } = {}) {
     p.delete("exportTheme");
   }
 
-  const exportCount =
-  localStorage.getItem("snapshotExportCount") || "0";
-
-  if (Number(exportCount) > 0) {
-    p.set("exports", exportCount);
-  } else {
-    p.delete("exports");
-  }
+  p.delete("exports");
 
   const qs = p.toString();
   const url = qs ? `?${qs}` : location.pathname;
@@ -824,9 +817,7 @@ function writeUrlState({ push = false } = {}) {
 }
 
 function applyStateToUI(state) {
-  if (state.exports != null) {
-  localStorage.setItem("snapshotExportCount", state.exports);
-}
+  
   // Chart controls
   const fromEl = document.getElementById("from");
   const toEl = document.getElementById("to");
@@ -2255,7 +2246,7 @@ async function downloadResearchSnapshot() {
   updateExportCountStatus();
   updateSessionStatus();
   updateLastExportStatus();
-  
+
   const exportTime = new Date().toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
