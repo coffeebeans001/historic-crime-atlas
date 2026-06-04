@@ -2205,7 +2205,10 @@ async function downloadResearchSnapshot() {
     chart.options?.plugins?.title?.text?.toString().trim() ||
     "research-snapshot";
 
-  const { file: exportFileTime } = getExportDateTime();
+  const {
+    display: exportDisplayTime,
+    file: exportFileTime,
+  } = getExportDateTime();
 
   const versionSlug = APP_VERSION.replace(/[^\w\s-]/g, "")
     .trim()
@@ -2254,10 +2257,11 @@ async function downloadResearchSnapshot() {
 
   localStorage.setItem(
   "lastSnapshotExportTime",
-  exportTime,
+  exportDisplayTime,
 );
 
   updateLastExportStatus();
+  updateSessionStatus();
 
   const exportCanvas =
   await buildResearchSnapshotCanvas();
@@ -2714,44 +2718,7 @@ function updateChartLockStatus() {
       : "No year locked";
 }
 
-function updateSessionStatus() {
-  const el = document.getElementById("session-status");
-  if (!el) return;
 
-  const locked =
-    lockedChartYear != null ? `Locked year ${lockedChartYear}` : "No lock";
-
-  const ci = document.getElementById("toggle-ci")?.checked ? "CI on" : "CI off";
-
- const noteText =
-  document.getElementById("research-note")?.value?.trim() || "";
-
-const note =
-  noteText
-    ? `Note added (${noteText.length} chars)`
-    : "No note";
-
-const updated =
-  document
-    .getElementById("last-updated")
-    ?.textContent?.replace("Updated: ", "") || "";
-
-const exportCount =
-  localStorage.getItem("snapshotExportCount") || "0";    
-
-el.textContent =
-  `${locked} • ${ci} • ${note} • Exports ${exportCount}${
-    updated ? ` • ${updated}` : ""
-  }`;
-
-  const lastExport =
-  localStorage.getItem("lastSnapshotExportTime");
-
-  el.textContent =
-  `${locked} • ${ci} • ${note} • Exports ${exportCount}${
-    lastExport ? ` • Last export ${lastExport}` : ""
-  }${updated ? ` • ${updated}` : ""}`;
-}
 
 function showResearchNoteSaved() {
   const el = document.getElementById(
@@ -2796,6 +2763,61 @@ function cleanDeprecatedUrlParams(p) {
       p.delete(param);
     }
   });
+}
+
+function buildSessionStatusParts() {
+  const parts = [];
+
+  if (lockedChartYear != null) {
+    parts.push(`Locked year ${lockedChartYear}`);
+  } else {
+    parts.push("No lock");
+  }
+
+  const ciEnabled =
+    document.getElementById("toggle-ci")?.checked ?? true;
+
+  parts.push(ciEnabled ? "CI on" : "CI off");
+
+  const researchNoteEl = document.getElementById("research-note");
+
+  parts.push(
+    researchNoteEl?.value?.trim()
+      ? "Note added"
+      : "No note",
+  );
+
+  const exportCount =
+    localStorage.getItem("snapshotExportCount") || "0";
+
+  parts.push(`Exports ${exportCount}`);
+
+  const lastExport =
+    localStorage.getItem("lastSnapshotExportTime");
+
+  if (lastExport) {
+    parts.push(`Last export ${lastExport}`);
+  }
+
+  return parts;
+}
+
+function updateSessionStatus() {
+  const el = document.getElementById("session-status");
+  if (!el) return;
+
+  const parts = buildSessionStatusParts();
+
+  //const updated =
+    //document
+      //.getElementById("last-updated")
+      //?.textContent?.replace("Last updated: ", "") || "";
+
+  //if (updated) {
+    //parts.push(updated);
+  //}
+
+  el.textContent = parts.join(" • ");
 }
 
 async function render() {
