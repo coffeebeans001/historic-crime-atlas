@@ -552,6 +552,7 @@ function ensureChart() {
           clearChartYearLock();
           updateLastUpdatedLabel();
           writeUrlState();
+          
           return;
         }
 
@@ -2245,6 +2246,7 @@ async function downloadResearchSnapshot() {
 
   updateLastExportStatus();
   updateSessionStatus();
+  updateResearchIdStatus();
 
   const versionSlug = APP_VERSION.replace(/[^\w\s-]/g, "")
     .trim()
@@ -2268,6 +2270,7 @@ async function downloadResearchSnapshot() {
     .toLowerCase();
 
      writeUrlState();
+     updateResearchIdStatus();
 
     const currentUrl = window.location.href;
 
@@ -2285,6 +2288,7 @@ async function downloadResearchSnapshot() {
   );
   updateExportCountStatus();
   updateSessionStatus();
+  updateResearchIdStatus();
   updateLastExportStatus();
 
   const researchId = `${stateId}-${exportCount}`;  
@@ -2862,6 +2866,7 @@ function updateSessionStatus() {
 
 function getCurrentResearchId() {
   writeUrlState();
+ 
 
   const currentUrl = window.location.href;
 
@@ -2873,6 +2878,13 @@ function getCurrentResearchId() {
     localStorage.getItem("snapshotExportCount") || "0";
 
   return `${stateId}-${exportCount}`;
+}
+
+function updateResearchIdStatus() {
+  const el = document.getElementById("research-id-status");
+  if (!el) return;
+
+  el.textContent = `Research ID: ${getCurrentResearchId()}`;
 }
 
 async function render() {
@@ -3987,6 +3999,7 @@ resetExportCountBtn?.addEventListener("click", () => {
   updateLastExportStatus();
   updateSessionStatus();
   writeUrlState();
+  updateResearchIdStatus();
 
   const exportCountStatus =
     document.getElementById("export-count-status");
@@ -4093,6 +4106,7 @@ copyResearchIdBtn?.addEventListener("click", async () => {
           }
 
           writeUrlState();
+          updateSessionStatus();
         });
 
       const exportThemeEl = document.getElementById("export-theme");
@@ -4236,6 +4250,7 @@ function initFromUrl() {
   const state = readUrlState();
   applyStateToUI(state);
   updateExportThemeStatus(); // <-- HERE
+  updateResearchIdStatus(); // <-- HERE
 
   const groupInput = document.getElementById("group");
 
