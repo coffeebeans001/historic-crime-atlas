@@ -1741,18 +1741,17 @@ const sessionChip =
             bg: "#163826",
             color: "#bbf7d0",
           },
-          
           snapshotTypeChip,
-          noteChip,
           layoutChip,
           sessionChip,
           exportCountChip,
           lastExportChip,
           lockedYearChip,
           playbackChip,
+          confidenceChip,
+          noteChip,
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
-          confidenceChip,
         ]
       : [
           {
@@ -1770,19 +1769,17 @@ const sessionChip =
             bg: "#dcfce7",
             color: "#166534",
           },
-          
           snapshotTypeChip,
-          noteChip,
           layoutChip,
           sessionChip,
           exportCountChip,
           lastExportChip,
           lockedYearChip,
           playbackChip,
+          confidenceChip,
+          noteChip,
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
-          confidenceChip,
-          
         ];
 
   const visibleChips = filterChips.filter(Boolean);
