@@ -4040,6 +4040,20 @@ copyResearchIdBtn?.addEventListener("click", async () => {
   }
 });
 
+const refreshResearchIdBtn =
+  document.getElementById("refresh-research-id-btn");
+
+refreshResearchIdBtn?.addEventListener("click", () => {
+  writeUrlState();
+  updateResearchIdStatus();
+
+  refreshResearchIdBtn.textContent = "Refreshed ✓";
+
+  setTimeout(() => {
+    refreshResearchIdBtn.textContent = "Refresh research ID";
+  }, 900);
+});
+
       document
         .getElementById("clear-lock-btn")
         ?.addEventListener("click", () => {
