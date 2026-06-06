@@ -4032,8 +4032,13 @@ copyResearchIdBtn?.addEventListener("click", async () => {
   copyResearchIdBtn.textContent = "Copying…";
 
   try {
-    await navigator.clipboard.writeText(getCurrentResearchId());
-    copyResearchIdBtn.textContent = "Copied ✓";
+const researchIdText =
+  document.getElementById("research-id-status")?.textContent ||
+  `Research ID: ${getCurrentResearchId()}`;
+
+ await navigator.clipboard.writeText(researchIdText);    
+
+copyResearchIdBtn.textContent = "Copied ✓";
   } catch (err) {
     console.error(err);
     copyResearchIdBtn.textContent = "Copy failed";
