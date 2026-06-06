@@ -1630,10 +1630,9 @@ function drawChip(ctx, text, x, y, options = {}) {
   };
 
   const layoutChip = {
-    text:
-       exportTheme === "dark"
-      ? "Report layout · Dark"
-      : "Report layout · Light",
+    text: exportTheme === "dark"
+      ? "Export theme: Dark"
+      : "Export theme: Light",
     bg: exportTheme === "dark" ? "#111827" : "#f3f4f6",
     color: exportTheme === "dark" ? "#e5e7eb" : "#374151",
   };
