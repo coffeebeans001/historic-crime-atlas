@@ -2275,6 +2275,7 @@ async function downloadResearchSnapshot() {
       .replace(/[^a-zA-Z0-9]/g, "")
       .slice(0, 8);
 
+
   const exportCount =
      Number(localStorage.getItem("snapshotExportCount") || 0) + 1;
 
@@ -2285,6 +2286,8 @@ async function downloadResearchSnapshot() {
   updateExportCountStatus();
   updateSessionStatus();
   updateLastExportStatus();
+
+  const researchId = `${stateId}-${exportCount}`;  
 
   const exportTime = new Date().toLocaleTimeString([], {
     hour: "2-digit",
@@ -2316,7 +2319,8 @@ async function downloadResearchSnapshot() {
     link.href = url;
    
     link.download =
-      `${safeTitle}-export-${exportCount}-${stateId}-${versionSlug}-${exportFileTime}.png`;    document.body.appendChild(link);
+      `${safeTitle}-${researchId}-${versionSlug}-${exportFileTime}.png`;    
+    document.body.appendChild(link);
     link.click();
     link.remove();
 
