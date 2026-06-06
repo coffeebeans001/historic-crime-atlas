@@ -2884,7 +2884,13 @@ function updateResearchIdStatus() {
   const el = document.getElementById("research-id-status");
   if (!el) return;
 
-  el.textContent = `Research ID: ${getCurrentResearchId()}`;
+  const refreshedAt = new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  el.textContent =
+    `Research ID: ${getCurrentResearchId()} • refreshed ${refreshedAt}`;
 }
 
 async function render() {
