@@ -2063,6 +2063,7 @@ const stateId = btoa(currentUrl)
   .slice(0, 8);
 
 const footerMetaX = width - padding - 190;
+const researchId = `${stateId}-${exportCount}`;
 
 // timestamp
 ctx.fillStyle = theme.footerText;
@@ -2078,6 +2079,14 @@ ctx.fillText(
   `Export #${exportCount}`,
   footerMetaX,
   y + 32,
+);
+
+ctx.font = "11px Arial";
+
+ctx.fillText(
+  `Research ID: ${researchId}`,
+  footerMetaX,
+  y + 48,
 );
 
 y += 48;
