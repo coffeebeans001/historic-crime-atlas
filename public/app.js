@@ -1652,6 +1652,23 @@ function drawChip(ctx, text, x, y, options = {}) {
       }
     : null;
 
+    const exportCountForChips =
+  Number(localStorage.getItem("snapshotExportCount") || 0);
+
+    const lastExport =
+  exportCountForChips > 0
+    ? localStorage.getItem("lastSnapshotExportTime")
+    : null;
+
+    const lastExportChip =
+  lastExport
+    ? {
+        text: `Last export ${lastExport}`,
+        bg: exportTheme === "dark" ? "#1e1b4b" : "#ede9fe",
+        color: exportTheme === "dark" ? "#ddd6fe" : "#5b21b6",
+      }
+    : null;
+
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
 
@@ -1716,6 +1733,7 @@ function drawChip(ctx, text, x, y, options = {}) {
           layoutChip,
           sessionChip,
           exportCountChip,
+          lastExportChip,
           lockedYearChip,
           playbackChip,
           ...(largestGapChip ? [largestGapChip] : []),
@@ -1744,6 +1762,7 @@ function drawChip(ctx, text, x, y, options = {}) {
           layoutChip,
           sessionChip,
           exportCountChip,
+          lastExportChip,
           lockedYearChip,
           playbackChip,
           ...(largestGapChip ? [largestGapChip] : []),
