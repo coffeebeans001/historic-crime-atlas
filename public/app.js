@@ -2860,6 +2860,21 @@ function updateSessionStatus() {
   el.textContent = parts.join(" • ");
 }
 
+function getCurrentResearchId() {
+  writeUrlState();
+
+  const currentUrl = window.location.href;
+
+  const stateId = btoa(currentUrl)
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(0, 8);
+
+  const exportCount =
+    localStorage.getItem("snapshotExportCount") || "0";
+
+  return `${stateId}-${exportCount}`;
+}
+
 async function render() {
   ensureChart();
 
@@ -3986,6 +4001,30 @@ resetExportCountBtn?.addEventListener("click", () => {
   setTimeout(() => {
     resetExportCountBtn.textContent = "Reset export count";
   }, 900);
+});
+
+const copyResearchIdBtn =
+  document.getElementById("copy-research-id-btn");
+
+copyResearchIdBtn?.addEventListener("click", async () => {
+  const previousText = copyResearchIdBtn.textContent;
+
+  copyResearchIdBtn.disabled = true;
+  copyResearchIdBtn.textContent = "Copying…";
+
+  try {
+    await navigator.clipboard.writeText(getCurrentResearchId());
+    copyResearchIdBtn.textContent = "Copied ✓";
+  } catch (err) {
+    console.error(err);
+    copyResearchIdBtn.textContent = "Copy failed";
+  } finally {
+    setTimeout(() => {
+      copyResearchIdBtn.disabled = false;
+      copyResearchIdBtn.textContent =
+        previousText || "Copy research ID";
+    }, 900);
+  }
 });
 
       document
