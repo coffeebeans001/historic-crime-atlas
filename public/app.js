@@ -1611,14 +1611,17 @@ function drawChip(ctx, text, x, y, options = {}) {
     color: exportTheme === "dark" ? "#67e8f9" : "#155e75",
   };
 
-  const noteChip = {
-    text: document.getElementById("research-note")?.value?.trim()
-    ? "Research note added"
-    : "No research note",
+  const noteLength =
+  document.getElementById("research-note")?.value?.trim().length || 0;
 
-    bg: exportTheme === "dark" ? "#3f1d0b" : "#fff7ed",
-    color: exportTheme === "dark" ? "#fdba74" : "#9a3412",
-  }; 
+  const noteChip =
+    noteLength > 0
+      ? {
+          text: `Research note (${noteLength} chars)`,
+          bg: exportTheme === "dark" ? "#3f1d0b" : "#fff7ed",
+          color: exportTheme === "dark" ? "#fdba74" : "#9a3412",
+        }
+      : null;
 
   const snapshotTypeChip = {
     text: "Research snapshot",
@@ -1669,6 +1672,7 @@ function drawChip(ctx, text, x, y, options = {}) {
         color: exportTheme === "dark" ? "#ddd6fe" : "#5b21b6",
       }
     : null;
+
 
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
@@ -1731,6 +1735,7 @@ function drawChip(ctx, text, x, y, options = {}) {
           },
           
           snapshotTypeChip,
+          noteChip,
           layoutChip,
           sessionChip,
           exportCountChip,
@@ -1740,7 +1745,6 @@ function drawChip(ctx, text, x, y, options = {}) {
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
           confidenceChip,
-          noteChip,
         ]
       : [
           {
@@ -1760,6 +1764,7 @@ function drawChip(ctx, text, x, y, options = {}) {
           },
           
           snapshotTypeChip,
+          noteChip,
           layoutChip,
           sessionChip,
           exportCountChip,
@@ -1769,7 +1774,7 @@ function drawChip(ctx, text, x, y, options = {}) {
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
           confidenceChip,
-          noteChip,
+          
         ];
 
   const visibleChips = filterChips.filter(Boolean);
