@@ -2210,6 +2210,14 @@ async function downloadResearchSnapshot() {
     file: exportFileTime,
   } = getExportDateTime();
 
+    localStorage.setItem(
+    "lastSnapshotExportTime",
+    exportDisplayTime,
+  );
+
+  updateLastExportStatus();
+  updateSessionStatus();
+
   const versionSlug = APP_VERSION.replace(/[^\w\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-")
