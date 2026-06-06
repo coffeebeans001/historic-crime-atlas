@@ -1638,11 +1638,20 @@ function drawChip(ctx, text, x, y, options = {}) {
     color: exportTheme === "dark" ? "#e5e7eb" : "#374151",
   };
 
-  const sessionChip = {
-    text: "Session state captured",
-    bg: exportTheme === "dark" ? "#022c22" : "#dcfce7",
-    color: exportTheme === "dark" ? "#bbf7d0" : "#166534",
-  };
+ const hasSessionState =
+  lockedChartYear != null ||
+  timelineTimer != null ||
+  document.getElementById("research-note")?.value?.trim() ||
+  Number(localStorage.getItem("snapshotExportCount") || 0) > 0;
+
+const sessionChip =
+  hasSessionState
+    ? {
+        text: "Session state captured",
+        bg: exportTheme === "dark" ? "#022c22" : "#dcfce7",
+        color: exportTheme === "dark" ? "#bbf7d0" : "#166534",
+      }
+    : null;
 
   const exportCount =
   localStorage.getItem("snapshotExportCount") || "0";
@@ -1657,15 +1666,15 @@ function drawChip(ctx, text, x, y, options = {}) {
     : null;
 
     const exportCountForChips =
-  Number(localStorage.getItem("snapshotExportCount") || 0);
+     Number(localStorage.getItem("snapshotExportCount") || 0);
 
     const lastExport =
-  exportCountForChips > 0
+      exportCountForChips > 0
     ? localStorage.getItem("lastSnapshotExportTime")
     : null;
 
     const lastExportChip =
-  lastExport
+      lastExport
     ? {
         text: `Last export ${lastExport}`,
         bg: exportTheme === "dark" ? "#1e1b4b" : "#ede9fe",
