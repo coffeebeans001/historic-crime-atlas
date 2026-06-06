@@ -1681,6 +1681,17 @@ const sessionChip =
       }
     : null;
 
+    const noDataChip =
+  chart.data?.datasets?.[0]?.data?.every(
+    (value) => Number(value) === 0,
+  )
+    ? {
+        text: "No chart data",
+        bg: exportTheme === "dark" ? "#451a03" : "#fef3c7",
+        color: exportTheme === "dark" ? "#fde68a" : "#92400e",
+      }
+    : null;
+
 
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
@@ -1749,6 +1760,7 @@ const sessionChip =
           lockedYearChip,
           playbackChip,
           confidenceChip,
+          noDataChip,
           noteChip,
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
@@ -1777,6 +1789,7 @@ const sessionChip =
           lockedYearChip,
           playbackChip,
           confidenceChip,
+          noDataChip,
           noteChip,
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
