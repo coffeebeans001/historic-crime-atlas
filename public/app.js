@@ -1900,6 +1900,13 @@ y += 10;
     chipX += chipWidth + chipGap;
   }
 
+    if (y > headerHeight + 180) {
+    console.warn("Snapshot chip area is getting tall", {
+      chipCount: visibleChips.length,
+      y,
+    });
+  }
+
   ctx.strokeStyle = theme.divider;
   ctx.lineWidth = 1;
   ctx.beginPath();
