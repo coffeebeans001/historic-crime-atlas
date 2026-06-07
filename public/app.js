@@ -2873,6 +2873,13 @@ function buildSessionStatusParts() {
 
   parts.push(ciEnabled ? "CI on" : "CI off");
 
+  const noDataVisible =
+  !document
+    .getElementById("chart-no-data")
+    ?.classList.contains("hidden");
+
+  parts.push(noDataVisible ? "No chart data" : "Chart data available");
+
   const researchNoteEl = document.getElementById("research-note");
 
   parts.push(
