@@ -1877,7 +1877,11 @@ const sessionChip =
  // title
 ctx.fillStyle = theme.textPrimary;
 ctx.font = "bold 26px Arial";
-ctx.fillText("Old Bailey Research Snapshot", padding + 50, y + 28);
+const snapshotTitle = noDataVisible
+  ? "Old Bailey Research Snapshot — No Chart Data"
+  : "Old Bailey Research Snapshot";
+
+ctx.fillText(snapshotTitle, padding + 50, y + 28);
 
 ctx.fillStyle = theme.textSecondary;
 ctx.font = "14px Arial";
