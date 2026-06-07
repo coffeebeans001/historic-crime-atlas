@@ -2943,13 +2943,26 @@ function updateResearchIdStatus() {
     `Research ID: ${getCurrentResearchId()} • refreshed ${refreshedAt}`;
 }
 
+function updateChartDataStatus() {
+  const el = document.getElementById("chart-data-status");
+  if (!el) return;
+
+  const noDataVisible =
+    !document
+      .getElementById("chart-no-data")
+      ?.classList.contains("hidden");
+
+  el.textContent = noDataVisible
+    ? "No chart data for current filters"
+    : "Chart data available";
+}
+
 async function render() {
   ensureChart();
 
   showNoDataOverlay(false);
   setChartLoading(true);
   updateCiStatus();
-
   try {
     const validatedGroup = getValidatedGroup();
     updateGroupInputState();
@@ -3002,6 +3015,8 @@ async function render() {
       );
 
     showNoDataOverlay(noData);
+
+    updateChartDataStatus();
 
     if (noData) {
       chart.data.datasets = [];
