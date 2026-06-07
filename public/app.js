@@ -1610,6 +1610,7 @@ function drawChip(ctx, text, x, y, options = {}) {
     bg: exportTheme === "dark" ? "#0f172a" : "#ecfeff",
     color: exportTheme === "dark" ? "#67e8f9" : "#155e75",
   };
+  
 
   const noteLength =
   document.getElementById("research-note")?.value?.trim().length || 0;
@@ -1694,6 +1695,21 @@ const sessionChip =
       }
     : null;
 
+  const chartDataStatusChip =
+  noDataVisible
+    ? {
+        text: "No chart data",
+        bg: exportTheme === "dark" ? "#451a03" : "#fef3c7",
+        color: exportTheme === "dark" ? "#fde68a" : "#92400e",
+      }
+    : {
+        text: "Chart data available",
+        bg: exportTheme === "dark" ? "#022c22" : "#dcfce7",
+        color: exportTheme === "dark" ? "#bbf7d0" : "#166534",
+      };  
+
+
+
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
 
@@ -1761,6 +1777,7 @@ const sessionChip =
           lockedYearChip,
           playbackChip,
           confidenceChip,
+          chartDataStatusChip,
           noteChip,
           noDataChip,
           ...(largestGapChip ? [largestGapChip] : []),
@@ -1790,6 +1807,7 @@ const sessionChip =
           lockedYearChip,
           playbackChip,
           confidenceChip,
+          chartDataStatusChip,
           noteChip,
           noDataChip,
           ...(largestGapChip ? [largestGapChip] : []),
