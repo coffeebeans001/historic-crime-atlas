@@ -1695,17 +1695,6 @@ const sessionChip =
       }
     : null;
 
-  const chartDataStatusChip =
-  noDataVisible
-    ? {
-        text: "No chart data",
-        bg: exportTheme === "dark" ? "#451a03" : "#fef3c7",
-        color: exportTheme === "dark" ? "#fde68a" : "#92400e",
-      }
-    : null;
-
-
-
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
 
@@ -1773,7 +1762,6 @@ const sessionChip =
           lockedYearChip,
           playbackChip,
           confidenceChip,
-          chartDataStatusChip,
           noteChip,
           noDataChip,
           ...(largestGapChip ? [largestGapChip] : []),
@@ -1803,7 +1791,6 @@ const sessionChip =
           lockedYearChip,
           playbackChip,
           confidenceChip,
-          chartDataStatusChip,
           noteChip,
           noDataChip,
           ...(largestGapChip ? [largestGapChip] : []),
@@ -2892,7 +2879,9 @@ function buildSessionStatusParts() {
     .getElementById("chart-no-data")
     ?.classList.contains("hidden");
 
-  parts.push(noDataVisible ? "No chart data" : "Chart data available");
+  if (noDataVisible) {
+  parts.push("No chart data");
+}
 
   const researchNoteEl = document.getElementById("research-note");
 
