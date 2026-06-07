@@ -1702,11 +1702,7 @@ const sessionChip =
         bg: exportTheme === "dark" ? "#451a03" : "#fef3c7",
         color: exportTheme === "dark" ? "#fde68a" : "#92400e",
       }
-    : {
-        text: "Chart data available",
-        bg: exportTheme === "dark" ? "#022c22" : "#dcfce7",
-        color: exportTheme === "dark" ? "#bbf7d0" : "#166534",
-      };  
+    : null;
 
 
 
