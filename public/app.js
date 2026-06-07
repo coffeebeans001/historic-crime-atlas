@@ -1681,17 +1681,18 @@ const sessionChip =
       }
     : null;
 
-    const noDataChip =
-  chart.data?.datasets?.[0]?.data?.every(
-    (value) => Number(value) === 0,
-  )
+    const noDataVisible =
+  !document
+    .getElementById("chart-no-data")
+    ?.classList.contains("hidden");
+
+  const noDataChip = noDataVisible
     ? {
         text: "No chart data",
         bg: exportTheme === "dark" ? "#451a03" : "#fef3c7",
         color: exportTheme === "dark" ? "#fde68a" : "#92400e",
       }
     : null;
-
 
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
@@ -1760,8 +1761,8 @@ const sessionChip =
           lockedYearChip,
           playbackChip,
           confidenceChip,
-          noDataChip,
           noteChip,
+          noDataChip,
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
         ]
@@ -1789,8 +1790,8 @@ const sessionChip =
           lockedYearChip,
           playbackChip,
           confidenceChip,
-          noDataChip,
           noteChip,
+          noDataChip,
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
         ];
@@ -2254,7 +2255,19 @@ function buildResearchNotes() {
     "Interpretations are based on the currently filtered sample and should not be treated as the full historical population.",
   );
 
+  const noDataVisible =
+    !document
+      .getElementById("chart-no-data")
+      ?.classList.contains("hidden");
+
+  if (noDataVisible) {
+    notes.push(
+      "No chart data is available for the selected filter combination; adjust offence group, gender, or date range.",
+    );
+  }
+
   return notes;
+
 }
 
 async function downloadResearchSnapshot() {
