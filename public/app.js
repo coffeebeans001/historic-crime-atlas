@@ -2309,7 +2309,9 @@ async function downloadResearchSnapshot() {
     .getElementById("chart-no-data")
     ?.classList.contains("hidden");
 
-  const dataPart = noDataVisible ? "no-data" : "data";
+  const dataPart = noDataVisible
+  ? "no-chart-data"
+  : "chart-data";
 
   const lockPart =
     lockedChartYear != null ? `locked-${lockedChartYear}` : "unlocked";
