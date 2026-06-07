@@ -2975,7 +2975,7 @@ function updateChartDataStatus() {
 
   el.textContent = noDataVisible
     ? "No chart data for current filters"
-    : "Chart data available";
+    : "";
 }
 
 async function render() {
