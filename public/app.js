@@ -2303,10 +2303,17 @@ async function downloadResearchSnapshot() {
 
   const bucket = document.getElementById("bucket")?.value || "year";
 
+  const noDataVisible =
+  !document
+    .getElementById("chart-no-data")
+    ?.classList.contains("hidden");
+
+  const dataPart = noDataVisible ? "no-data" : "data";
+
   const lockPart =
     lockedChartYear != null ? `locked-${lockedChartYear}` : "unlocked";
 
-  const safeTitle = ["research-snapshot", offence, gender, bucket, lockPart]
+  const safeTitle = ["research-snapshot", offence, gender, bucket, lockPart, dataPart]
     .join("-")
     .replace(/[^\w-]/g, "")
     .replace(/-+/g, "-")
