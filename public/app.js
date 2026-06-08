@@ -1717,6 +1717,12 @@ const chartPeriodChip =
       }
     : null;
 
+    const datasetChip = {
+  text: "Old Bailey Dataset",
+  bg: exportTheme === "dark" ? "#312e81" : "#e0e7ff",
+  color: exportTheme === "dark" ? "#c7d2fe" : "#3730a3",
+};
+
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
 
@@ -1777,6 +1783,7 @@ const chartPeriodChip =
             color: "#bbf7d0",
           },
           snapshotTypeChip,
+          datasetChip,
           layoutChip,
           sessionChip,
           exportCountChip,
@@ -1807,6 +1814,7 @@ const chartPeriodChip =
             color: "#166534",
           },
           snapshotTypeChip,
+          datasetChip,
           layoutChip,
           sessionChip,
           exportCountChip,
