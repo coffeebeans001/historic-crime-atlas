@@ -1695,6 +1695,23 @@ const sessionChip =
       }
     : null;
 
+    const chartPeriodCount = chart.data?.datasets?.[0]?.data?.length || 0;
+
+     const bucketLabel =
+  bucket === "decade"
+    ? "decades"
+    : bucket === "month"
+    ? "months"
+    : "years";
+
+    const chartPeriodChip = chartPeriodCount > 0
+        ? {
+            text: `${chartPeriodCount} chart periods`,
+            bg: exportTheme === "dark" ? "#1f2937" : "#f3f4f6",
+            color: exportTheme === "dark" ? "#d1d5db" : "#374151",
+          }
+        : null;
+
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
 
@@ -1763,6 +1780,7 @@ const sessionChip =
           playbackChip,
           confidenceChip,
           noteChip,
+          chartPeriodChip,
           noDataChip,
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
@@ -1792,6 +1810,7 @@ const sessionChip =
           playbackChip,
           confidenceChip,
           noteChip,
+          chartPeriodChip,
           noDataChip,
           ...(largestGapChip ? [largestGapChip] : []),
           ...(mapQualityChip ? [mapQualityChip] : []),
