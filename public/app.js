@@ -1695,22 +1695,27 @@ const sessionChip =
       }
     : null;
 
-    const chartPeriodCount = chart.data?.datasets?.[0]?.data?.length || 0;
+     const chartBucket =
+  document.getElementById("bucket")?.value || "year";
 
-     const bucketLabel =
-  bucket === "decade"
+const chartPeriodCount =
+  chart.data?.datasets?.[0]?.data?.length || 0;
+
+const bucketLabel =
+  chartBucket === "decade"
     ? "decades"
-    : bucket === "month"
+    : chartBucket === "month"
     ? "months"
     : "years";
 
-    const chartPeriodChip = chartPeriodCount > 0
-        ? {
-            text: `${chartPeriodCount} chart periods`,
-            bg: exportTheme === "dark" ? "#1f2937" : "#f3f4f6",
-            color: exportTheme === "dark" ? "#d1d5db" : "#374151",
-          }
-        : null;
+const chartPeriodChip =
+  chartPeriodCount > 0
+    ? {
+        text: `${chartPeriodCount} ${bucketLabel}`,
+        bg: exportTheme === "dark" ? "#1f2937" : "#f3f4f6",
+        color: exportTheme === "dark" ? "#d1d5db" : "#374151",
+      }
+    : null;
 
   const largestGapChip = (() => {
     const genderValue = document.getElementById("gender")?.value || "all";
