@@ -2170,12 +2170,21 @@ y += 48;
 
   y += 16;
 
-  drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
+  ctx.fillText(
+    "Dataset: Old Bailey trial records",
+    padding,
+    y,
+  );
+
   y += 10;
+
+    y+= 18;
+
 
   // URL section
   ctx.fillStyle = theme.urlText;
   ctx.fillText("Shareable URL:", padding, y);
+  drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
 
   y += 20;
 
