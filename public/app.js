@@ -2086,9 +2086,17 @@ y += 10;
   y += 20;
 
   const notes = buildResearchNotes();
-  
+
   drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
   y += 8;
+
+ 
+y += 26;
+
+ctx.fillStyle = theme.textSecondary;
+ctx.font = "14px Arial";
+
+y += 12;
 
   ctx.fillStyle = theme.textPrimary;
   ctx.font = "bold 18px Arial";
@@ -2098,6 +2106,7 @@ y += 10;
 
   ctx.fillStyle = theme.textSecondary;
   ctx.font = "14px Arial";
+
 
   for (const note of notes) {
     ctx.fillText(`• ${note}`, padding + 8, y);
@@ -2261,6 +2270,7 @@ function buildResearchNotes() {
       })
       .filter(Boolean);
 
+
     const sharedLocationCount =
       markerCoords?.length - new Set(markerCoords || []).size;
 
@@ -2300,6 +2310,7 @@ function buildResearchNotes() {
   notes.push(
     "Interpretations are based on the currently filtered sample and should not be treated as the full historical population.",
   );
+
 
   const noDataVisible =
     !document
@@ -2575,6 +2586,12 @@ function buildSnapshotSummary() {
 
   const genderValue = document.getElementById("gender")?.value?.trim() || "all";
 
+  const from = document.getElementById("from")?.value || "Start";
+
+  const to = document.getElementById("to")?.value || "End";
+
+  const rangeText = `${from} to ${to}`;
+
   let genderGapLine = null;
 
   if (genderValue === "all" && chart?.data?.datasets) {
@@ -2607,6 +2624,7 @@ function buildSnapshotSummary() {
     `Nearby records: ${nearbyCount}`,
     `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
     "Confidence interval visible",
+    `Range: ${rangeText}`,
   ];
 }
 
