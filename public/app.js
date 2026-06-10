@@ -2593,6 +2593,9 @@ function buildSnapshotSummary() {
   document.getElementById("confidence")?.selectedOptions?.[0]?.text ||
   "95%";
 
+  const exportCount =
+  localStorage.getItem("snapshotExportCount") || "0";
+
   const dateFrom = document.getElementById("from")?.value;
   const dateTo = document.getElementById("to")?.value;
 
@@ -2643,6 +2646,7 @@ function buildSnapshotSummary() {
   ? "Confidence interval visible"
   : "Confidence interval hidden",
     `Range: ${rangeText}`,
+    `Export reference: #${exportCount}`,
   ];
 }
 
