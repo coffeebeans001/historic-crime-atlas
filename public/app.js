@@ -1863,7 +1863,7 @@ const chartPeriodChip =
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 690;
+  const summaryHeight = 730;
 
   const height =
     padding +
@@ -2604,6 +2604,8 @@ function buildSnapshotSummary() {
   const dateFrom = document.getElementById("from")?.value;
   const dateTo = document.getElementById("to")?.value;
 
+  const researchId = getCurrentResearchId();
+
   let rangeText = "Full dataset";
 
   if (dateFrom && dateTo) {
@@ -2653,6 +2655,7 @@ function buildSnapshotSummary() {
     `Range: ${rangeText}`,
     ...(noDataVisible ? ["Chart status: No chart data"] : []),
     `Export reference: #${exportCount}`,
+    `Research ID: ${researchId}`,
   ];
 }
 
