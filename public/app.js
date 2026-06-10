@@ -2634,7 +2634,9 @@ function buildSnapshotSummary() {
 }`,
     `Nearby records: ${nearbyCount}`,
     `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
-    "Confidence interval visible",
+    document.getElementById("toggle-ci")?.checked
+  ? "Confidence interval visible"
+  : "Confidence interval hidden",
     `Range: ${rangeText}`,
   ];
 }
