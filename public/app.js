@@ -2611,6 +2611,14 @@ function buildSnapshotSummary() {
 
   const researchId = getCurrentResearchId();
 
+  const chartPeriodCount = chart.data?.datasets?.[0]?.data?.length || 0;
+
+  const densityLabel = chartPeriodCount >= 20
+      ? "High"
+      : chartPeriodCount >= 10
+      ? "Moderate"
+      : "Low";
+
   let activeFilters = 0;
 
   if (offence !== "all") activeFilters++;
@@ -2651,7 +2659,7 @@ function buildSnapshotSummary() {
   `Bucket: ${bucket}`,
   `Analysis scope: ${analysisScope}`,
   `Active filters applied: ${activeFilters}`,
-
+  `Data density: ${densityLabel}`,
   ...(noDataVisible ? ["Chart status: No chart data"] : []),
 
   ...(gender === "all"
