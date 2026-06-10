@@ -2593,9 +2593,11 @@ function buildSnapshotSummary() {
     document.getElementById("to")?.value || "";
 
   const rangeText =
-    from || to
-      ? `${from || "Start"} to ${to || "End"}`
-      : "Full dataset";
+  from || to
+    ? `${from ? formatDisplayDate(from) : "Start"} to ${
+        to ? formatDisplayDate(to) : "End"
+      }`
+    : "Full dataset";
 
   let genderGapLine = null;
 
