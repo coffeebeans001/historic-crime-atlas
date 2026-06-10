@@ -1863,7 +1863,7 @@ const chartPeriodChip =
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 610;
+  const summaryHeight = 690;
 
   const height =
     padding +
@@ -2596,6 +2596,11 @@ function buildSnapshotSummary() {
   const exportCount =
   localStorage.getItem("snapshotExportCount") || "0";
 
+  const noDataVisible =
+  !document
+    .getElementById("chart-no-data")
+    ?.classList.contains("hidden");
+
   const dateFrom = document.getElementById("from")?.value;
   const dateTo = document.getElementById("to")?.value;
 
@@ -2646,6 +2651,7 @@ function buildSnapshotSummary() {
   ? "Confidence interval visible"
   : "Confidence interval hidden",
     `Range: ${rangeText}`,
+    ...(noDataVisible ? ["Chart status: No chart data"] : []),
     `Export reference: #${exportCount}`,
   ];
 }
