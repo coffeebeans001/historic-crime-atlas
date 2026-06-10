@@ -2604,6 +2604,11 @@ function buildSnapshotSummary() {
   const dateFrom = document.getElementById("from")?.value;
   const dateTo = document.getElementById("to")?.value;
 
+  const analysisScope =
+  lockedChartYear != null
+    ? "Focused year analysis"
+    : "Multi-period trend analysis";
+
   const researchId = getCurrentResearchId();
 
   let activeFilters = 0;
@@ -2640,31 +2645,38 @@ function buildSnapshotSummary() {
   }
 
   return [
-    `Offence: ${offence}`,
-    `Gender: ${gender}`,
-    `Bucket: ${bucket}`,
+  `Offence: ${offence}`,
+  `Gender: ${gender}`,
+  `Range: ${rangeText}`,
+  `Bucket: ${bucket}`,
+  `Analysis scope: ${analysisScope}`,
+  `Active filters applied: ${activeFilters}`,
 
-    ...(gender === "all"
-      ? ["Comparison mode: Male and Female trends visible."]
-      : []),
-    ...(genderGapLine ? [genderGapLine] : []),
-    `Locked year: ${
-  lockedChartYear != null
-    ? lockedChartYear
-    : "None"
-}`,
-    `Nearby records: ${nearbyCount}`,
-    `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
-    `Confidence level: ${confidenceValue}`,
-    document.getElementById("toggle-ci")?.checked
-  ? "Confidence interval visible"
-  : "Confidence interval hidden",
-    `Range: ${rangeText}`,
-    `Active filters applied: ${activeFilters}`,
-    ...(noDataVisible ? ["Chart status: No chart data"] : []),
-    `Export reference: #${exportCount}`,
-    `Research ID: ${researchId}`,
-  ];
+  ...(noDataVisible ? ["Chart status: No chart data"] : []),
+
+  ...(gender === "all"
+    ? ["Comparison mode: Male and Female trends visible."]
+    : []),
+
+  ...(genderGapLine ? [genderGapLine] : []),
+
+  `Locked year: ${
+    lockedChartYear != null
+      ? lockedChartYear
+      : "None"
+  }`,
+
+  `Nearby records: ${nearbyCount}`,
+  `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
+
+  `Confidence level: ${confidenceValue}`,
+  document.getElementById("toggle-ci")?.checked
+    ? "Confidence interval visible"
+    : "Confidence interval hidden",
+
+  `Export reference: #${exportCount}`,
+  `Research ID: ${researchId}`,
+];
 }
 
 function updateLockButton() {
