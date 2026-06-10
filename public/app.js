@@ -2606,6 +2606,13 @@ function buildSnapshotSummary() {
 
   const researchId = getCurrentResearchId();
 
+  let activeFilters = 0;
+
+  if (offence !== "all") activeFilters++;
+  if (gender !== "all") activeFilters++;
+  if (lockedChartYear != null) activeFilters++;
+  if (dateFrom || dateTo) activeFilters++;
+
   let rangeText = "Full dataset";
 
   if (dateFrom && dateTo) {
@@ -2653,6 +2660,7 @@ function buildSnapshotSummary() {
   ? "Confidence interval visible"
   : "Confidence interval hidden",
     `Range: ${rangeText}`,
+    `Active filters: ${activeFilters}`,
     ...(noDataVisible ? ["Chart status: No chart data"] : []),
     `Export reference: #${exportCount}`,
     `Research ID: ${researchId}`,
