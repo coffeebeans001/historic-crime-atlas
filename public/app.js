@@ -2586,11 +2586,16 @@ function buildSnapshotSummary() {
 
   const genderValue = document.getElementById("gender")?.value?.trim() || "all";
 
-  const from = document.getElementById("from")?.value || "Start";
+  const from =
+  document.getElementById("from")?.value || "";
 
-  const to = document.getElementById("to")?.value || "End";
+  const to =
+    document.getElementById("to")?.value || "";
 
-  const rangeText = `${from} to ${to}`;
+  const rangeText =
+    from || to
+      ? `${from || "Start"} to ${to || "End"}`
+      : "Full dataset";
 
   let genderGapLine = null;
 
