@@ -2589,6 +2589,10 @@ function buildSnapshotSummary() {
   const from =
   document.getElementById("from")?.value || "";
 
+  const confidenceValue =
+  document.getElementById("confidence")?.selectedOptions?.[0]?.text ||
+  "95%";
+
   const dateFrom = document.getElementById("from")?.value;
   const dateTo = document.getElementById("to")?.value;
 
@@ -2634,6 +2638,7 @@ function buildSnapshotSummary() {
 }`,
     `Nearby records: ${nearbyCount}`,
     `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
+    `Confidence level: ${confidenceValue}`,
     document.getElementById("toggle-ci")?.checked
   ? "Confidence interval visible"
   : "Confidence interval hidden",
