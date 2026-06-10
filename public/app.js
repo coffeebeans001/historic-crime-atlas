@@ -2660,7 +2660,7 @@ function buildSnapshotSummary() {
   ? "Confidence interval visible"
   : "Confidence interval hidden",
     `Range: ${rangeText}`,
-    `Active filters: ${activeFilters}`,
+    `Active filters applied: ${activeFilters}`,
     ...(noDataVisible ? ["Chart status: No chart data"] : []),
     `Export reference: #${exportCount}`,
     `Research ID: ${researchId}`,
