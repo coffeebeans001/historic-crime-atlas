@@ -2589,15 +2589,19 @@ function buildSnapshotSummary() {
   const from =
   document.getElementById("from")?.value || "";
 
-  const to =
-    document.getElementById("to")?.value || "";
+  const dateFrom = document.getElementById("from")?.value;
+  const dateTo = document.getElementById("to")?.value;
 
-  const rangeText =
-  from || to
-    ? `${from ? formatDisplayDate(from) : "Start"} to ${
-        to ? formatDisplayDate(to) : "End"
-      }`
-    : "Full dataset";
+  let rangeText = "Full dataset";
+
+  if (dateFrom && dateTo) {
+    rangeText =
+      `${formatDisplayDate(dateFrom)} to ${formatDisplayDate(dateTo)}`;
+  } else if (dateFrom) {
+    rangeText = `From ${formatDisplayDate(dateFrom)}`;
+  } else if (dateTo) {
+    rangeText = `Up to ${formatDisplayDate(dateTo)}`;
+  }
 
   let genderGapLine = null;
 
