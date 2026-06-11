@@ -1790,6 +1790,7 @@ const chartPeriodChip =
           lastExportChip,
           lockedYearChip,
           playbackChip,
+          
           confidenceChip,
           noteChip,
           chartPeriodChip,
@@ -1821,6 +1822,7 @@ const chartPeriodChip =
           lastExportChip,
           lockedYearChip,
           playbackChip,
+          
           confidenceChip,
           noteChip,
           chartPeriodChip,
