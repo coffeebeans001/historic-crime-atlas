@@ -1865,7 +1865,7 @@ const chartPeriodChip =
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 750;
+  const summaryHeight = 800;
 
   const height =
     padding +
@@ -2142,6 +2142,9 @@ const stateId = btoa(currentUrl)
   .replace(/[^a-zA-Z0-9]/g, "")
   .slice(0, 8);
 
+const generationTime =
+  localStorage.getItem("lastSnapshotGenerationTime");  
+
 const footerMetaX = width - padding - 190;
 const researchId = `${stateId}-${exportCount}`;
 
@@ -2160,6 +2163,16 @@ ctx.fillText(
   footerMetaX,
   y + 32,
 );
+
+if (generationTime) {
+  ctx.fillText(
+    `Generation time: ${generationTime}s`,
+    footerMetaX,
+    y + 48,
+  );
+}
+
+y += 64;
 
 ctx.font = "11px Arial";
 
@@ -2653,6 +2666,8 @@ function buildSnapshotSummary() {
       genderGapLine = `Largest gender gap: ${gap.year} — Male ${gap.male.toFixed(1)}%, Female ${gap.female.toFixed(1)}%, gap ${gap.gap.toFixed(1)}pp`;
     }
   }
+
+ 
 
   const reliabilityLabel =
   noDataVisible
@@ -4427,11 +4442,13 @@ refreshResearchIdBtn?.addEventListener("click", () => {
         await downloadResearchSnapshot();
 
         const duration = ((performance.now() - start) / 1000).toFixed(1);
+        localStorage.setItem("lastSnapshotGenerationTime", duration);
+
         const exportTime =
-  new Date().toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+          new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
 
 downloadSnapshotBtn.textContent =
   `Exported ✓ ${exportTime} (${duration}s)`;
