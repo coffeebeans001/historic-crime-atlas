@@ -1865,7 +1865,7 @@ const chartPeriodChip =
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 730;
+  const summaryHeight = 750;
 
   const height =
     padding +
@@ -2654,6 +2654,15 @@ function buildSnapshotSummary() {
     }
   }
 
+  const reliabilityLabel =
+  noDataVisible
+    ? "Unavailable"
+    : chartPeriodCount >= 20
+    ? "Stronger trend signal"
+    : chartPeriodCount >= 10
+    ? "Moderate trend signal"
+    : "Limited trend signal";
+
   return [
   `Offence: ${offence}`,
   `Gender: ${gender}`,
@@ -2663,6 +2672,7 @@ function buildSnapshotSummary() {
   `Active filters applied: ${activeFilters}`,
   `Data density: ${densityLabel} (${chartPeriodCount} chart periods)`,
   ...(noDataVisible ? ["Chart status: No chart data"] : []),
+  `Analysis reliability: ${reliabilityLabel}`,
 
   ...(gender === "all"
     ? ["Comparison mode: Male and Female trends visible."]
