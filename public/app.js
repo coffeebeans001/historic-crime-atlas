@@ -2145,6 +2145,9 @@ const stateId = btoa(currentUrl)
 const generationTime =
   localStorage.getItem("lastSnapshotGenerationTime");  
 
+const snapshotSize =
+  `${exportCanvas.width} × ${exportCanvas.height}px`;  
+
 const footerMetaX = width - padding - 190;
 const researchId = `${stateId}-${exportCount}`;
 
@@ -2172,7 +2175,15 @@ if (generationTime) {
   );
 }
 
+ctx.fillText(
+  `Snapshot size: ${snapshotSize}`,
+  footerMetaX,
+  y + 64,
+);
+
 y += 64;
+
+
 
 ctx.font = "11px Arial";
 
