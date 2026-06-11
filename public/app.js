@@ -2155,43 +2155,25 @@ const researchId = `${stateId}-${exportCount}`;
 ctx.fillStyle = theme.footerText;
 ctx.font = "italic 13px Arial";
 ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
-ctx.fillText(APP_VERSION, footerMetaX, y);
 
-ctx.font = "11px Arial";
-ctx.fillText(`State ID: ${stateId}`, footerMetaX, y + 16);
-
-ctx.font = "11px Arial";
-ctx.fillText(
+const footerMetaLines = [
+  APP_VERSION,
+  `State ID: ${stateId}`,
+  `Research ID: ${researchId}`,
   `Export #${exportCount}`,
-  footerMetaX,
-  y + 32,
-);
-
-if (generationTime) {
-  ctx.fillText(
-    `Generation time: ${generationTime}s`,
-    footerMetaX,
-    y + 48,
-  );
-}
-
-ctx.fillText(
+  ...(generationTime
+    ? [`Generation time: ${generationTime}s`]
+    : []),
   `Snapshot size: ${snapshotSize}`,
-  footerMetaX,
-  y + 64,
-);
+];
+
+ctx.font = "11px Arial";
+
+footerMetaLines.forEach((line, index) => {
+  ctx.fillText(line, footerMetaX, y + index * 16);
+});
 
 y += 64;
-
-
-
-ctx.font = "11px Arial";
-
-ctx.fillText(
-  `Research ID: ${researchId}`,
-  footerMetaX,
-  y + 48,
-);
 
 y += 48;
 
