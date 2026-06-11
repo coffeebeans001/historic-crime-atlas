@@ -2659,7 +2659,7 @@ function buildSnapshotSummary() {
   `Bucket: ${bucket}`,
   `Analysis scope: ${analysisScope}`,
   `Active filters applied: ${activeFilters}`,
-  `Data density: ${densityLabel}`,
+  `Data density: ${densityLabel} (${chartPeriodCount} chart periods)`,
   ...(noDataVisible ? ["Chart status: No chart data"] : []),
 
   ...(gender === "all"
