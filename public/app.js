@@ -2156,7 +2156,7 @@ ctx.fillStyle = theme.footerText;
 ctx.font = "italic 13px Arial";
 ctx.fillStyle = theme.textPrimary;
 ctx.font = "bold 14px Arial";
-ctx.fillText("Export metadata", padding, y);
+ctx.fillText("Export metadata and provenance", padding, y);
 
 y += 18;
 ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
