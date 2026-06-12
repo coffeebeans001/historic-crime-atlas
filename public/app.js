@@ -1865,7 +1865,7 @@ const chartPeriodChip =
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 800;
+  const summaryHeight = 880;
 
   const height =
     padding +
@@ -2073,7 +2073,7 @@ y += 10;
 
   ctx.fillStyle = theme.textPrimary;
   ctx.font = "bold 18px Arial";
-  ctx.fillText("Summary", padding, y);
+  ctx.fillText("1. Summary", padding, y);
 
   y += 26;
 
@@ -2102,7 +2102,7 @@ y += 12;
 
   ctx.fillStyle = theme.textPrimary;
   ctx.font = "bold 18px Arial";
-  ctx.fillText("Research notes", padding, y);
+  ctx.fillText("2. Research notes", padding, y);
 
   y += 26;
 
