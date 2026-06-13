@@ -2059,33 +2059,39 @@ y += 10;
   
   
   // summary
-  const summary = buildSnapshotSummary();
+  const {
+  analysisSummary,
+  evidenceSummary,
+  trackingSummary,
+} = buildSnapshotSummary();
 
-  if (sessionStatus) {
-  ctx.fillStyle = theme.textSecondary;
-  ctx.font = "13px Arial";
-  ctx.fillText(`Session: ${sessionStatus}`, padding, y);
-  y += 24;
-}
-
-  drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
-  y += 8;
-
+function drawSummaryGroup(title, lines) {
   ctx.fillStyle = theme.textPrimary;
-  ctx.font = "bold 18px Arial";
-  ctx.fillText("1. Summary", padding, y);
+  ctx.font = "bold 15px Arial";
+  ctx.fillText(title, padding + 8, y);
 
-  y += 26;
+  y += 22;
 
   ctx.fillStyle = theme.textSecondary;
   ctx.font = "14px Arial";
 
-  for (const line of summary) {
-    ctx.fillText(`• ${line}`, padding + 8, y);
+  for (const line of lines) {
+    ctx.fillText(`• ${line}`, padding + 18, y);
     y += 20;
   }
 
-  y += 20;
+  y += 10;
+}
+
+ctx.fillStyle = theme.textPrimary;
+ctx.font = "bold 18px Arial";
+ctx.fillText("1. Summary", padding, y);
+
+y += 28;
+
+drawSummaryGroup("Analysis", analysisSummary);
+drawSummaryGroup("Evidence", evidenceSummary);
+drawSummaryGroup("Tracking", trackingSummary);
 
   const notes = buildResearchNotes();
 
@@ -2148,7 +2154,6 @@ const generationTime =
 const snapshotSize =
   `${exportCanvas.width} × ${exportCanvas.height}px`;  
 
-const footerMetaX = width - padding - 220;
 const researchId = `${stateId}-${exportCount}`;
 
 // timestamp
@@ -2164,7 +2169,7 @@ ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
 const releaseLabel =
   `Snapshot revision: ${APP_VERSION}`;
 
-//const footerMetaX = width - padding - 220;
+const footerMetaX = width - padding - 220;
 
 const footerMetaLines = [
   releaseLabel,
@@ -2680,40 +2685,38 @@ function buildSnapshotSummary() {
     ? "Moderate trend signal"
     : "Limited trend signal";
 
-  return [
+  const analysisSummary = [
   `Offence: ${offence}`,
   `Gender: ${gender}`,
   `Range: ${rangeText}`,
   `Bucket: ${bucket}`,
   `Analysis scope: ${analysisScope}`,
-  `Active filters applied: ${activeFilters}`,
-  `Data density: ${densityLabel} (${chartPeriodCount} chart periods)`,
-  ...(noDataVisible ? ["Chart status: No chart data"] : []),
-  `Analysis reliability: ${reliabilityLabel}`,
+];  
 
-  ...(gender === "all"
-    ? ["Comparison mode: Male and Female trends visible."]
-    : []),
+const radiusValue =
+  document.getElementById("radius")?.value || "2000";
 
-  ...(genderGapLine ? [genderGapLine] : []),
-
-  `Locked year: ${
-    lockedChartYear != null
-      ? lockedChartYear
-      : "None"
-  }`,
-
+const evidenceSummary = [
   `Nearby records: ${nearbyCount}`,
-  `Radius: ${document.getElementById("radius")?.value || "2000"}m`,
-
+  `Radius: ${radiusValue}m`,
+  `Data density: ${densityLabel} (${chartPeriodCount} chart periods)`,
   `Confidence level: ${confidenceValue}`,
   document.getElementById("toggle-ci")?.checked
     ? "Confidence interval visible"
     : "Confidence interval hidden",
+];
 
+const trackingSummary = [
+  `Active filters applied: ${activeFilters}`,
   `Export reference: #${exportCount}`,
   `Research ID: ${researchId}`,
 ];
+
+  return {
+  analysisSummary,
+  evidenceSummary,
+  trackingSummary,
+};
 }
 
 function updateLockButton() {
