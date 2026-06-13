@@ -2148,7 +2148,7 @@ const generationTime =
 const snapshotSize =
   `${exportCanvas.width} × ${exportCanvas.height}px`;  
 
-const footerMetaX = width - padding - 190;
+const footerMetaX = width - padding - 220;
 const researchId = `${stateId}-${exportCount}`;
 
 // timestamp
@@ -2161,8 +2161,13 @@ ctx.fillText("Export metadata and provenance", padding, y);
 y += 18;
 ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
 
+const releaseLabel =
+  `Snapshot revision: ${APP_VERSION}`;
+
+//const footerMetaX = width - padding - 220;
+
 const footerMetaLines = [
-  APP_VERSION,
+  releaseLabel,
   `State ID: ${stateId}`,
   `Research ID: ${researchId}`,
   `Export #${exportCount}`,
@@ -2173,7 +2178,6 @@ const footerMetaLines = [
 ];
 
 ctx.font = "11px Arial";
-
 footerMetaLines.forEach((line, index) => {
   ctx.fillText(line, footerMetaX, y + index * 16);
 });
