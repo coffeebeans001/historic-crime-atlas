@@ -2082,8 +2082,18 @@ function drawSummaryGroup(title, lines) {
     y += 20;
   }
 
+  ctx.strokeStyle = theme.divider;
+  ctx.lineWidth = 1;
+
+  ctx.beginPath();
+  ctx.moveTo(padding + 8, y - 4);
+  ctx.lineTo(width - padding - 8, y - 4);
+  ctx.stroke();
+     
   y += 14;
+
 }
+
 
 ctx.fillStyle = theme.textPrimary;
 ctx.font = "bold 18px Arial";
@@ -2097,7 +2107,7 @@ drawSummaryGroup("Tracking", trackingSummary);
 
   const notes = buildResearchNotes();
 
-  drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
+  //drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
   y += 8;
 
  
@@ -2118,7 +2128,7 @@ y += 12;
   ctx.font = "14px Arial";
 
 
-  for (const note of notes) {
+ for (const note of notes) {
     ctx.fillText(`• ${note}`, padding + 8, y);
     y += 20;
   }
