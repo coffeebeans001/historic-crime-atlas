@@ -2086,8 +2086,8 @@ function drawSummaryGroup(title, lines) {
   ctx.lineWidth = 1;
 
   ctx.beginPath();
-  ctx.moveTo(padding + 8, y - 4);
-  ctx.lineTo(width - padding - 8, y - 4);
+  ctx.moveTo(padding + 20, y - 4);
+  ctx.lineTo(width - padding - 20, y - 4);
   ctx.stroke();
      
   y += 14;
