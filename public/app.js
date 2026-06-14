@@ -2078,7 +2078,7 @@ function drawSummaryGroup(title, lines) {
   ctx.font = "14px Arial";
 
   for (const line of lines) {
-    ctx.fillText(`• ${line}`, padding + 18, y);
+    ctx.fillText(`• ${line}`, padding + 24, y);
     y += 20;
   }
 
