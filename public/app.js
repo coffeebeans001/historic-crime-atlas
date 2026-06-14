@@ -2083,7 +2083,7 @@ function drawSummaryGroup(title, lines, showDivider = true) {
   }
 
   if (showDivider) {
-    ctx.strokeStyle = theme.divider;
+    ctx.strokeStyle = theme.divider || theme.border || "#d1d5db";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(padding + 24, y - 4);
