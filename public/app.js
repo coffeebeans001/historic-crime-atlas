@@ -2065,7 +2065,7 @@ y += 10;
   trackingSummary,
 } = buildSnapshotSummary();
 
-function drawSummaryGroup(title, lines) {
+function drawSummaryGroup(title, lines, showDivider = true) {
   if (!lines || lines.length === 0) return;
 
   ctx.fillStyle = theme.textSecondary;
@@ -2082,16 +2082,16 @@ function drawSummaryGroup(title, lines) {
     y += 20;
   }
 
-  ctx.strokeStyle = theme.divider;
-  ctx.lineWidth = 1;
+  if (showDivider) {
+    ctx.strokeStyle = theme.divider;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding + 24, y - 4);
+    ctx.lineTo(width - padding - 24, y - 4);
+    ctx.stroke();
+  }
 
-  ctx.beginPath();
-  ctx.moveTo(padding + 24, y - 4);
-  ctx.lineTo(width - padding - 24, y - 4);
-  ctx.stroke();
-     
   y += 14;
-
 }
 
 
@@ -2103,11 +2103,11 @@ y += 28;
 
 drawSummaryGroup("Analysis", analysisSummary);
 drawSummaryGroup("Evidence", evidenceSummary);
-drawSummaryGroup("Tracking", trackingSummary);
+drawSummaryGroup("Tracking", trackingSummary, false);
 
   const notes = buildResearchNotes();
 
-  //drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
+  drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
   y += 8;
 
  
