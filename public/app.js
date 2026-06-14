@@ -1865,7 +1865,7 @@ const chartPeriodChip =
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 880;
+  const summaryHeight = 1050;
 
   const height =
     padding +
@@ -2105,6 +2105,43 @@ drawSnapshotSummaryGroup("Analysis", analysisSummary);
 drawSnapshotSummaryGroup("Evidence", evidenceSummary);
 drawSnapshotSummaryGroup("Tracking", trackingSummary, false);
 
+y+= 5;
+
+const insightText =
+  document.getElementById("insight-text")?.textContent?.trim() ||
+  "No insight available.";
+
+const firstSentence =
+  insightText.match(/.*?[.!?](?:\s|$)/)?.[0]?.trim() ||
+  insightText;
+
+const keyFinding =
+  firstSentence.replace(/^Interpretive summary:\s*/i, "");
+  
+  ctx.fillStyle = theme.textPrimary;
+ctx.font = "bold 16px Arial";
+ctx.fillText("Key finding", padding, y);
+
+//y += 15;
+
+ctx.fillStyle = theme.textSecondary;
+ctx.font = "14px Arial";
+//ctx.fillText(`• ${keyFinding}`, padding + 24, y);
+
+y += 30;
+
+const wrappedFinding = wrapText(
+  `• ${keyFinding}`,
+  90
+);
+
+for (const line of wrappedFinding) {
+  ctx.fillText(line, padding + 24, y);
+  y += 20;
+}  
+
+y += 10;
+
   const notes = buildResearchNotes();
 
   drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
@@ -2126,7 +2163,6 @@ y += 12;
 
   ctx.fillStyle = theme.textSecondary;
   ctx.font = "14px Arial";
-
 
  for (const note of notes) {
     ctx.fillText(`• ${note}`, padding + 8, y);
@@ -2223,15 +2259,12 @@ y += 48;
 
     y+= 18;
 
-
   // URL section
   ctx.fillStyle = theme.urlText;
   ctx.fillText("Shareable URL:", padding, y);
   drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
 
   y += 20;
-
-  
 
   ctx.fillStyle = theme.urlText;
   ctx.font = "13px Arial";
@@ -2244,8 +2277,6 @@ y += 48;
     ctx.fillText(line, padding, y);
     y += 18;
   }
-
-  
 
 
   const safeTitle = (chartTitle || "research-snapshot")
@@ -2685,8 +2716,6 @@ function buildSnapshotSummary() {
       genderGapLine = `Largest gender gap: ${gap.year} — Male ${gap.male.toFixed(1)}%, Female ${gap.female.toFixed(1)}%, gap ${gap.gap.toFixed(1)}pp`;
     }
   }
-
- 
 
   const reliabilityLabel =
   noDataVisible
