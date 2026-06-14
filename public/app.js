@@ -2065,7 +2065,7 @@ y += 10;
   trackingSummary,
 } = buildSnapshotSummary();
 
-function drawSummaryGroup(title, lines, showDivider = true) {
+function drawSnapshotSummaryGroup(title, lines, showDivider = true) {
   if (!lines || lines.length === 0) return;
 
   ctx.fillStyle = theme.textSecondary;
@@ -2101,9 +2101,9 @@ ctx.fillText("1. Summary", padding, y);
 
 y += 28;
 
-drawSummaryGroup("Analysis", analysisSummary);
-drawSummaryGroup("Evidence", evidenceSummary);
-drawSummaryGroup("Tracking", trackingSummary, false);
+drawSnapshotSummaryGroup("Analysis", analysisSummary);
+drawSnapshotSummaryGroup("Evidence", evidenceSummary);
+drawSnapshotSummaryGroup("Tracking", trackingSummary, false);
 
   const notes = buildResearchNotes();
 
