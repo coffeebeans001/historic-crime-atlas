@@ -2066,7 +2066,9 @@ y += 10;
 } = buildSnapshotSummary();
 
 function drawSummaryGroup(title, lines) {
-  ctx.fillStyle = theme.textPrimary;
+  if (!lines || lines.length === 0) return;
+
+  ctx.fillStyle = theme.textSecondary;
   ctx.font = "bold 15px Arial";
   ctx.fillText(title, padding + 8, y);
 
@@ -2080,7 +2082,7 @@ function drawSummaryGroup(title, lines) {
     y += 20;
   }
 
-  y += 10;
+  y += 14;
 }
 
 ctx.fillStyle = theme.textPrimary;
