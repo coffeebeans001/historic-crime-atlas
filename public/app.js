@@ -2163,6 +2163,12 @@ y += 12;
   y += 26;
 
   ctx.fillStyle = theme.textSecondary;
+  ctx.font = "bold 15px Arial";
+  ctx.fillText("Methodology", padding + 8, y);
+
+  y += 22;
+
+  ctx.fillStyle = theme.textSecondary;
   ctx.font = "14px Arial";
 
  for (const note of notes) {
