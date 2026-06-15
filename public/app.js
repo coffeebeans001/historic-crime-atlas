@@ -2172,9 +2172,15 @@ y += 12;
   ctx.font = "14px Arial";
 
  for (const note of notes) {
-    ctx.fillText(`• ${note}`, padding + 8, y);
+  const wrappedNote = wrapText(`• ${note}`, 95);
+
+  for (const line of wrappedNote) {
+    ctx.fillText(line, padding + 8, y);
     y += 20;
   }
+
+  y += 4;
+}
 
   y += sectionGap;
 
