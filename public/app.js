@@ -2320,6 +2320,12 @@ function buildResearchNotes() {
 
   const genderValue = document.getElementById("gender")?.value?.trim() || "all";
 
+  if (genderValue !== "all") {
+    notes.push(
+      `Results reflect the selected gender filter (${genderValue}).`,
+    );
+  }
+
   if (genderValue === "all" && chart?.data?.datasets) {
     const seriesArr = ["Male", "Female"].map((label) => ({
       label,
