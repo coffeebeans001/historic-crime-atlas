@@ -2115,9 +2115,10 @@ const firstSentence =
   insightText.match(/.*?[.!?](?:\s|$)/)?.[0]?.trim() ||
   insightText;
 
-const keyFinding =
-  firstSentence.replace(/^Interpretive summary:\s*/i, "");
-  
+const keyFinding = noDataVisible
+  ? "No chart data is available for the selected filters."
+  : firstSentence.replace(/^Interpretive summary:\s*/i, "");
+
   ctx.fillStyle = theme.textPrimary;
 ctx.font = "bold 16px Arial";
 ctx.fillText("Key finding", padding, y);
