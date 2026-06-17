@@ -2221,7 +2221,7 @@ const researchId = `${stateId}-${exportCount}`;
 ctx.fillStyle = theme.footerText;
 ctx.font = "italic 13px Arial";
 ctx.fillStyle = theme.textPrimary;
-ctx.font = "bold 14px Arial";
+ctx.font = "bold 15px Arial";
 ctx.fillText("Export metadata and provenance", padding, y);
 
 y += 18;
