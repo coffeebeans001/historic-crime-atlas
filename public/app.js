@@ -1551,6 +1551,11 @@ function drawChip(ctx, text, x, y, options = {}) {
           urlText: "#666666",
         };
 
+  const sectionHeadingFont = "bold 18px Arial";
+  const subHeadingFont = "bold 15px Arial";
+  const bodyFont = "14px Arial";
+  const smallMetaFont = "11px Arial";      
+
   const offenceFilter =
     document.getElementById("group")?.value?.trim() || "All offences";
 
@@ -1918,7 +1923,7 @@ const snapshotTitle = noDataVisible
 ctx.fillText(snapshotTitle, padding + 50, y + 28);
 
 ctx.fillStyle = theme.textSecondary;
-ctx.font = "14px Arial";
+ctx.font = bodyFont;
 ctx.fillText(
   "Historic criminal case insight export",
   padding + 50,
@@ -1977,7 +1982,7 @@ y += 10;
   y += 26;
 
   ctx.fillStyle = theme.textSecondary;
-  ctx.font = "14px Arial";
+  ctx.font = bodyFont;
   ctx.fillText(
   "Historical criminal justice analytics • Old Bailey research workspace",
   padding,
@@ -2069,13 +2074,13 @@ function drawSnapshotSummaryGroup(title, lines, showDivider = true) {
   if (!lines || lines.length === 0) return;
 
   ctx.fillStyle = theme.textSecondary;
-  ctx.font = "bold 15px Arial";
+  ctx.font = subHeadingFont;
   ctx.fillText(title, padding + 8, y);
 
   y += 22;
 
   ctx.fillStyle = theme.textSecondary;
-  ctx.font = "14px Arial";
+  ctx.font = bodyFont;
 
   for (const line of lines) {
     ctx.fillText(`• ${line}`, padding + 24, y);
@@ -2096,7 +2101,7 @@ function drawSnapshotSummaryGroup(title, lines, showDivider = true) {
 
 
 ctx.fillStyle = theme.textPrimary;
-ctx.font = "bold 18px Arial";
+ctx.font = sectionHeadingFont;
 ctx.fillText("1. Summary", padding, y);
 
 y += 28;
@@ -2126,7 +2131,7 @@ ctx.fillText("Key finding", padding, y);
 //y += 15;
 
 ctx.fillStyle = theme.textSecondary;
-ctx.font = "14px Arial";
+ctx.font = bodyFont;
 //ctx.fillText(`• ${keyFinding}`, padding + 24, y);
 
 y += 30;
@@ -2152,24 +2157,24 @@ y += 10;
 y += 26;
 
 ctx.fillStyle = theme.textSecondary;
-ctx.font = "14px Arial";
+ctx.font = bodyFont;
 
 y += 12;
 
   ctx.fillStyle = theme.textPrimary;
-  ctx.font = "bold 18px Arial";
+  ctx.font = sectionHeadingFont;
   ctx.fillText("2. Research notes", padding, y);
 
   y += 26;
 
   ctx.fillStyle = theme.textSecondary;
-  ctx.font = "bold 15px Arial";
+  ctx.font = subHeadingFont;
   ctx.fillText("Methodology", padding + 8, y);
 
   y += 22;
 
   ctx.fillStyle = theme.textSecondary;
-  ctx.font = "14px Arial";
+  ctx.font = bodyFont;
 
  for (const note of notes) {
   const wrappedNote = wrapText(`• ${note}`, 95);
@@ -2221,7 +2226,7 @@ const researchId = `${stateId}-${exportCount}`;
 ctx.fillStyle = theme.footerText;
 ctx.font = "italic 13px Arial";
 ctx.fillStyle = theme.textPrimary;
-ctx.font = "bold 15px Arial";
+ctx.font = subHeadingFont;
 ctx.fillText("Export metadata and provenance", padding, y);
 
 y += 18;
@@ -2243,7 +2248,7 @@ const footerMetaLines = [
   `Snapshot size: ${snapshotSize}`,
 ];
 
-ctx.font = "11px Arial";
+ctx.font = smallMetaFont;
 footerMetaLines.forEach((line, index) => {
   ctx.fillText(line, footerMetaX, y + index * 16);
 });
@@ -2253,7 +2258,7 @@ y += 64;
 y += 48;
 
   ctx.fillStyle = theme.footerText;
-  ctx.font = "11px Arial";
+  ctx.font = smallMetaFont;
   ctx.fillText(
     "Generated from Old Bailey Analytics research workspace",
     padding,
