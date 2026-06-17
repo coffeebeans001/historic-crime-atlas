@@ -2088,16 +2088,32 @@ function drawSnapshotSummaryGroup(title, lines, showDivider = true) {
     y += 20;
   }
 
-  if (showDivider) {
-    ctx.strokeStyle = theme.divider || theme.border || "#d1d5db";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(padding + 24, y - 4);
-    ctx.lineTo(width - padding - 24, y - 4);
-    ctx.stroke();
+    if (showDivider) {
+      ctx.strokeStyle = theme.divider || theme.border || "#d1d5db";
+      ctx.moveTo(padding + 24, y - 4);
+      ctx.lineTo(width - padding - 24, y - 4);
+      drawSnapshotGroupDivider(
+      ctx,
+      width,
+      padding,
+      y,
+      theme,
+    );
   }
 
   y += 14;
+}
+
+function drawSnapshotGroupDivider(ctx, width, padding, y, theme) {
+  ctx.strokeStyle =
+    theme.divider || theme.border || "#d1d5db";
+
+  ctx.lineWidth = 1;
+
+  ctx.beginPath();
+  ctx.moveTo(padding + 24, y - 4);
+  ctx.lineTo(width - padding - 24, y - 4);
+  ctx.stroke();
 }
 
 function drawSnapshotDivider(ctx, canvas, padding, y, theme) {
@@ -2667,15 +2683,6 @@ function getYRangeFromSeries(seriesArr) {
   return { min, max };
 }
 
-function drawSnapshotDivider(ctx, exportCanvas, padding, y, theme) {
-  ctx.strokeStyle = theme.border || theme.divider || "#303840";
-  ctx.lineWidth = 1;
-
-  ctx.beginPath();
-  ctx.moveTo(padding, y);
-  ctx.lineTo(exportCanvas.width - padding, y);
-  ctx.stroke();
-}
 
 function buildSnapshotSummary() {
   const offence =
