@@ -1965,12 +1965,13 @@ y += 10;
     });
   }
 
-  ctx.strokeStyle = theme.divider;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padding, y + headerHeight);
-  ctx.lineTo(width - padding, y + headerHeight);
-  ctx.stroke();
+ drawSnapshotDivider(
+  ctx,
+  exportCanvas,
+  padding,
+  y,
+  theme,
+);
 
   // title + text
   y += headerHeight + 24;
@@ -2099,6 +2100,18 @@ function drawSnapshotSummaryGroup(title, lines, showDivider = true) {
   y += 14;
 }
 
+function drawSnapshotDivider(ctx, canvas, padding, y, theme) {
+  ctx.strokeStyle =
+    theme.divider || theme.border || "#d1d5db";
+
+  ctx.lineWidth = 1;
+
+  ctx.beginPath();
+  ctx.moveTo(padding, y);
+  ctx.lineTo(canvas.width - padding, y);
+  ctx.stroke();
+}
+
 
 ctx.fillStyle = theme.textPrimary;
 ctx.font = sectionHeadingFont;
@@ -2201,12 +2214,13 @@ if (y + footerSafetySpace > exportCanvas.height) {
   });
 }
 
-  ctx.strokeStyle = theme.divider;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padding, y);
-  ctx.lineTo(width - padding, y);
-  ctx.stroke();
+  drawSnapshotDivider(
+  ctx,
+  exportCanvas,
+  padding,
+  y,
+  theme,
+);
 
   y += 20;
 
