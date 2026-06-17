@@ -2128,6 +2128,18 @@ function drawSnapshotDivider(ctx, canvas, padding, y, theme) {
   ctx.stroke();
 }
 
+function drawSnapshotSectionHeading(
+  ctx,
+  title,
+  padding,
+  y,
+  theme,
+  font
+) {
+  ctx.fillStyle = theme.textPrimary;
+  ctx.font = font;
+  ctx.fillText(title, padding, y);
+}
 
 ctx.fillStyle = theme.textPrimary;
 ctx.font = sectionHeadingFont;
@@ -2153,9 +2165,14 @@ const keyFinding = noDataVisible
   ? "No chart data is available for the selected filters."
   : firstSentence.replace(/^Interpretive summary:\s*/i, "");
 
-  ctx.fillStyle = theme.textPrimary;
-ctx.font = "bold 16px Arial";
-ctx.fillText("Key finding", padding, y);
+drawSnapshotSectionHeading(
+  ctx,
+  "Key finding",
+  padding,
+  y,
+  theme,
+  sectionHeadingFont
+);
 
 //y += 15;
 
@@ -2190,9 +2207,14 @@ ctx.font = bodyFont;
 
 y += 12;
 
-  ctx.fillStyle = theme.textPrimary;
-  ctx.font = sectionHeadingFont;
-  ctx.fillText("2. Research notes", padding, y);
+ drawSnapshotSectionHeading(
+  ctx,
+  "2. Research notes",
+  padding,
+  y,
+  theme,
+  sectionHeadingFont
+);
 
   y += 26;
 
@@ -2312,7 +2334,8 @@ y += 48;
   ctx.fillText("Shareable URL:", padding, y);
   drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
 
-  y += 20;
+    y += 20;
+
 
   ctx.fillStyle = theme.urlText;
   ctx.font = "13px Arial";
