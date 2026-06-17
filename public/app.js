@@ -2141,9 +2141,20 @@ function drawSnapshotSectionHeading(
   ctx.fillText(title, padding, y);
 }
 
-ctx.fillStyle = theme.textPrimary;
-ctx.font = sectionHeadingFont;
-ctx.fillText("1. Summary", padding, y);
+function drawSnapshotSectionHeading(ctx, title, padding, y, theme, font) {
+  ctx.fillStyle = theme.textPrimary;
+  ctx.font = font;
+  ctx.fillText(title, padding, y);
+}
+
+drawSnapshotSectionHeading(
+  ctx,
+  "1. Summary",
+  padding,
+  y,
+  theme,
+  sectionHeadingFont,
+);
 
 y += 28;
 
@@ -2275,11 +2286,14 @@ const snapshotSize =
 const researchId = `${stateId}-${exportCount}`;
 
 // timestamp
-ctx.fillStyle = theme.footerText;
-ctx.font = "italic 13px Arial";
-ctx.fillStyle = theme.textPrimary;
-ctx.font = subHeadingFont;
-ctx.fillText("Export metadata and provenance", padding, y);
+drawSnapshotSectionHeading(
+  ctx,
+  "Export metadata and provenance",
+  padding,
+  y,
+  theme,
+  sectionHeadingFont,
+);
 
 y += 18;
 ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
