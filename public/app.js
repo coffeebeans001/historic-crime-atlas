@@ -2084,7 +2084,12 @@ function drawSnapshotSummaryGroup(title, lines, showDivider = true) {
   ctx.font = bodyFont;
 
   for (const line of lines) {
-    ctx.fillText(`• ${line}`, padding + 24, y);
+    drawSnapshotBullet(
+  ctx,
+  line,
+  padding + 24,
+  y,
+);
     y += 20;
   }
 
@@ -2145,6 +2150,10 @@ function drawSnapshotSectionHeading(ctx, title, padding, y, theme, font) {
   ctx.fillStyle = theme.textPrimary;
   ctx.font = font;
   ctx.fillText(title, padding, y);
+}
+
+function drawSnapshotBullet(ctx, text, x, y) {
+  ctx.fillText(`• ${text}`, x, y);
 }
 
 drawSnapshotSectionHeading(
