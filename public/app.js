@@ -2791,6 +2791,19 @@ function buildSnapshotSummary() {
   if (lockedChartYear != null) activeFilters++;
   if (dateFrom || dateTo) activeFilters++;
 
+  function buildSnapshotStats() {
+  return {
+    activeFilters,
+    researchId,
+    exportCount,
+    chartPeriodCount,
+    confidenceValue,
+    analysisScope,
+  };
+}
+
+const stats = buildSnapshotStats();
+
   let rangeText = "Full dataset";
 
   if (dateFrom && dateTo) {
