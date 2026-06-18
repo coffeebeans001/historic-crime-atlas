@@ -1932,6 +1932,8 @@ ctx.fillText(
 
 y += 10;
 
+y += 20;
+
   let chipX = padding;
   let chipY = y + 72;
   const chipGap = 10;
@@ -1989,8 +1991,6 @@ y += 10;
   padding,
   y,
  );
-
- 
 
     y += 18;
 
