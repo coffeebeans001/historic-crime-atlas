@@ -2156,7 +2156,15 @@ function drawSnapshotBullet(ctx, text, x, y) {
   ctx.fillText(`• ${text}`, x, y);
 }
 
-function drawWrappedSnapshotBullet(ctx, text, x, y, maxChars = 90, lineHeight = 20) {
+function drawWrappedSnapshotBullet(
+  ctx,
+  text,
+  x,
+  y,
+  maxChars = 90,
+  lineHeight = 20,
+  afterGap = 8,
+) {
   const wrappedLines = wrapText(`• ${text}`, maxChars);
 
   for (const line of wrappedLines) {
@@ -2164,7 +2172,7 @@ function drawWrappedSnapshotBullet(ctx, text, x, y, maxChars = 90, lineHeight = 
     y += lineHeight;
   }
 
-  return y;
+  return y + afterGap;
 }
 
 drawSnapshotSectionHeading(
@@ -2255,10 +2263,8 @@ y += 12;
     note,
     padding + 8,
     y,
-    95
+    95,
   );
-
-  y += 8;
 }
 
   y += sectionGap;
@@ -2307,7 +2313,7 @@ drawSnapshotSectionHeading(
   sectionHeadingFont,
 );
 
-y += 18;
+y += 30;
 ctx.fillText(`Exported: ${exportDateTime}`, padding, y);
 
 const releaseLabel =
