@@ -2156,6 +2156,17 @@ function drawSnapshotBullet(ctx, text, x, y) {
   ctx.fillText(`• ${text}`, x, y);
 }
 
+function drawWrappedSnapshotBullet(ctx, text, x, y, maxChars = 90, lineHeight = 20) {
+  const wrappedLines = wrapText(`• ${text}`, maxChars);
+
+  for (const line of wrappedLines) {
+    ctx.fillText(line, x, y);
+    y += lineHeight;
+  }
+
+  return y;
+}
+
 drawSnapshotSectionHeading(
   ctx,
   "1. Summary",
@@ -2198,19 +2209,10 @@ drawSnapshotSectionHeading(
 
 ctx.fillStyle = theme.textSecondary;
 ctx.font = bodyFont;
-//ctx.fillText(`• ${keyFinding}`, padding + 24, y);
 
 y += 30;
 
-const wrappedFinding = wrapText(
-  `• ${keyFinding}`,
-  90
-);
-
-for (const line of wrappedFinding) {
-  ctx.fillText(line, padding + 24, y);
-  y += 20;
-}  
+y = drawWrappedSnapshotBullet(ctx, keyFinding, padding + 24, y, 80);
 
 y += 10;
 
@@ -2248,12 +2250,13 @@ y += 12;
   ctx.font = bodyFont;
 
  for (const note of notes) {
-  const wrappedNote = wrapText(`• ${note}`, 95);
-
-  for (const line of wrappedNote) {
-    ctx.fillText(line, padding + 8, y);
-    y += 20;
-  }
+  y = drawWrappedSnapshotBullet(
+    ctx,
+    note,
+    padding + 8,
+    y,
+    95
+  );
 
   y += 8;
 }
