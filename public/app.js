@@ -2503,6 +2503,7 @@ function buildResearchNotes() {
 
 async function downloadResearchSnapshot() {
   const start = performance.now();
+  validateSnapshotExportReadiness();
 
   const chartTitle =
     chart.options?.plugins?.title?.text?.toString().trim() ||
@@ -3275,6 +3276,26 @@ function updateChartDataStatus() {
   el.textContent = noDataVisible
     ? "No chart data for current filters"
     : "";
+}
+
+function validateSnapshotExportReadiness() {
+  const checks = [
+    ["chart", chart],
+    ["summary builder", typeof buildSnapshotSummary === "function"],
+    ["research notes builder", typeof buildResearchNotes === "function"],
+    ["research ID", typeof getCurrentResearchId === "function"],
+    ["chart canvas", document.getElementById("chart")],
+  ];
+
+  const missing = checks
+    .filter(([, value]) => !value)
+    .map(([label]) => label);
+
+  if (missing.length > 0) {
+    console.warn("Snapshot export readiness issues:", missing);
+  }
+
+  return missing.length === 0;
 }
 
 async function render() {
