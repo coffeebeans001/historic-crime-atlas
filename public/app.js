@@ -2224,7 +2224,23 @@ y = drawWrappedSnapshotBullet(ctx, keyFinding, padding + 24, y, 80);
 
 y += 10;
 
+const sourceGender =
+  genderFilter === "all"
+    ? "All genders"
+    : genderFilter;
 
+const sourceReference =
+  `${offenceFilter} | ${sourceGender} | ${rangeText}`;
+
+  y = drawWrappedSnapshotBullet(
+    ctx,
+    `Source: ${sourceReference}`,
+    padding + 24,
+    y,
+    90,
+    10,
+    6
+  );
 
   const notes = buildResearchNotes();
 
@@ -2237,7 +2253,7 @@ y += 26;
 ctx.fillStyle = theme.textSecondary;
 ctx.font = bodyFont;
 
-y += 12;
+//y += 12;
 
  drawSnapshotSectionHeading(
   ctx,
