@@ -2206,7 +2206,7 @@ const keyFinding = noDataVisible
 
 drawSnapshotSectionHeading(
   ctx,
-  "Key finding",
+  "Key finding from chart insight",
   padding,
   y,
   theme,
@@ -2223,6 +2223,8 @@ y += 30;
 y = drawWrappedSnapshotBullet(ctx, keyFinding, padding + 24, y, 80);
 
 y += 10;
+
+
 
   const notes = buildResearchNotes();
 
