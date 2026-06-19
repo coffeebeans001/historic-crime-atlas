@@ -3479,6 +3479,50 @@ for (const note of notes) {
   notesY += lines.length * 14 + 6;
 }
 
+pdf.addPage();
+
+pdf.setFontSize(18);
+pdf.text("Export Metadata & Provenance", 40, 50);
+
+let metaY = 80;
+
+const currentUrl = window.location.href;
+
+const stateId = btoa(currentUrl)
+  .replace(/[^a-zA-Z0-9]/g, "")
+  .slice(0, 8);
+
+const exportCount =
+  localStorage.getItem("snapshotExportCount") || "0";
+
+const researchId = `${stateId}-${exportCount}`;
+
+const generationTime =
+  localStorage.getItem("lastSnapshotGenerationTime");
+
+const metadataLines = [
+  `Snapshot revision: ${APP_VERSION}`,
+  `State ID: ${stateId}`,
+  `Research ID: ${researchId}`,
+  `Export reference: #${exportCount}`,
+  ...(generationTime
+    ? [`Generation time: ${generationTime}s`]
+    : []),
+  "Generated from Old Bailey Analytics research workspace",
+  "Dataset: Old Bailey trial records",
+  `Shareable URL: ${currentUrl}`,
+];
+
+pdf.setFontSize(11);
+
+for (const line of metadataLines) {
+  const wrappedLines = pdf.splitTextToSize(line, 500);
+
+  pdf.text(wrappedLines, 40, metaY);
+
+  metaY += wrappedLines.length * 14 + 8;
+}
+
   pdf.save("old-bailey-research-snapshot.pdf");
 }
 
