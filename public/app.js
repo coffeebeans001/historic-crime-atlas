@@ -3419,6 +3419,66 @@ pdf.text(
   460
 );
 
+pdf.addPage();
+pdf.setFontSize(18);
+pdf.text("Summary", 40, 50);
+
+let y = 80;
+
+const {
+  analysisSummary,
+  evidenceSummary,
+  trackingSummary,
+} = buildSnapshotSummary();
+
+const pdfSummarySections = [
+  ["Analysis", analysisSummary],
+  ["Evidence", evidenceSummary],
+  ["Tracking", trackingSummary],
+];
+
+for (const [title, items] of pdfSummarySections) {
+  pdf.setFontSize(13);
+  pdf.text(title, 40, y);
+  y += 20;
+
+  pdf.setFontSize(11);
+
+  for (const item of items) {
+    const lines = pdf.splitTextToSize(
+      `• ${item}`,
+      500,
+    );
+
+    pdf.text(lines, 50, y);
+    y += lines.length * 14 + 6;
+  }
+
+  y += 10;
+}
+
+pdf.addPage();
+
+pdf.setFontSize(18);
+pdf.text("Research Notes", 40, 50);
+
+let notesY = 80;
+
+const notes = buildResearchNotes();
+
+pdf.setFontSize(11);
+
+for (const note of notes) {
+  const lines = pdf.splitTextToSize(
+    `• ${note}`,
+    500,
+  );
+
+  pdf.text(lines, 40, notesY);
+
+  notesY += lines.length * 14 + 6;
+}
+
   pdf.save("old-bailey-research-snapshot.pdf");
 }
 
