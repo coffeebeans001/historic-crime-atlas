@@ -3323,12 +3323,25 @@ function validateSnapshotExportReadiness() {
 }
 
 async function downloadResearchSnapshotPdf() {
-  console.log("Multi-page PDF export started");
+  const { jsPDF } = window.jspdf;
 
-  // Phase 2 will build:
-  // Page 1: Header + chart + key finding
-  // Page 2: Summary + research notes
-  // Page 3: Export metadata + shareable URL
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "pt",
+    format: "a4",
+  });
+
+  pdf.setFontSize(20);
+  pdf.text("Old Bailey Research Snapshot", 40, 50);
+
+  pdf.setFontSize(12);
+  pdf.text(
+    "Historic criminal case insight export",
+    40,
+    75,
+  );
+
+  pdf.save("old-bailey-research-snapshot.pdf");
 }
 
 async function render() {
