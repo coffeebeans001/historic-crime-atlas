@@ -3341,6 +3341,84 @@ async function downloadResearchSnapshotPdf() {
     75,
   );
 
+  const chartCanvas = document.getElementById("chart");
+
+if (chartCanvas) {
+  const chartImage = chartCanvas.toDataURL("image/png", 1.0);
+
+  pdf.addImage(
+    chartImage,
+    "PNG",
+    40,
+    110,
+    515,
+    260,
+  );
+}
+
+pdf.setFontSize(14);
+pdf.text("Key finding from chart", 40, 400);
+
+pdf.setFontSize(11);
+
+const insightText =
+  document.getElementById("insight-text")?.textContent?.trim() ||
+  "No insight available.";
+
+const firstSentence =
+  insightText.match(/.*?[.!?](?:\s|$)/)?.[0]?.trim() ||
+  insightText;
+
+const noDataVisible =
+  !document
+    .getElementById("chart-no-data")
+    ?.classList.contains("hidden");
+
+const keyFinding = noDataVisible
+  ? "No chart data is available for the selected filters."
+  : firstSentence.replace(/^Interpretive summary:\s*/i, "");
+
+const offenceFilter =
+  document.getElementById("group")?.value?.trim() || "All offences";
+
+const genderRaw =
+  document.getElementById("gender")?.value?.trim() || "all";
+
+const sourceGender =
+  genderRaw === "all" ? "All genders" : genderRaw;
+
+const dateFrom = document.getElementById("from")?.value;
+const dateTo = document.getElementById("to")?.value;
+
+let rangeText = "Full dataset";
+
+if (dateFrom && dateTo) {
+  rangeText =
+    `${formatDisplayDate(dateFrom)} to ${formatDisplayDate(dateTo)}`;
+} else if (dateFrom) {
+  rangeText = `From ${formatDisplayDate(dateFrom)}`;
+} else if (dateTo) {
+  rangeText = `Up to ${formatDisplayDate(dateTo)}`;
+}
+
+const sourceReference =
+  `${offenceFilter} | ${sourceGender} | ${rangeText}`;
+
+const findingLines = pdf.splitTextToSize(
+  keyFinding,
+  500
+);
+
+pdf.text(findingLines, 40, 420);
+
+pdf.setFontSize(9);
+
+pdf.text(
+  `Source: ${sourceReference}`,
+  40,
+  460
+);
+
   pdf.save("old-bailey-research-snapshot.pdf");
 }
 
