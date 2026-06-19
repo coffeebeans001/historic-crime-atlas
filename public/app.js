@@ -1870,7 +1870,7 @@ const chartPeriodChip =
 
   const estimatedUrlLines = wrapText(currentUrl, 65);
   const urlHeight = estimatedUrlLines.length * 18 + 50;
-  const summaryHeight = 1050;
+  const summaryHeight = 1150;
 
   const height =
     padding +
@@ -2232,6 +2232,9 @@ const sourceGender =
 const sourceReference =
   `${offenceFilter} | ${sourceGender} | ${rangeText}`;
 
+  ctx.fillStyle = theme.footerText || theme.textSecondary;
+  ctx.font = smallMetaFont;
+
   y = drawWrappedSnapshotBullet(
     ctx,
     `Source: ${sourceReference}`,
@@ -2241,6 +2244,9 @@ const sourceReference =
     10,
     6
   );
+
+  ctx.fillStyle = theme.textSecondary;
+  ctx.font = bodyFont;
 
   const notes = buildResearchNotes();
 
