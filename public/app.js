@@ -3322,6 +3322,15 @@ function validateSnapshotExportReadiness() {
   return missing.length === 0;
 }
 
+async function downloadResearchSnapshotPdf() {
+  console.log("Multi-page PDF export started");
+
+  // Phase 2 will build:
+  // Page 1: Header + chart + key finding
+  // Page 2: Summary + research notes
+  // Page 3: Export metadata + shareable URL
+}
+
 async function render() {
   ensureChart();
 
@@ -4341,6 +4350,27 @@ async function init() {
           console.error("PDF download failed:", err);
         }
       });
+
+      const downloadSnapshotPdfBtn =
+  document.getElementById("download-snapshot-pdf-btn");
+
+downloadSnapshotPdfBtn?.addEventListener("click", async () => {
+  downloadSnapshotPdfBtn.disabled = true;
+  downloadSnapshotPdfBtn.textContent = "Building PDF…";
+
+  try {
+    await downloadResearchSnapshotPdf();
+    downloadSnapshotPdfBtn.textContent = "PDF exported ✓";
+  } catch (err) {
+    console.error(err);
+    downloadSnapshotPdfBtn.textContent = "PDF failed";
+  } finally {
+    setTimeout(() => {
+      downloadSnapshotPdfBtn.disabled = false;
+      downloadSnapshotPdfBtn.textContent = "Export multi-page PDF";
+    }, 1200);
+  }
+});
 
       const researchNoteEl = document.getElementById("research-note");
       const researchNoteStatus = document.getElementById(
