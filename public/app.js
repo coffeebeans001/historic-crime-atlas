@@ -3522,6 +3522,17 @@ for (const line of metadataLines) {
 
   metaY += wrappedLines.length * 14 + 8;
 }
+  const pageCount = pdf.getNumberOfPages();
+
+for (let i = 1; i <= pageCount; i++) {
+  pdf.setPage(i);
+  pdf.setFontSize(9);
+  pdf.text(
+    `Page ${i} of ${pageCount}`,
+    500,
+    820,
+  );
+}
 
   pdf.save("old-bailey-research-snapshot.pdf");
 }
