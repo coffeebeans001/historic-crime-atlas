@@ -3322,6 +3322,22 @@ function validateSnapshotExportReadiness() {
   return missing.length === 0;
 }
 
+function drawPdfPageFooter(pdf, pageNumber, pageCount) {
+  pdf.setFontSize(9);
+
+  pdf.text(
+    "Old Bailey Analytics research workspace",
+    40,
+    820,
+  );
+
+  pdf.text(
+    `Page ${pageNumber} of ${pageCount}`,
+    500,
+    820,
+  );
+}
+
 function drawPdfPageHeader(pdf, pageTitle) {
   pdf.setFontSize(16);
   pdf.text(
@@ -3552,12 +3568,7 @@ for (const line of metadataLines) {
 
 for (let i = 1; i <= pageCount; i++) {
   pdf.setPage(i);
-  pdf.setFontSize(9);
-  pdf.text(
-    `Page ${i} of ${pageCount}`,
-    500,
-    820,
-  );
+  drawPdfPageFooter(pdf, i, pageCount);
 }
 
   pdf.save("old-bailey-research-snapshot.pdf");
