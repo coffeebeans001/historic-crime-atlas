@@ -3322,6 +3322,24 @@ function validateSnapshotExportReadiness() {
   return missing.length === 0;
 }
 
+function drawPdfPageHeader(pdf, pageTitle) {
+  pdf.setFontSize(16);
+  pdf.text(
+    "Old Bailey Research Snapshot",
+    40,
+    35,
+  );
+
+  pdf.setFontSize(10);
+  pdf.text(
+    `Page — ${pageTitle}`,
+    40,
+    52,
+  );
+
+  pdf.line(40, 60, 555, 60);
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -3331,15 +3349,17 @@ async function downloadResearchSnapshotPdf() {
     format: "a4",
   });
 
-  pdf.setFontSize(20);
-  pdf.text("Old Bailey Research Snapshot", 40, 50);
+  drawPdfPageHeader(
+  pdf,
+  "Findings & Visualisation"
+);
 
-  pdf.setFontSize(12);
-  pdf.text(
-    "Historic criminal case insight export",
-    40,
-    75,
-  );
+pdf.setFontSize(12);
+pdf.text(
+  "Historic criminal case insight export",
+  40,
+  85,
+);
 
   const chartCanvas = document.getElementById("chart");
 
@@ -3350,7 +3370,7 @@ if (chartCanvas) {
     chartImage,
     "PNG",
     40,
-    110,
+    120,
     515,
     260,
   );
@@ -3420,10 +3440,12 @@ pdf.text(
 );
 
 pdf.addPage();
-pdf.setFontSize(18);
-pdf.text("Summary", 40, 50);
+drawPdfPageHeader(
+  pdf,
+  "Summary"
+);
 
-let y = 80;
+let y = 90;
 
 const {
   analysisSummary,
@@ -3459,10 +3481,12 @@ for (const [title, items] of pdfSummarySections) {
 
 pdf.addPage();
 
-pdf.setFontSize(18);
-pdf.text("Research Notes", 40, 50);
+drawPdfPageHeader(
+  pdf,
+  "Research Notes"
+);
 
-let notesY = 80;
+let notesY = 90;
 
 const notes = buildResearchNotes();
 
@@ -3481,10 +3505,12 @@ for (const note of notes) {
 
 pdf.addPage();
 
-pdf.setFontSize(18);
-pdf.text("Export Metadata & Provenance", 40, 50);
+drawPdfPageHeader(
+  pdf,
+  "Metadata & Provenance"
+);
 
-let metaY = 80;
+let metaY = 90;
 
 const currentUrl = window.location.href;
 
