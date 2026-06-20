@@ -3572,7 +3572,20 @@ for (let i = 1; i <= pageCount; i++) {
   drawPdfPageFooter(pdf, i, pageCount);
 }
 
-  pdf.save("old-bailey-research-snapshot.pdf");
+  const { file: exportFileTime } = getExportDateTime();
+
+const safePdfName = [
+  "old-bailey-research-snapshot",
+  `export-${exportCount}`,
+  stateId,
+  exportFileTime,
+]
+  .join("-")
+  .replace(/[^\w-]/g, "")
+  .replace(/-+/g, "-")
+  .toLowerCase();
+
+pdf.save(`${safePdfName}.pdf`);
 }
 
 async function render() {
