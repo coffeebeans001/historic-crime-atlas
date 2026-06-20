@@ -3340,29 +3340,19 @@ function drawPdfPageFooter(pdf, pageNumber, pageCount) {
 
 function drawPdfPageHeader(pdf, pageTitle, sourceReference = "") {
   pdf.setFontSize(16);
-  pdf.text(
-    "Old Bailey Research Snapshot",
-    40,
-    35,
-  );
+  pdf.text("Old Bailey Research Snapshot", 40, 35);
 
   pdf.setFontSize(10);
-  pdf.text(
-    `Page — ${pageTitle}`,
-    40,
-    52,
-  );
+  pdf.text(`Page — ${pageTitle}`, 40, 52);
 
   if (sourceReference) {
     pdf.setFontSize(8);
-    pdf.text(
-      sourceReference,
-      300,
-      52,
-    );
+    pdf.text(sourceReference, 300, 52);
   }
 
   pdf.line(40, 60, 555, 60);
+
+  return 90;
 }
 
 async function downloadResearchSnapshotPdf() {
@@ -3466,13 +3456,9 @@ pdf.text(
 
 pdf.addPage();
 
-drawPdfPageHeader(
-  pdf,
-  "Summary",
-  sourceReference,
-);
+let y = drawPdfPageHeader(pdf, "Summary", sourceReference);
 
-let y = 90;
+//let y = 90;
 
 const {
   analysisSummary,
@@ -3508,13 +3494,9 @@ for (const [title, items] of pdfSummarySections) {
 
 pdf.addPage();
 
-drawPdfPageHeader(
-  pdf,
-  "Research Notes",
-  sourceReference,
-);
+let notesY = drawPdfPageHeader(pdf, "Research Notes", sourceReference);
 
-let notesY = 90;
+//let notesY = 90;
 
 const notes = buildResearchNotes();
 
@@ -3533,13 +3515,9 @@ for (const note of notes) {
 
 pdf.addPage();
 
-drawPdfPageHeader(
-  pdf,
-  "Metadata & Provenance",
-  sourceReference,
-);
+let metaY = drawPdfPageHeader(pdf, "Metadata & Provenance", sourceReference);
 
-let metaY = 90;
+//let metaY = 90;
 
 const currentUrl = window.location.href;
 
