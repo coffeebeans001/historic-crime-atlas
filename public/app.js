@@ -3338,7 +3338,7 @@ function drawPdfPageFooter(pdf, pageNumber, pageCount) {
   );
 }
 
-function drawPdfPageHeader(pdf, pageTitle) {
+function drawPdfPageHeader(pdf, pageTitle, sourceReference = "") {
   pdf.setFontSize(16);
   pdf.text(
     "Old Bailey Research Snapshot",
@@ -3352,6 +3352,15 @@ function drawPdfPageHeader(pdf, pageTitle) {
     40,
     52,
   );
+
+  if (sourceReference) {
+    pdf.setFontSize(8);
+    pdf.text(
+      sourceReference,
+      300,
+      52,
+    );
+  }
 
   pdf.line(40, 60, 555, 60);
 }
@@ -3459,7 +3468,8 @@ pdf.addPage();
 
 drawPdfPageHeader(
   pdf,
-  "Summary"
+  "Summary",
+  sourceReference,
 );
 
 let y = 90;
@@ -3500,7 +3510,8 @@ pdf.addPage();
 
 drawPdfPageHeader(
   pdf,
-  "Research Notes"
+  "Research Notes",
+  sourceReference,
 );
 
 let notesY = 90;
@@ -3524,7 +3535,8 @@ pdf.addPage();
 
 drawPdfPageHeader(
   pdf,
-  "Metadata & Provenance"
+  "Metadata & Provenance",
+  sourceReference,
 );
 
 let metaY = 90;
