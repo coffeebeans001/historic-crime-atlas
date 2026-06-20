@@ -3456,6 +3456,7 @@ pdf.text(
 );
 
 pdf.addPage();
+
 drawPdfPageHeader(
   pdf,
   "Summary"
