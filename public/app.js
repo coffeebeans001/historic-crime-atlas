@@ -3487,9 +3487,9 @@ const {
 } = buildSnapshotSummary();
 
 const pdfSummarySections = [
-  ["Analysis", analysisSummary],
-  ["Evidence", evidenceSummary],
-  ["Tracking", trackingSummary],
+  ["2.1 Analysis", analysisSummary],
+  ["2.2 Evidence", evidenceSummary],
+  ["2.3 Tracking", trackingSummary],
 ];
 
 for (const [title, items] of pdfSummarySections) {
