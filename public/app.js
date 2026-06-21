@@ -3366,6 +3366,8 @@ function ensurePdfPageSpace(
     return currentY;
   }
 
+  console.info(`PDF page break added: ${pageTitle}`);
+
   pdf.addPage();
 
   return drawPdfPageHeader(
