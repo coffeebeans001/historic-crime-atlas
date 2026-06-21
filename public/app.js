@@ -3355,6 +3355,26 @@ function drawPdfPageHeader(pdf, pageTitle, sourceReference = "") {
   return 90;
 }
 
+function ensurePdfPageSpace(
+  pdf,
+  currentY,
+  requiredHeight = 40,
+  pageTitle = "",
+  sourceReference = "",
+) {
+  if (currentY + requiredHeight < 760) {
+    return currentY;
+  }
+
+  pdf.addPage();
+
+  return drawPdfPageHeader(
+    pdf,
+    pageTitle,
+    sourceReference,
+  );
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -3458,8 +3478,6 @@ pdf.addPage();
 
 let y = drawPdfPageHeader(pdf, "Summary", sourceReference);
 
-//let y = 90;
-
 const {
   analysisSummary,
   evidenceSummary,
@@ -3485,8 +3503,16 @@ for (const [title, items] of pdfSummarySections) {
       500,
     );
 
+    y = ensurePdfPageSpace(
+      pdf,
+      y,
+      lines.length * 14 + 20,
+      "Summary",
+      sourceReference,
+    );
     pdf.text(lines, 50, y);
     y += lines.length * 14 + 6;
+
   }
 
   y += 10;
@@ -3495,8 +3521,6 @@ for (const [title, items] of pdfSummarySections) {
 pdf.addPage();
 
 let notesY = drawPdfPageHeader(pdf, "Research Notes", sourceReference);
-
-//let notesY = 90;
 
 const notes = buildResearchNotes();
 
@@ -3516,8 +3540,6 @@ for (const note of notes) {
 pdf.addPage();
 
 let metaY = drawPdfPageHeader(pdf, "Metadata & Provenance", sourceReference);
-
-//let metaY = 90;
 
 const currentUrl = window.location.href;
 
