@@ -3386,10 +3386,7 @@ async function downloadResearchSnapshotPdf() {
     format: "a4",
   });
 
-  drawPdfPageHeader(
-  pdf,
-  "Findings & Visualisation"
-);
+ drawPdfPageHeader(pdf, "1. Findings & Visualisation", sourceReference);
 
 pdf.setFontSize(12);
 pdf.text(
@@ -3478,7 +3475,7 @@ pdf.text(
 
 pdf.addPage();
 
-let y = drawPdfPageHeader(pdf, "Summary", sourceReference);
+let y = drawPdfPageHeader(pdf, "2. Summary", sourceReference);
 
 const {
   analysisSummary,
@@ -3522,7 +3519,7 @@ for (const [title, items] of pdfSummarySections) {
 
 pdf.addPage();
 
-let notesY = drawPdfPageHeader(pdf, "Research Notes", sourceReference);
+let notesY = drawPdfPageHeader(pdf, "3. Research Notes", sourceReference);
 
 const notes = buildResearchNotes();
 
@@ -3549,7 +3546,7 @@ for (const note of notes) {
 
 pdf.addPage();
 
-let metaY = drawPdfPageHeader(pdf, "Metadata & Provenance", sourceReference);
+let metaY = drawPdfPageHeader(pdf, "4. Metadata & Provenance", sourceReference);
 
 const currentUrl = window.location.href;
 
