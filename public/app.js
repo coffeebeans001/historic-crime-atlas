@@ -3532,9 +3532,17 @@ for (const note of notes) {
     500,
   );
 
+  notesY = ensurePdfPageSpace(
+    pdf,
+    notesY,
+    lines.length * 14 + 20,
+    "Research Notes",
+    sourceReference,
+  );
+
   pdf.text(lines, 40, notesY);
 
-  notesY += lines.length * 14 + 6;
+  notesY += lines.length * 14 + 8;
 }
 
 pdf.addPage();
