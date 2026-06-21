@@ -3386,35 +3386,6 @@ async function downloadResearchSnapshotPdf() {
     format: "a4",
   });
 
- drawPdfPageHeader(pdf, "1. Findings & Visualisation", sourceReference);
-
-pdf.setFontSize(12);
-pdf.text(
-  "Historic criminal case insight export",
-  40,
-  85,
-);
-
-  const chartCanvas = document.getElementById("chart");
-
-if (chartCanvas) {
-  const chartImage = chartCanvas.toDataURL("image/png", 1.0);
-
-  pdf.addImage(
-    chartImage,
-    "PNG",
-    40,
-    120,
-    515,
-    260,
-  );
-}
-
-pdf.setFontSize(14);
-pdf.text("Key finding from chart", 40, 400);
-
-pdf.setFontSize(11);
-
 const insightText =
   document.getElementById("insight-text")?.textContent?.trim() ||
   "No insight available.";
@@ -3456,7 +3427,36 @@ if (dateFrom && dateTo) {
 }
 
 const sourceReference =
-  `${offenceFilter} | ${sourceGender} | ${rangeText}`;
+  `${offenceFilter} | ${sourceGender} | ${rangeText}`;  
+
+ drawPdfPageHeader(pdf, "1. Findings & Visualisation", sourceReference);
+
+pdf.setFontSize(12);
+pdf.text(
+  "Historic criminal case insight export",
+  40,
+  85,
+);
+
+  const chartCanvas = document.getElementById("chart");
+
+if (chartCanvas) {
+  const chartImage = chartCanvas.toDataURL("image/png", 1.0);
+
+  pdf.addImage(
+    chartImage,
+    "PNG",
+    40,
+    120,
+    515,
+    260,
+  );
+}
+
+pdf.setFontSize(14);
+pdf.text("Key finding from chart", 40, 400);
+
+pdf.setFontSize(11);
 
 const findingLines = pdf.splitTextToSize(
   keyFinding,
