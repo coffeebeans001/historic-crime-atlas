@@ -3579,7 +3579,18 @@ const metadataLines = [
 pdf.setFontSize(11);
 
 for (const line of metadataLines) {
-  const wrappedLines = pdf.splitTextToSize(line, 500);
+  const wrappedLines = pdf.splitTextToSize(
+    line,
+    500,
+  );
+
+  metaY = ensurePdfPageSpace(
+    pdf,
+    metaY,
+    wrappedLines.length * 14 + 20,
+    "Metadata & Provenance",
+    sourceReference,
+  );
 
   pdf.text(wrappedLines, 40, metaY);
 
