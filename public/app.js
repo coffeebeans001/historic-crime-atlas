@@ -3602,12 +3602,13 @@ for (let i = 1; i <= pageCount; i++) {
   drawPdfPageFooter(pdf, i, pageCount);
 }
 
-  const { file: exportFileTime } = getExportDateTime();
+const { file: exportFileTime } = getExportDateTime();
 
 const safePdfName = [
   "old-bailey-research-snapshot",
-  `export-${exportCount}`,
-  stateId,
+  offenceFilter,
+  sourceGender,
+  rangeText,
   exportFileTime,
 ]
   .join("-")
