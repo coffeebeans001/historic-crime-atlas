@@ -3436,7 +3436,7 @@ pdf.setFontSize(10);
 
 const reportSummary = noDataVisible
   ? `This report records a no-data export for ${offenceFilter.toLowerCase()} and ${sourceGender.toLowerCase()} within ${rangeText.toLowerCase()}. The selected filters did not return chart data.`
-  : `This report analyses ${offenceFilter.toLowerCase()} conviction outcomes for ${sourceGender.toLowerCase()} within ${rangeText.toLowerCase()} using the currently selected Old Bailey dataset filters.`;
+  : `This report analyses conviction outcomes for ${sourceGender.toLowerCase()} ${offenceFilter.toLowerCase()} cases within ${rangeText.toLowerCase()}, using the selected Old Bailey dataset filters.`;
 
 // Create summaryLines FIRST
 const summaryLines = pdf.splitTextToSize(
