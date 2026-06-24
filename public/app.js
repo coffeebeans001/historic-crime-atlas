@@ -3617,6 +3617,10 @@ const safePdfName = [
   .toLowerCase();
 
 pdf.save(`${safePdfName}.pdf`);
+
+console.info(
+  `PDF exported: ${safePdfName}.pdf`,
+);
 }
 
 async function render() {
