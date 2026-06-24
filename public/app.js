@@ -3434,8 +3434,9 @@ pdf.text("Report Summary", 40, 500);
 
 pdf.setFontSize(10);
 
-const reportSummary =
-  `This report analyses ${offenceFilter.toLowerCase()} conviction outcomes for ${sourceGender.toLowerCase()} within ${rangeText.toLowerCase()} using the currently selected Old Bailey dataset filters.`;
+const reportSummary = noDataVisible
+  ? `This report records a no-data export for ${offenceFilter.toLowerCase()} and ${sourceGender.toLowerCase()} within ${rangeText.toLowerCase()}. The selected filters did not return chart data.`
+  : `This report analyses ${offenceFilter.toLowerCase()} conviction outcomes for ${sourceGender.toLowerCase()} within ${rangeText.toLowerCase()} using the currently selected Old Bailey dataset filters.`;
 
 const summaryLines = pdf.splitTextToSize(
   reportSummary,
