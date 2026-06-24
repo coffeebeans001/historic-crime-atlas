@@ -3429,6 +3429,21 @@ if (dateFrom && dateTo) {
 const sourceReference =
   `${offenceFilter} | ${sourceGender} | ${rangeText}`;  
 
+pdf.setFontSize(12);
+pdf.text("Report Summary", 40, 500);
+
+pdf.setFontSize(10);
+
+const reportSummary =
+  `This report analyses ${offenceFilter.toLowerCase()} conviction outcomes for ${sourceGender.toLowerCase()} within ${rangeText.toLowerCase()} using the currently selected Old Bailey dataset filters.`;
+
+const summaryLines = pdf.splitTextToSize(
+  reportSummary,
+  500,
+);
+
+pdf.text(summaryLines, 40, 520);  
+
  drawPdfPageHeader(pdf, "1. Findings & Visualisation", sourceReference);
 
 pdf.setFontSize(12);
