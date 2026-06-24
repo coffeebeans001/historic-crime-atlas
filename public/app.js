@@ -3427,7 +3427,7 @@ if (dateFrom && dateTo) {
 }
 
 const sourceReference =
-  `${offenceFilter} | ${sourceGender} | ${rangeText}`;  
+  `${offenceFilter} | ${sourceGender} | ${rangeText}`;
 
 pdf.setFontSize(12);
 pdf.text("Report Summary", 40, 500);
@@ -3438,12 +3438,20 @@ const reportSummary = noDataVisible
   ? `This report records a no-data export for ${offenceFilter.toLowerCase()} and ${sourceGender.toLowerCase()} within ${rangeText.toLowerCase()}. The selected filters did not return chart data.`
   : `This report analyses ${offenceFilter.toLowerCase()} conviction outcomes for ${sourceGender.toLowerCase()} within ${rangeText.toLowerCase()} using the currently selected Old Bailey dataset filters.`;
 
+// Create summaryLines FIRST
 const summaryLines = pdf.splitTextToSize(
   reportSummary,
   500,
 );
 
-pdf.text(summaryLines, 40, 520);  
+const reportSummaryY = 520;
+
+pdf.text(summaryLines, 40, reportSummaryY);
+
+const reportSourceY =
+  reportSummaryY + summaryLines.length * 14 + 10;
+
+pdf.setFontSize(9);
 
  drawPdfPageHeader(pdf, "1. Findings & Visualisation", sourceReference);
 
@@ -3482,12 +3490,6 @@ const findingLines = pdf.splitTextToSize(
 pdf.text(findingLines, 40, 420);
 
 pdf.setFontSize(9);
-
-pdf.text(
-  `Source: ${sourceReference}`,
-  40,
-  460
-);
 
 pdf.addPage();
 
