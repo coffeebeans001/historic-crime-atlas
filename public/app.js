@@ -3484,10 +3484,6 @@ const points = chart?.data?.datasets?.[0]?.data || [];
 const statisticalSummary = buildStatisticalSummary(points);  
 const dataQualitySummary = buildDataQualitySummary(points);
 const genderComparisonSummary = buildGenderComparisonSummary();
-console.log(
-  "Gender comparison:",
-  genderComparisonSummary,
-);
 
 const insightText =
   document.getElementById("insight-text")?.textContent?.trim() ||
