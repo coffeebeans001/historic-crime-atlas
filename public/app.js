@@ -3681,6 +3681,37 @@ for (const [title, items] of pdfSummarySections) {
   y += 10;
 }
 
+if (genderComparisonSummary) {
+  y = ensurePdfPageSpace(
+    pdf,
+    y,
+    120,
+    "2. Summary",
+    sourceReference,
+  );
+
+  pdf.setFontSize(13);
+  pdf.text("2.4 Gender Comparison", 40, y);
+
+  y += 20;
+
+  pdf.setFontSize(11);
+
+  const comparisonLines = [
+    `Male average conviction rate: ${genderComparisonSummary.maleAverage.toFixed(1)}%`,
+    `Female average conviction rate: ${genderComparisonSummary.femaleAverage.toFixed(1)}%`,
+    `Difference: ${Math.abs(genderComparisonSummary.difference).toFixed(1)} percentage points`,
+    `Higher average: ${genderComparisonSummary.strongerGroup}`,
+  ];
+
+  for (const line of comparisonLines) {
+    pdf.text(line, 50, y);
+    y += 16;
+  }
+
+  y += 10;
+}
+
 pdf.addPage();
 
 let notesY = drawPdfPageHeader(pdf, "3. Research Notes", sourceReference);
