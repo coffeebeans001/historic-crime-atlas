@@ -3402,6 +3402,27 @@ function buildStatisticalSummary(points) {
   };
 }
 
+function buildDataQualitySummary(points) {
+  const totalPeriods = points?.length || 0;
+
+  const validPoints =
+    points?.filter((p) => Number.isFinite(Number(p.y))) || [];
+
+  const validPeriods = validPoints.length;
+  const missingPeriods = totalPeriods - validPeriods;
+
+  const zeroValuePeriods = validPoints.filter(
+    (p) => Number(p.y) === 0,
+  ).length;
+
+  return {
+    totalPeriods,
+    validPeriods,
+    missingPeriods,
+    zeroValuePeriods,
+  };
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -3414,6 +3435,7 @@ async function downloadResearchSnapshotPdf() {
 const points = chart?.data?.datasets?.[0]?.data || [];  
 
 const statisticalSummary = buildStatisticalSummary(points);  
+const dataQualitySummary = buildDataQualitySummary(points);
 
 const insightText =
   document.getElementById("insight-text")?.textContent?.trim() ||
@@ -3481,10 +3503,6 @@ pdf.text(summaryLines, 40, reportSummaryY);
 const reportSourceY =
   reportSummaryY + summaryLines.length * 14 + 10;
 
-
-
-pdf.setFontSize(9);
-
 pdf.setFontSize(12);
 pdf.text("Statistical Summary", 40, reportSourceY + 30);
 
@@ -3505,6 +3523,25 @@ if (statisticalSummary) {
     pdf.text(line, 40, statsY);
     statsY += 16;
   }
+}
+
+pdf.setFontSize(12);
+pdf.text("Data Quality", 40, statsY + 20);
+
+pdf.setFontSize(10);
+
+let qualityY = statsY + 40;
+
+const qualityLines = [
+  `Total chart periods: ${dataQualitySummary.totalPeriods}`,
+  `Valid chart periods: ${dataQualitySummary.validPeriods}`,
+  `Missing chart periods: ${dataQualitySummary.missingPeriods}`,
+  `Zero-value periods: ${dataQualitySummary.zeroValuePeriods}`,
+];
+
+for (const line of qualityLines) {
+  pdf.text(line, 40, qualityY);
+  qualityY += 16;
 }
 
 //}
