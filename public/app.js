@@ -3726,7 +3726,7 @@ const femaleBarWidth =
   (genderComparisonSummary.femaleAverage / maxAverage) * barMaxWidth;
 
 pdf.setFontSize(10);
-pdf.text("Visual comparison", barX, barY);
+pdf.text("Comparison Visualisation", barX, barY);
 
 barY += 18;
 
