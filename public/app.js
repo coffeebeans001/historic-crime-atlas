@@ -3423,6 +3423,53 @@ function buildDataQualitySummary(points) {
   };
 }
 
+function buildGenderComparisonSummary() {
+  const datasets = chart?.data?.datasets || [];
+
+  const maleDataset = datasets.find(
+    (ds) => ds.label === "Male",
+  );
+
+  const femaleDataset = datasets.find(
+    (ds) => ds.label === "Female",
+  );
+
+  if (!maleDataset || !femaleDataset) {
+    return null;
+  }
+
+  const maleStats = buildStatisticalSummary(
+  maleDataset.data.map((point, index) => ({
+    x: point.x ?? index,
+    y: Number(point.y ?? point),
+  })),
+);
+
+const femaleStats = buildStatisticalSummary(
+  femaleDataset.data.map((point, index) => ({
+    x: point.x ?? index,
+    y: Number(point.y ?? point),
+  })),
+);
+
+  if (!maleStats || !femaleStats) return null;
+
+  const difference =
+    femaleStats.average - maleStats.average;
+
+  return {
+    maleAverage: maleStats.average,
+    femaleAverage: femaleStats.average,
+    difference,
+    strongerGroup:
+      difference > 0
+        ? "Female"
+        : difference < 0
+        ? "Male"
+        : "Neither",
+  };
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -3436,6 +3483,11 @@ const points = chart?.data?.datasets?.[0]?.data || [];
 
 const statisticalSummary = buildStatisticalSummary(points);  
 const dataQualitySummary = buildDataQualitySummary(points);
+const genderComparisonSummary = buildGenderComparisonSummary();
+console.log(
+  "Gender comparison:",
+  genderComparisonSummary,
+);
 
 const insightText =
   document.getElementById("insight-text")?.textContent?.trim() ||
@@ -3480,71 +3532,9 @@ if (dateFrom && dateTo) {
 const sourceReference =
   `${offenceFilter} | ${sourceGender} | ${rangeText}`;
 
-pdf.setFontSize(12);
-pdf.text("Report Summary", 40, 500);
-
-pdf.setFontSize(10);
-
 const reportSummary = noDataVisible
   ? `This report records a no-data export for ${sourceGender.toLowerCase()} ${offenceFilter.toLowerCase()} cases within ${rangeText.toLowerCase()}. The selected Old Bailey dataset filters did not return chart data.`
   : `This report analyses conviction outcomes for ${sourceGender.toLowerCase()} ${offenceFilter.toLowerCase()} cases within ${rangeText.toLowerCase()}, using the selected Old Bailey dataset filters.`;
-// Create summaryLines FIRST
-const summaryLines = pdf.splitTextToSize(
-  reportSummary,
-  500,
-);
-
-
-const reportSummaryY = 520;
-
-
-pdf.text(summaryLines, 40, reportSummaryY);
-
-const reportSourceY =
-  reportSummaryY + summaryLines.length * 14 + 10;
-
-pdf.setFontSize(12);
-pdf.text("Statistical Summary", 40, reportSourceY + 30);
-
-pdf.setFontSize(10);
-
-let statsY = reportSourceY + 50;
-
-if (statisticalSummary) {
-  const statLines = [
-    `Average conviction rate: ${statisticalSummary.average.toFixed(1)}%`,
-    `Highest conviction rate: ${statisticalSummary.highest.toFixed(1)}%`,
-    `Lowest conviction rate: ${statisticalSummary.lowest.toFixed(1)}%`,
-    `Range: ${statisticalSummary.range.toFixed(1)} percentage points`,
-    `Years analysed: ${statisticalSummary.yearsAnalysed}`,
-  ];
-
-  for (const line of statLines) {
-    pdf.text(line, 40, statsY);
-    statsY += 16;
-  }
-}
-
-pdf.setFontSize(12);
-pdf.text("Data Quality", 40, statsY + 20);
-
-pdf.setFontSize(10);
-
-let qualityY = statsY + 40;
-
-const qualityLines = [
-  `Total chart periods: ${dataQualitySummary.totalPeriods}`,
-  `Valid chart periods: ${dataQualitySummary.validPeriods}`,
-  `Missing chart periods: ${dataQualitySummary.missingPeriods}`,
-  `Zero-value periods: ${dataQualitySummary.zeroValuePeriods}`,
-];
-
-for (const line of qualityLines) {
-  pdf.text(line, 40, qualityY);
-  qualityY += 16;
-}
-
-//}
 
  drawPdfPageHeader(pdf, "1. Findings & Visualisation", sourceReference);
 
@@ -3575,12 +3565,79 @@ pdf.text("Key finding from chart", 40, 400);
 
 pdf.setFontSize(11);
 
+// Key finding
 const findingLines = pdf.splitTextToSize(
   keyFinding,
-  500
+  500,
 );
 
 pdf.text(findingLines, 40, 420);
+
+let page1Y =
+  420 + findingLines.length * 14 + 28;
+
+// Report Summary
+pdf.setFontSize(12);
+pdf.text("Report Summary", 40, page1Y);
+
+page1Y += 20;
+
+pdf.setFontSize(10);
+
+const summaryLines = pdf.splitTextToSize(
+  reportSummary,
+  500,
+);
+
+pdf.text(summaryLines, 40, page1Y);
+
+page1Y += summaryLines.length * 14 + 24;
+
+// Statistical Summary
+pdf.setFontSize(12);
+pdf.text("Statistical Summary", 40, page1Y);
+
+page1Y += 20;
+
+pdf.setFontSize(10);
+
+if (statisticalSummary) {
+  const statLines = [
+    `Average conviction rate: ${statisticalSummary.average.toFixed(1)}%`,
+    `Highest conviction rate: ${statisticalSummary.highest.toFixed(1)}%`,
+    `Lowest conviction rate: ${statisticalSummary.lowest.toFixed(1)}%`,
+    `Range: ${statisticalSummary.range.toFixed(1)} percentage points`,
+    `Years analysed: ${statisticalSummary.yearsAnalysed}`,
+  ];
+
+  for (const line of statLines) {
+    pdf.text(line, 40, page1Y);
+    page1Y += 16;
+  }
+}
+
+page1Y += 20;
+
+// Data Quality
+pdf.setFontSize(12);
+pdf.text("Data Quality", 40, page1Y);
+
+page1Y += 20;
+
+pdf.setFontSize(10);
+
+const qualityLines = [
+  `Total chart periods: ${dataQualitySummary.totalPeriods}`,
+  `Valid chart periods: ${dataQualitySummary.validPeriods}`,
+  `Missing chart periods: ${dataQualitySummary.missingPeriods}`,
+  `Zero-value periods: ${dataQualitySummary.zeroValuePeriods}`,
+];
+
+for (const line of qualityLines) {
+  pdf.text(line, 40, page1Y);
+  page1Y += 16;
+} 
+
 
 pdf.setFontSize(9);
 
