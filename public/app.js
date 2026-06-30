@@ -3470,6 +3470,34 @@ const femaleStats = buildStatisticalSummary(
   };
 }
 
+function buildTrendInterpretation(statisticalSummary) {
+  if (!statisticalSummary) return null;
+
+  const range = statisticalSummary.range;
+
+  if (range < 10) {
+    return {
+      trend: "Stable",
+      interpretation:
+        "Conviction rates remained relatively consistent throughout the selected period.",
+    };
+  }
+
+  if (range < 25) {
+    return {
+      trend: "Moderate variation",
+      interpretation:
+        "Conviction rates fluctuated moderately across the selected period.",
+    };
+  }
+
+  return {
+    trend: "High variation",
+    interpretation:
+      "Conviction rates varied considerably during the selected period, suggesting notable changes over time.",
+    };
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -3484,6 +3512,7 @@ const points = chart?.data?.datasets?.[0]?.data || [];
 const statisticalSummary = buildStatisticalSummary(points);  
 const dataQualitySummary = buildDataQualitySummary(points);
 const genderComparisonSummary = buildGenderComparisonSummary();
+const trendInterpretation = buildTrendInterpretation(statisticalSummary);
 
 const insightText =
   document.getElementById("insight-text")?.textContent?.trim() ||
@@ -3681,6 +3710,8 @@ for (const [title, items] of pdfSummarySections) {
   y += 10;
 }
 
+let summarySectionNumber = 4;
+
 if (genderComparisonSummary) {
   y = ensurePdfPageSpace(
     pdf,
@@ -3691,7 +3722,13 @@ if (genderComparisonSummary) {
   );
 
   pdf.setFontSize(13);
-  pdf.text("2.4 Gender Comparison", 40, y);
+  pdf.text(
+    `2.${summarySectionNumber} Gender Comparison`,
+    40,
+    y,
+  );
+
+  summarySectionNumber++;
 
   y += 20;
 
@@ -3751,6 +3788,46 @@ pdf.text(
 y = barY + 24;  
 
   y += 10;
+}
+
+if (trendInterpretation) {
+  y = ensurePdfPageSpace(
+    pdf,
+    y,
+    90,
+    "2. Summary",
+    sourceReference,
+  );
+
+  pdf.setFontSize(13);
+  pdf.text(
+  `2.${summarySectionNumber} Trend Interpretation`,
+  40,
+  y,
+);
+
+summarySectionNumber++;
+
+  y += 20;
+
+  pdf.setFontSize(11);
+
+  pdf.text(
+    `Overall trend: ${trendInterpretation.trend}`,
+    50,
+    y,
+  );
+
+  y += 20;
+
+  const trendLines = pdf.splitTextToSize(
+    trendInterpretation.interpretation,
+    500,
+  );
+
+  pdf.text(trendLines, 50, y);
+
+  y += trendLines.length * 14 + 12;
 }
 
 pdf.addPage();
