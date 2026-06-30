@@ -3709,6 +3709,47 @@ if (genderComparisonSummary) {
     y += 16;
   }
 
+const barX = 50;
+let barY = y + 10;
+const barMaxWidth = 220;
+const barHeight = 12;
+
+const maxAverage = Math.max(
+  genderComparisonSummary.maleAverage,
+  genderComparisonSummary.femaleAverage,
+);
+
+const maleBarWidth =
+  (genderComparisonSummary.maleAverage / maxAverage) * barMaxWidth;
+
+const femaleBarWidth =
+  (genderComparisonSummary.femaleAverage / maxAverage) * barMaxWidth;
+
+pdf.setFontSize(10);
+pdf.text("Visual comparison", barX, barY);
+
+barY += 18;
+
+pdf.text("Male", barX, barY);
+pdf.rect(barX + 60, barY - 9, maleBarWidth, barHeight, "F");
+pdf.text(
+  `${genderComparisonSummary.maleAverage.toFixed(1)}%`,
+  barX + 70 + maleBarWidth,
+  barY,
+);
+
+barY += 22;
+
+pdf.text("Female", barX, barY);
+pdf.rect(barX + 60, barY - 9, femaleBarWidth, barHeight, "F");
+pdf.text(
+  `${genderComparisonSummary.femaleAverage.toFixed(1)}%`,
+  barX + 70 + femaleBarWidth,
+  barY,
+);
+
+y = barY + 24;  
+
   y += 10;
 }
 
