@@ -1171,8 +1171,11 @@ function generateInsight(seriesArr) {
     return "No data available for the selected filters.";
   }
 
+  const statisticalSummary =
+  buildStatisticalSummary(points);
+
   const values = points.map((p) => p.y);
-  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  const avg = statisticalSummary.average;
 
   const minPoint = points.reduce((a, b) => (a.y < b.y ? a : b));
   const maxPoint = points.reduce((a, b) => (a.y > b.y ? a : b));
@@ -3377,6 +3380,28 @@ function ensurePdfPageSpace(
   );
 }
 
+function buildStatisticalSummary(points) {
+  if (!points?.length) {
+    return null;
+  }
+
+  const values = points.map((p) => p.y);
+
+  const average =
+    values.reduce((a, b) => a + b, 0) / values.length;
+
+  const highest = Math.max(...values);
+  const lowest = Math.min(...values);
+
+  return {
+    average,
+    highest,
+    lowest,
+    range: highest - lowest,
+    yearsAnalysed: values.length,
+  };
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -3385,6 +3410,10 @@ async function downloadResearchSnapshotPdf() {
     unit: "pt",
     format: "a4",
   });
+
+const points = chart?.data?.datasets?.[0]?.data || [];  
+
+const statisticalSummary = buildStatisticalSummary(points);  
 
 const insightText =
   document.getElementById("insight-text")?.textContent?.trim() ||
@@ -3401,7 +3430,7 @@ const noDataVisible =
 
 const keyFinding = noDataVisible
   ? "No chart data is available for the selected filters."
-  : firstSentence.replace(/^Interpretive summary:\s*/i, "");
+  : `Across the selected period, the average conviction rate is ${statisticalSummary.average.toFixed(1)}%.`;
 
 const offenceFilter =
   document.getElementById("group")?.value?.trim() || "All offences";
@@ -3443,14 +3472,42 @@ const summaryLines = pdf.splitTextToSize(
   500,
 );
 
+
 const reportSummaryY = 520;
+
 
 pdf.text(summaryLines, 40, reportSummaryY);
 
 const reportSourceY =
   reportSummaryY + summaryLines.length * 14 + 10;
 
+
+
 pdf.setFontSize(9);
+
+pdf.setFontSize(12);
+pdf.text("Statistical Summary", 40, reportSourceY + 30);
+
+pdf.setFontSize(10);
+
+let statsY = reportSourceY + 50;
+
+if (statisticalSummary) {
+  const statLines = [
+    `Average conviction rate: ${statisticalSummary.average.toFixed(1)}%`,
+    `Highest conviction rate: ${statisticalSummary.highest.toFixed(1)}%`,
+    `Lowest conviction rate: ${statisticalSummary.lowest.toFixed(1)}%`,
+    `Range: ${statisticalSummary.range.toFixed(1)} percentage points`,
+    `Years analysed: ${statisticalSummary.yearsAnalysed}`,
+  ];
+
+  for (const line of statLines) {
+    pdf.text(line, 40, statsY);
+    statsY += 16;
+  }
+}
+
+//}
 
  drawPdfPageHeader(pdf, "1. Findings & Visualisation", sourceReference);
 
