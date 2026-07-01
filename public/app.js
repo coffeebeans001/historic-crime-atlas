@@ -3516,8 +3516,8 @@ const stateId = btoa(currentUrl)
   .replace(/[^a-zA-Z0-9]/g, "")
   .slice(0, 8);
 
-const researchId = `${stateId}-${pdfExportCount}`;
-
+const pdfResearchId =
+  `${stateId}-PDF-${String(pdfExportCount).padStart(4, "0")}`;
 
 const insightText =
   document.getElementById("insight-text")?.textContent?.trim() ||
@@ -3687,7 +3687,7 @@ const pdfTrackingSummary = trackingSummary.map((line) => {
   }
 
   if (line.startsWith("Research ID:")) {
-    return `Research ID: ${researchId}`;
+    return `Research ID: ${pdfResearchId}`;
   }
 
   return line;
@@ -3884,7 +3884,7 @@ const generationTime =
 const metadataLines = [
   `Snapshot revision: ${APP_VERSION}`,
   `State ID: ${stateId}`,
-  `Research ID: ${researchId}`,
+  `Research ID: ${pdfResearchId}`,
   `Export reference: #${pdfExportCount}`,
   ...(generationTime
     ? [`Generation time: ${generationTime}s`]
@@ -3925,9 +3925,9 @@ const { file: exportFileTime } = getExportDateTime();
 
 const safePdfName = [
   "old-bailey-research-snapshot",
-  offenceFilter,
-  sourceGender,
-  rangeText,
+  "pdf",
+  `export-${String(pdfExportCount).padStart(4, "0")}`,
+  stateId,
   exportFileTime,
 ]
   .join("-")
