@@ -2532,6 +2532,8 @@ async function downloadResearchSnapshot() {
   const start = performance.now();
   validateSnapshotExportReadiness();
 
+  const exportCount = getNextSnapshotExportCount();
+
   const chartTitle =
     chart.options?.plugins?.title?.text?.toString().trim() ||
     "research-snapshot";
@@ -2590,13 +2592,13 @@ async function downloadResearchSnapshot() {
       .slice(0, 8);
 
 
-  const exportCount =
-     Number(localStorage.getItem("snapshotExportCount") || 0) + 1;
+  //const exportCount =
+     //Number(localStorage.getItem("snapshotExportCount") || 0) + 1;
 
-  localStorage.setItem(
-    "snapshotExportCount",
-    exportCount, 
-  );
+  //localStorage.setItem(
+    //"snapshotExportCount",
+    //exportCount, 
+  //);
   updateExportCountStatus();
   updateSessionStatus();
   updateResearchIdStatus();
@@ -3514,6 +3516,15 @@ const dataQualitySummary = buildDataQualitySummary(points);
 const genderComparisonSummary = buildGenderComparisonSummary();
 const trendInterpretation = buildTrendInterpretation(statisticalSummary);
 
+const exportCount = getNextPdfExportCount();
+//const exportCount =
+  //Number(localStorage.getItem("snapshotExportCount") || "0") + 1;
+
+//localStorage.setItem(
+  //"snapshotExportCount",
+  //String(exportCount),
+//);
+
 const insightText =
   document.getElementById("insight-text")?.textContent?.trim() ||
   "No insight available.";
@@ -3867,9 +3878,6 @@ const stateId = btoa(currentUrl)
   .replace(/[^a-zA-Z0-9]/g, "")
   .slice(0, 8);
 
-const exportCount =
-  localStorage.getItem("snapshotExportCount") || "0";
-
 const researchId = `${stateId}-${exportCount}`;
 
 const generationTime =
@@ -3934,6 +3942,30 @@ pdf.save(`${safePdfName}.pdf`);
 console.info(
   `PDF exported: ${safePdfName}.pdf`,
 );
+}
+
+function getNextSnapshotExportCount() {
+  const nextCount =
+    Number(localStorage.getItem("snapshotExportCount") || "0") + 1;
+
+  localStorage.setItem(
+    "snapshotExportCount",
+    String(nextCount),
+  );
+
+  return nextCount;
+}
+
+function getNextPdfExportCount() {
+  const nextCount =
+    Number(localStorage.getItem("pdfExportCount") || "0") + 1;
+
+  localStorage.setItem(
+    "pdfExportCount",
+    String(nextCount),
+  );
+
+  return nextCount;
 }
 
 async function render() {
