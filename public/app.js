@@ -3339,7 +3339,7 @@ function drawPdfPageFooter(pdf, pageNumber, pageCount) {
 
 function drawPdfPageHeader(pdf, pageTitle, sourceReference = "") {
   pdf.setFontSize(16);
-  pdf.text("Old Bailey Research Snapshot", 40, 35);
+  pdf.text("Old Bailey Research Report", 40, 35);
 
   pdf.setFontSize(10);
   pdf.text(`Page — ${pageTitle}`, 40, 52);
@@ -3570,7 +3570,7 @@ const reportSummary = noDataVisible
 
 pdf.setFontSize(12);
 pdf.text(
-  "Historic criminal case insight export",
+  "Historic Criminal Case Analytics",
   40,
   85,
 );
@@ -3883,6 +3883,7 @@ const generationTime =
 
 const metadataLines = [
   `Snapshot revision: ${APP_VERSION}`,
+  `Export type: Multi-page PDF report`,
   `State ID: ${stateId}`,
   `Research ID: ${pdfResearchId}`,
   `Export reference: #${pdfExportCount}`,
@@ -3924,8 +3925,8 @@ for (let i = 1; i <= pageCount; i++) {
 const { file: exportFileTime } = getExportDateTime();
 
 const safePdfName = [
-  "old-bailey-research-snapshot",
-  "pdf",
+  "old-bailey-research-report",
+  //"pdf",
   `export-${String(pdfExportCount).padStart(4, "0")}`,
   stateId,
   exportFileTime,
