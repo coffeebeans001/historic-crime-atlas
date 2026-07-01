@@ -2532,7 +2532,8 @@ async function downloadResearchSnapshot() {
   const start = performance.now();
   validateSnapshotExportReadiness();
 
-  const exportCount = getNextSnapshotExportCount();
+  //const exportCount = getNextSnapshotExportCount();
+  const snapshotExportCount = getNextSnapshotExportCount();
 
   const chartTitle =
     chart.options?.plugins?.title?.text?.toString().trim() ||
@@ -2591,20 +2592,13 @@ async function downloadResearchSnapshot() {
       .replace(/[^a-zA-Z0-9]/g, "")
       .slice(0, 8);
 
-
-  //const exportCount =
-     //Number(localStorage.getItem("snapshotExportCount") || 0) + 1;
-
-  //localStorage.setItem(
-    //"snapshotExportCount",
-    //exportCount, 
-  //);
   updateExportCountStatus();
   updateSessionStatus();
   updateResearchIdStatus();
   updateLastExportStatus();
 
-  const researchId = `${stateId}-${exportCount}`;  
+  //const researchId = `${stateId}-${exportCount}`;
+  const researchId = `${stateId}-${snapshotExportCount}`;  
 
   const exportTime = new Date().toLocaleTimeString([], {
     hour: "2-digit",
@@ -3515,15 +3509,15 @@ const statisticalSummary = buildStatisticalSummary(points);
 const dataQualitySummary = buildDataQualitySummary(points);
 const genderComparisonSummary = buildGenderComparisonSummary();
 const trendInterpretation = buildTrendInterpretation(statisticalSummary);
+const pdfExportCount = getNextPdfExportCount();
+const currentUrl = window.location.href;
 
-const exportCount = getNextPdfExportCount();
-//const exportCount =
-  //Number(localStorage.getItem("snapshotExportCount") || "0") + 1;
+const stateId = btoa(currentUrl)
+  .replace(/[^a-zA-Z0-9]/g, "")
+  .slice(0, 8);
 
-//localStorage.setItem(
-  //"snapshotExportCount",
-  //String(exportCount),
-//);
+const researchId = `${stateId}-${pdfExportCount}`;
+
 
 const insightText =
   document.getElementById("insight-text")?.textContent?.trim() ||
@@ -3687,10 +3681,22 @@ const {
   trackingSummary,
 } = buildSnapshotSummary();
 
+const pdfTrackingSummary = trackingSummary.map((line) => {
+  if (line.startsWith("Export reference:")) {
+    return `Export reference: #${pdfExportCount}`;
+  }
+
+  if (line.startsWith("Research ID:")) {
+    return `Research ID: ${researchId}`;
+  }
+
+  return line;
+});
+
 const pdfSummarySections = [
   ["2.1 Analysis", analysisSummary],
   ["2.2 Evidence", evidenceSummary],
-  ["2.3 Tracking", trackingSummary],
+  ["2.3 Tracking", pdfTrackingSummary],
 ];
 
 for (const [title, items] of pdfSummarySections) {
@@ -3872,14 +3878,6 @@ pdf.addPage();
 
 let metaY = drawPdfPageHeader(pdf, "4. Metadata & Provenance", sourceReference);
 
-const currentUrl = window.location.href;
-
-const stateId = btoa(currentUrl)
-  .replace(/[^a-zA-Z0-9]/g, "")
-  .slice(0, 8);
-
-const researchId = `${stateId}-${exportCount}`;
-
 const generationTime =
   localStorage.getItem("lastSnapshotGenerationTime");
 
@@ -3887,7 +3885,7 @@ const metadataLines = [
   `Snapshot revision: ${APP_VERSION}`,
   `State ID: ${stateId}`,
   `Research ID: ${researchId}`,
-  `Export reference: #${exportCount}`,
+  `Export reference: #${pdfExportCount}`,
   ...(generationTime
     ? [`Generation time: ${generationTime}s`]
     : []),
@@ -5096,6 +5094,8 @@ const resetExportCountBtn =
 
 resetExportCountBtn?.addEventListener("click", () => {
   localStorage.setItem("snapshotExportCount", "0");
+  localStorage.setItem("pdfExportCount", "0");
+
   localStorage.removeItem("lastSnapshotExportTime");
 
   updateExportCountStatus();
