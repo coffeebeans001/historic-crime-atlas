@@ -3926,7 +3926,6 @@ const { file: exportFileTime } = getExportDateTime();
 
 const safePdfName = [
   "old-bailey-research-report",
-  //"pdf",
   `export-${String(pdfExportCount).padStart(4, "0")}`,
   stateId,
   exportFileTime,
