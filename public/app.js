@@ -3370,10 +3370,10 @@ function ensurePdfPageSpace(
   pdf.addPage();
 
   return drawPdfPageHeader(
-    pdf,
-    pageTitle,
-    sourceReference,
-  );
+  pdf,
+  `${pageTitle} continued`,
+  sourceReference,
+);
 }
 
 function buildStatisticalSummary(points) {
@@ -3503,7 +3503,10 @@ async function downloadResearchSnapshotPdf() {
     format: "a4",
   });
 
-const points = chart?.data?.datasets?.[0]?.data || [];  
+const points = chart?.data?.datasets?.[0]?.data || []; 
+
+const historicalInsights = buildHistoricalInsights(points);  
+console.log("Historical insights:", historicalInsights);
 
 const statisticalSummary = buildStatisticalSummary(points);  
 const dataQualitySummary = buildDataQualitySummary(points);
@@ -3763,46 +3766,7 @@ if (genderComparisonSummary) {
     y += 16;
   }
 
-const barX = 50;
-let barY = y + 10;
-const barMaxWidth = 220;
-const barHeight = 12;
-
-const maxAverage = Math.max(
-  genderComparisonSummary.maleAverage,
-  genderComparisonSummary.femaleAverage,
-);
-
-const maleBarWidth =
-  (genderComparisonSummary.maleAverage / maxAverage) * barMaxWidth;
-
-const femaleBarWidth =
-  (genderComparisonSummary.femaleAverage / maxAverage) * barMaxWidth;
-
-pdf.setFontSize(10);
-pdf.text("Comparison Visualisation", barX, barY);
-
-barY += 18;
-
-pdf.text("Male", barX, barY);
-pdf.rect(barX + 60, barY - 9, maleBarWidth, barHeight, "F");
-pdf.text(
-  `${genderComparisonSummary.maleAverage.toFixed(1)}%`,
-  barX + 70 + maleBarWidth,
-  barY,
-);
-
-barY += 22;
-
-pdf.text("Female", barX, barY);
-pdf.rect(barX + 60, barY - 9, femaleBarWidth, barHeight, "F");
-pdf.text(
-  `${genderComparisonSummary.femaleAverage.toFixed(1)}%`,
-  barX + 70 + femaleBarWidth,
-  barY,
-);
-
-y = barY + 24;  
+  
 
   y += 10;
 }
@@ -3846,6 +3810,77 @@ summarySectionNumber++;
 
   y += trendLines.length * 14 + 12;
 }
+
+if (historicalInsights) {
+  y = ensurePdfPageSpace(
+    pdf,
+    y,
+    100,
+    "2. Summary",
+    sourceReference,
+  );
+
+  pdf.setFontSize(13);
+  pdf.text("Historical Insights", 40, y);
+
+  y += 20;
+
+  pdf.setFontSize(11);
+
+  const insightLines = [
+    `Highest observed rate: ${historicalInsights.highestPoint.y.toFixed(1)}% in ${historicalInsights.highestPoint.x}`,
+    `Lowest observed rate: ${historicalInsights.lowestPoint.y.toFixed(1)}% in ${historicalInsights.lowestPoint.x}`,
+    `Largest period change: ${historicalInsights.largestChange.change.toFixed(1)} percentage points from ${historicalInsights.largestChange.from} to ${historicalInsights.largestChange.to}`,
+  ];
+
+  for (const line of insightLines) {
+    pdf.text(line, 50, y);
+    y += 16;
+  }
+
+  y += 10;
+}
+
+const barX = 50;
+let barY = y + 10;
+const barMaxWidth = 220;
+const barHeight = 12;
+
+const maxAverage = Math.max(
+  genderComparisonSummary.maleAverage,
+  genderComparisonSummary.femaleAverage,
+);
+
+const maleBarWidth =
+  (genderComparisonSummary.maleAverage / maxAverage) * barMaxWidth;
+
+const femaleBarWidth =
+  (genderComparisonSummary.femaleAverage / maxAverage) * barMaxWidth;
+
+pdf.setFontSize(10);
+pdf.text("Comparison Visualisation", barX, barY);
+
+barY += 18;
+
+pdf.text("Male", barX, barY);
+pdf.rect(barX + 60, barY - 9, maleBarWidth, barHeight, "F");
+pdf.text(
+  `${genderComparisonSummary.maleAverage.toFixed(1)}%`,
+  barX + 70 + maleBarWidth,
+  barY,
+);
+
+barY += 22;
+
+pdf.text("Female", barX, barY);
+pdf.rect(barX + 60, barY - 9, femaleBarWidth, barHeight, "F");
+pdf.text(
+  `${genderComparisonSummary.femaleAverage.toFixed(1)}%`,
+  barX + 70 + femaleBarWidth,
+  barY,
+);
+
+y = barY + 24;
 
 pdf.addPage();
 
@@ -3964,6 +3999,53 @@ function getNextPdfExportCount() {
   );
 
   return nextCount;
+}
+
+function buildHistoricalInsights(points) {
+  if (!points?.length) return null;
+
+  const cleanPoints = points
+    .map((point, index) => ({
+      x: point.x ?? index,
+      y: Number(point.y ?? point),
+    }))
+    .filter((point) => Number.isFinite(point.y));
+
+  if (cleanPoints.length === 0) return null;
+
+  const highestPoint = cleanPoints.reduce((a, b) =>
+    a.y > b.y ? a : b
+  );
+
+  const lowestPoint = cleanPoints.reduce((a, b) =>
+    a.y < b.y ? a : b
+  );
+
+  let largestChange = null;
+
+  for (let i = 1; i < cleanPoints.length; i++) {
+    const previous = cleanPoints[i - 1];
+    const current = cleanPoints[i];
+
+    const change = current.y - previous.y;
+
+    if (
+      !largestChange ||
+      Math.abs(change) > Math.abs(largestChange.change)
+    ) {
+      largestChange = {
+        from: previous.x,
+        to: current.x,
+        change,
+      };
+    }
+  }
+
+  return {
+    highestPoint,
+    lowestPoint,
+    largestChange,
+  };
 }
 
 async function render() {
