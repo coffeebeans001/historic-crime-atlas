@@ -3599,7 +3599,43 @@ function drawChip(pdf, text, x, y, fillColor) {
   return width;
 }
 
+function drawSectionCallout(pdf, title, y) {
+  const x = 35;
+  const width = 525;
+  const height = 28;
 
+  // Light blue background
+  pdf.setFillColor(235, 244, 255);
+
+  // Blue border
+  pdf.setDrawColor(64, 114, 203);
+
+  pdf.roundedRect(
+    x,
+    y - 18,
+    width,
+    height,
+    5,
+    5,
+    "FD",
+  );
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(13);
+  pdf.setTextColor(35, 65, 120);
+
+  pdf.text(
+    title,
+    x + 12,
+    y,
+  );
+
+  // Restore defaults
+  pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(0, 0, 0);
+
+  return y + 24;
+}
 
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
@@ -3884,16 +3920,13 @@ if (genderComparisonSummary) {
     sourceReference,
   );
 
-  pdf.setFontSize(13);
-  pdf.text(
-    `2.${summarySectionNumber} Gender Comparison`,
-    40,
-    y,
-  );
+  y = drawSectionCallout(
+  pdf,
+  `2.${summarySectionNumber} Gender Comparison`,
+  y,
+);
 
-  summarySectionNumber++;
-
-  y += 20;
+summarySectionNumber++;
 
   pdf.setFontSize(11);
 
@@ -3965,16 +3998,13 @@ if (historicalInsights) {
     sourceReference,
   );
 
-  pdf.setFontSize(13);
-  pdf.text(
-    `2.${summarySectionNumber} Historical Insights`,
-    40,
-    y,
-  );
+  y = drawSectionCallout(
+  pdf,
+  `2.${summarySectionNumber} Historical Insights`,
+  y,
+);
 
 summarySectionNumber++;
-
-  y += 20;
 
   pdf.setFontSize(11);
 
@@ -4001,10 +4031,9 @@ if (trendInterpretation) {
     sourceReference,
   );
 
-  pdf.setFontSize(13);
-  pdf.text(
+  y = drawSectionCallout(
+  pdf,
   `2.${summarySectionNumber} Trend Interpretation`,
-  40,
   y,
 );
 
