@@ -3602,13 +3602,13 @@ function drawChip(pdf, text, x, y, fillColor) {
 function drawSectionCallout(pdf, title, y) {
   const x = 35;
   const width = 525;
-  const height = 28;
+  const height = 32;
 
-  // Light blue background
-  pdf.setFillColor(235, 244, 255);
+  // Background
+  pdf.setFillColor(248, 250, 252);
 
-  // Blue border
-  pdf.setDrawColor(64, 114, 203);
+  // Border
+  pdf.setDrawColor(210, 220, 235);
 
   pdf.roundedRect(
     x,
@@ -3617,24 +3617,38 @@ function drawSectionCallout(pdf, title, y) {
     height,
     5,
     5,
-    "FD",
+    "FD"
   );
 
+  // Left accent bar
+  pdf.setFillColor(38, 90, 165);
+
+  pdf.roundedRect(
+    x,
+    y - 18,
+    6,
+    height,
+    5,
+    5,
+    "F"
+  );
+
+  // Title
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(13);
-  pdf.setTextColor(35, 65, 120);
+  pdf.setTextColor(38, 90, 165);
 
   pdf.text(
     title,
-    x + 12,
-    y,
+    x + 18,
+    y
   );
 
   // Restore defaults
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(0, 0, 0);
 
-  return y + 24;
+  return y + 26;
 }
 
 async function downloadResearchSnapshotPdf() {
