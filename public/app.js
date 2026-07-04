@@ -3815,7 +3815,6 @@ for (const line of qualityLines) {
   page1Y += 16;
 } 
 
-
 pdf.setFontSize(9);
 
 pdf.addPage();
