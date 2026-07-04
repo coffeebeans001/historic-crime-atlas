@@ -3678,6 +3678,30 @@ function drawPdfFooter(pdf, pageNumber, totalPages, exportDateTime) {
   pdf.setTextColor(0, 0, 0);
 }
 
+function drawNoDataCallout(pdf, message, y) {
+  pdf.setFillColor(255, 248, 230);
+  pdf.setDrawColor(230, 180, 80);
+
+  pdf.roundedRect(35, y, 525, 70, 6, 6, "FD");
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(12);
+  pdf.setTextColor(130, 85, 20);
+
+  pdf.text("No chart data available", 50, y + 24);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+  pdf.setTextColor(90, 70, 40);
+
+  const lines = pdf.splitTextToSize(message, 480);
+  pdf.text(lines, 50, y + 44);
+
+  pdf.setTextColor(0, 0, 0);
+
+  return y + 90;
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -3801,19 +3825,23 @@ pdf.text(
 
   const chartCanvas = document.getElementById("chart");
 
-if (chartCanvas) {
+if (chartCanvas && !noDataVisible) {
   const chartImage = chartCanvas.toDataURL("image/png", 1.0);
 
-
- pdf.addImage(
-  chartImage,
-  "PNG",
-  40,
-  120,
-  515,
-  260,
-);
-
+  pdf.addImage(
+    chartImage,
+    "PNG",
+    40,
+    120,
+    515,
+    260,
+  );
+} else {
+  y = drawNoDataCallout(
+    pdf,
+    "The selected filters did not return enough data to generate a conviction trend chart.",
+    y,
+  );
 }
 
 pdf.setFontSize(14);
