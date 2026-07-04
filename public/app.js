@@ -3494,6 +3494,113 @@ function buildTrendInterpretation(statisticalSummary) {
     };
 }
 
+function getNextSnapshotExportCount() {
+  const nextCount =
+    Number(localStorage.getItem("snapshotExportCount") || "0") + 1;
+
+  localStorage.setItem(
+    "snapshotExportCount",
+    String(nextCount),
+  );
+
+  return nextCount;
+}
+
+function getNextPdfExportCount() {
+  const nextCount =
+    Number(localStorage.getItem("pdfExportCount") || "0") + 1;
+
+  localStorage.setItem(
+    "pdfExportCount",
+    String(nextCount),
+  );
+
+  return nextCount;
+}
+
+function buildHistoricalInsights(points) {
+  if (!points?.length) return null;
+
+  const cleanPoints = points
+    .map((point, index) => ({
+      x: point.x ?? index,
+      y: Number(point.y ?? point),
+    }))
+    .filter((point) => Number.isFinite(point.y));
+
+  if (cleanPoints.length === 0) return null;
+
+  const highestPoint = cleanPoints.reduce((a, b) =>
+    a.y > b.y ? a : b
+  );
+
+  const lowestPoint = cleanPoints.reduce((a, b) =>
+    a.y < b.y ? a : b
+  );
+
+  let largestChange = null;
+
+  for (let i = 1; i < cleanPoints.length; i++) {
+    const previous = cleanPoints[i - 1];
+    const current = cleanPoints[i];
+
+    const change = current.y - previous.y;
+
+    if (
+      !largestChange ||
+      Math.abs(change) > Math.abs(largestChange.change)
+    ) {
+      largestChange = {
+        from: previous.x,
+        to: current.x,
+        change,
+      };
+    }
+  }
+
+  return {
+    highestPoint,
+    lowestPoint,
+    largestChange,
+  };
+}
+
+function drawChip(pdf, text, x, y, fillColor) {
+  pdf.setFillColor(...fillColor);
+  pdf.setDrawColor(...fillColor);
+
+  const paddingX = 8;
+  const paddingY = 5;
+
+  const width = pdf.getTextWidth(text) + paddingX * 2;
+  const height = 18;
+
+  pdf.roundedRect(
+    x,
+    y,
+    width,
+    height,
+    4,
+    4,
+    "F"
+  );
+
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(10);
+
+  pdf.text(
+    text,
+    x + paddingX,
+    y + 12
+  );
+
+  pdf.setTextColor(0, 0, 0);
+
+  return width;
+}
+
+
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -3502,6 +3609,11 @@ async function downloadResearchSnapshotPdf() {
     unit: "pt",
     format: "a4",
   });
+
+// Chip colours  
+const offenceChipColour = [32, 76, 151];   // Blue
+const genderChipColour = [106, 76, 147];   // Purple
+const rangeChipColour = [40, 167, 69];     // Green  
 
 const points = chart?.data?.datasets?.[0]?.data || []; 
 
@@ -3550,6 +3662,7 @@ const sourceGender =
 const dateFrom = document.getElementById("from")?.value;
 const dateTo = document.getElementById("to")?.value;
 
+
 let rangeText = "Full dataset";
 
 if (dateFrom && dateTo) {
@@ -3562,19 +3675,51 @@ if (dateFrom && dateTo) {
 }
 
 const sourceReference =
-  `${offenceFilter} | ${sourceGender} | ${rangeText}`;
+  `${offenceFilter} | ${sourceGender} | ${rangeText}`; 
 
 const reportSummary = noDataVisible
   ? `This report records a no-data export for ${sourceGender.toLowerCase()} ${offenceFilter.toLowerCase()} cases within ${rangeText.toLowerCase()}. The selected Old Bailey dataset filters did not return chart data.`
   : `This report analyses conviction outcomes for ${sourceGender.toLowerCase()} ${offenceFilter.toLowerCase()} cases within ${rangeText.toLowerCase()}, using the selected Old Bailey dataset filters.`;
 
- drawPdfPageHeader(pdf, "1. Findings & Visualisation", sourceReference);
+drawPdfPageHeader(pdf, "1. Findings & Visualisation", sourceReference);
+
+let y = 115;
+
+// Chip row for PDF header
+const chipY = y;
+let chipX = 40;
+
+chipX += drawChip(
+  pdf,
+  offenceFilter,
+  chipX,
+  chipY,
+  offenceChipColour,
+) + 8;
+
+chipX += drawChip(
+  pdf,
+  sourceGender,
+  chipX,
+  chipY,
+  genderChipColour,
+) + 8;
+
+drawChip(
+  pdf,
+  rangeText,
+  chipX,
+  chipY,
+  rangeChipColour,
+);
+
+y += 32;
 
 pdf.setFontSize(12);
 pdf.text(
   "Historic Criminal Case Analytics",
   40,
-  85,
+  y,
 );
 
   const chartCanvas = document.getElementById("chart");
@@ -3675,7 +3820,7 @@ pdf.setFontSize(9);
 
 pdf.addPage();
 
-let y = drawPdfPageHeader(pdf, "2. Summary", sourceReference);
+y = drawPdfPageHeader(pdf, "2. Summary", sourceReference);
 
 const {
   analysisSummary,
@@ -3981,77 +4126,6 @@ pdf.save(`${safePdfName}.pdf`);
 console.info(
   `PDF exported: ${safePdfName}.pdf`,
 );
-}
-
-function getNextSnapshotExportCount() {
-  const nextCount =
-    Number(localStorage.getItem("snapshotExportCount") || "0") + 1;
-
-  localStorage.setItem(
-    "snapshotExportCount",
-    String(nextCount),
-  );
-
-  return nextCount;
-}
-
-function getNextPdfExportCount() {
-  const nextCount =
-    Number(localStorage.getItem("pdfExportCount") || "0") + 1;
-
-  localStorage.setItem(
-    "pdfExportCount",
-    String(nextCount),
-  );
-
-  return nextCount;
-}
-
-function buildHistoricalInsights(points) {
-  if (!points?.length) return null;
-
-  const cleanPoints = points
-    .map((point, index) => ({
-      x: point.x ?? index,
-      y: Number(point.y ?? point),
-    }))
-    .filter((point) => Number.isFinite(point.y));
-
-  if (cleanPoints.length === 0) return null;
-
-  const highestPoint = cleanPoints.reduce((a, b) =>
-    a.y > b.y ? a : b
-  );
-
-  const lowestPoint = cleanPoints.reduce((a, b) =>
-    a.y < b.y ? a : b
-  );
-
-  let largestChange = null;
-
-  for (let i = 1; i < cleanPoints.length; i++) {
-    const previous = cleanPoints[i - 1];
-    const current = cleanPoints[i];
-
-    const change = current.y - previous.y;
-
-    if (
-      !largestChange ||
-      Math.abs(change) > Math.abs(largestChange.change)
-    ) {
-      largestChange = {
-        from: previous.x,
-        to: current.x,
-        change,
-      };
-    }
-  }
-
-  return {
-    highestPoint,
-    lowestPoint,
-    largestChange,
-  };
 }
 
 async function render() {
