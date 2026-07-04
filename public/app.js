@@ -3506,7 +3506,6 @@ async function downloadResearchSnapshotPdf() {
 const points = chart?.data?.datasets?.[0]?.data || []; 
 
 const historicalInsights = buildHistoricalInsights(points);  
-console.log("Historical insights:", historicalInsights);
 
 const statisticalSummary = buildStatisticalSummary(points);  
 const dataQualitySummary = buildDataQualitySummary(points);
@@ -3736,7 +3735,7 @@ if (genderComparisonSummary) {
   y = ensurePdfPageSpace(
     pdf,
     y,
-    120,
+    130,
     "2. Summary",
     sourceReference,
   );
@@ -3766,7 +3765,85 @@ if (genderComparisonSummary) {
     y += 16;
   }
 
+  y += 10;
+
+  const barX = 50;
+  let barY = y + 10;
+  const barMaxWidth = 220;
+  const barHeight = 12;
+
+  const maxAverage = Math.max(
+    genderComparisonSummary.maleAverage,
+    genderComparisonSummary.femaleAverage,
+  );
+
+  const maleBarWidth =
+    (genderComparisonSummary.maleAverage / maxAverage) * barMaxWidth;
+
+  const femaleBarWidth =
+    (genderComparisonSummary.femaleAverage / maxAverage) * barMaxWidth;
+
+  pdf.setFontSize(10);
+  pdf.text("Comparison Visualisation", barX, barY);
+
+  barY += 18;
+
+  pdf.text("Male", barX, barY);
+
+  // keep the rest of your male/female bar drawing code here
+  pdf.rect(barX + 60, barY - 9, maleBarWidth, barHeight, "F");
+pdf.text(
+  `${genderComparisonSummary.maleAverage.toFixed(1)}%`,
+  barX + 70 + maleBarWidth,
+  barY,
+);
+
+barY += 22;
+
+pdf.text("Female", barX, barY);
+pdf.rect(barX + 60, barY - 9, femaleBarWidth, barHeight, "F");
+pdf.text(
+  `${genderComparisonSummary.femaleAverage.toFixed(1)}%`,
+  barX + 70 + femaleBarWidth,
+  barY,
+);
+
+y = barY + 24;
   
+}
+
+if (historicalInsights) {
+  y = ensurePdfPageSpace(
+    pdf,
+    y,
+    100,
+    "2. Summary",
+    sourceReference,
+  );
+
+  pdf.setFontSize(13);
+  pdf.text(
+    `2.${summarySectionNumber} Historical Insights`,
+    40,
+    y,
+  );
+
+summarySectionNumber++;
+
+  y += 20;
+
+  pdf.setFontSize(11);
+
+  const insightLines = [
+    `Highest observed rate: ${historicalInsights.highestPoint.y.toFixed(1)}% in ${historicalInsights.highestPoint.x}`,
+    `Lowest observed rate: ${historicalInsights.lowestPoint.y.toFixed(1)}% in ${historicalInsights.lowestPoint.x}`,
+    `Largest period change: ${historicalInsights.largestChange.change.toFixed(1)} percentage points from ${historicalInsights.largestChange.from} to ${historicalInsights.largestChange.to}`,
+  ];
+
+  for (const line of insightLines) {
+    pdf.text(line, 50, y);
+    y += 16;
+  }
 
   y += 10;
 }
@@ -3810,77 +3887,6 @@ summarySectionNumber++;
 
   y += trendLines.length * 14 + 12;
 }
-
-if (historicalInsights) {
-  y = ensurePdfPageSpace(
-    pdf,
-    y,
-    100,
-    "2. Summary",
-    sourceReference,
-  );
-
-  pdf.setFontSize(13);
-  pdf.text("Historical Insights", 40, y);
-
-  y += 20;
-
-  pdf.setFontSize(11);
-
-  const insightLines = [
-    `Highest observed rate: ${historicalInsights.highestPoint.y.toFixed(1)}% in ${historicalInsights.highestPoint.x}`,
-    `Lowest observed rate: ${historicalInsights.lowestPoint.y.toFixed(1)}% in ${historicalInsights.lowestPoint.x}`,
-    `Largest period change: ${historicalInsights.largestChange.change.toFixed(1)} percentage points from ${historicalInsights.largestChange.from} to ${historicalInsights.largestChange.to}`,
-  ];
-
-  for (const line of insightLines) {
-    pdf.text(line, 50, y);
-    y += 16;
-  }
-
-  y += 10;
-}
-
-const barX = 50;
-let barY = y + 10;
-const barMaxWidth = 220;
-const barHeight = 12;
-
-const maxAverage = Math.max(
-  genderComparisonSummary.maleAverage,
-  genderComparisonSummary.femaleAverage,
-);
-
-const maleBarWidth =
-  (genderComparisonSummary.maleAverage / maxAverage) * barMaxWidth;
-
-const femaleBarWidth =
-  (genderComparisonSummary.femaleAverage / maxAverage) * barMaxWidth;
-
-pdf.setFontSize(10);
-pdf.text("Comparison Visualisation", barX, barY);
-
-barY += 18;
-
-pdf.text("Male", barX, barY);
-pdf.rect(barX + 60, barY - 9, maleBarWidth, barHeight, "F");
-pdf.text(
-  `${genderComparisonSummary.maleAverage.toFixed(1)}%`,
-  barX + 70 + maleBarWidth,
-  barY,
-);
-
-barY += 22;
-
-pdf.text("Female", barX, barY);
-pdf.rect(barX + 60, barY - 9, femaleBarWidth, barHeight, "F");
-pdf.text(
-  `${genderComparisonSummary.femaleAverage.toFixed(1)}%`,
-  barX + 70 + femaleBarWidth,
-  barY,
-);
-
-y = barY + 24;
 
 pdf.addPage();
 
