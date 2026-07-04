@@ -3777,14 +3777,16 @@ pdf.text(
 if (chartCanvas) {
   const chartImage = chartCanvas.toDataURL("image/png", 1.0);
 
-  pdf.addImage(
-    chartImage,
-    "PNG",
-    40,
-    120,
-    515,
-    260,
-  );
+
+ pdf.addImage(
+  chartImage,
+  "PNG",
+  40,
+  120,
+  515,
+  260,
+);
+
 }
 
 pdf.setFontSize(14);
@@ -3967,6 +3969,8 @@ summarySectionNumber++;
     genderComparisonSummary.maleAverage,
     genderComparisonSummary.femaleAverage,
   );
+
+
 
   const maleBarWidth =
     (genderComparisonSummary.maleAverage / maxAverage) * barMaxWidth;
