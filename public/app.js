@@ -3651,6 +3651,33 @@ function drawSectionCallout(pdf, title, y) {
   return y + 26;
 }
 
+function drawPdfFooter(pdf, pageNumber, totalPages, exportDateTime) {
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  pdf.setDrawColor(220, 220, 220);
+  pdf.line(40, pageHeight - 45, 555, pageHeight - 45);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(100, 100, 100);
+
+  pdf.text("Old Bailey Analytics research workspace", 40, pageHeight - 25);
+
+  pdf.text(
+    `Exported: ${exportDateTime}`,
+    260,
+    pageHeight - 25,
+  );
+
+  pdf.text(
+    `Page ${pageNumber} of ${totalPages}`,
+    500,
+    pageHeight - 25,
+  );
+
+  pdf.setTextColor(0, 0, 0);
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -4008,8 +4035,6 @@ summarySectionNumber++;
     genderComparisonSummary.femaleAverage,
   );
 
-
-
   const maleBarWidth =
     (genderComparisonSummary.maleAverage / maxAverage) * barMaxWidth;
 
@@ -4185,12 +4210,7 @@ for (const line of metadataLines) {
 
   metaY += wrappedLines.length * 14 + 8;
 }
-  const pageCount = pdf.getNumberOfPages();
-
-for (let i = 1; i <= pageCount; i++) {
-  pdf.setPage(i);
-  drawPdfPageFooter(pdf, i, pageCount);
-}
+  
 
 const { file: exportFileTime } = getExportDateTime();
 
@@ -4204,6 +4224,13 @@ const safePdfName = [
   .replace(/[^\w-]/g, "")
   .replace(/-+/g, "-")
   .toLowerCase();
+
+const totalPages = pdf.internal.getNumberOfPages();
+
+for (let i = 1; i <= totalPages; i++) {
+  pdf.setPage(i);
+  drawPdfFooter(pdf, i, totalPages, exportDateTime);
+}  
 
 pdf.save(`${safePdfName}.pdf`);
 
