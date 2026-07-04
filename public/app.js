@@ -3873,6 +3873,44 @@ pdf.addPage();
 
 y = drawPdfPageHeader(pdf, "2. Summary", sourceReference);
 
+// Executive summary callout
+pdf.setFillColor(248, 250, 252);
+pdf.setDrawColor(210, 220, 235);
+
+pdf.roundedRect(
+  35,
+  y,
+  525,
+  70,
+  6,
+  6,
+  "FD",
+);
+
+pdf.setFillColor(38, 90, 165);
+pdf.rect(35, y, 6, 70, "F");
+
+pdf.setFont("helvetica", "bold");
+pdf.setFontSize(12);
+pdf.setTextColor(38, 90, 165);
+
+pdf.text("Executive Summary", 50, y + 22);
+
+pdf.setFont("helvetica", "normal");
+pdf.setFontSize(10);
+pdf.setTextColor(60, 60, 60);
+
+const executiveSummaryLines = pdf.splitTextToSize(
+  reportSummary,
+  480,
+);
+
+pdf.text(executiveSummaryLines, 50, y + 42);
+
+y += 90;
+
+pdf.setTextColor(0, 0, 0);
+
 const {
   analysisSummary,
   evidenceSummary,
