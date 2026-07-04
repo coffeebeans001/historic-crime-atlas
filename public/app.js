@@ -3711,7 +3711,7 @@ async function downloadResearchSnapshotPdf() {
     format: "a4",
   });
 
-const exportDateTime = getExportDateTime().display;
+  const exportDateTime = getExportDateTime().display;
 
   const reportIdDate = new Date()
     .toISOString()
@@ -3719,8 +3719,7 @@ const exportDateTime = getExportDateTime().display;
     .slice(0, 14);
 
   const researchId = `OBR-${reportIdDate}`;
-  const reportVersion = exportDateTime;
-
+  const reportVersion = exportDateTime; 
 
 // Chip colours  
 const offenceChipColour = [32, 76, 151];   // Blue
