@@ -3778,17 +3778,24 @@ if (dateFrom && dateTo) {
 const sourceReference =
   `${offenceFilter} | ${sourceGender} | ${rangeText}`; 
 
+const researchId = "OBR-0174";
+
+const reportVersion = exportDateTime;  
+
 const reportSummary = noDataVisible
   ? `This report records a no-data export for ${sourceGender.toLowerCase()} ${offenceFilter.toLowerCase()} cases within ${rangeText.toLowerCase()}. The selected Old Bailey dataset filters did not return chart data.`
   : `This report analyses conviction outcomes for ${sourceGender.toLowerCase()} ${offenceFilter.toLowerCase()} cases within ${rangeText.toLowerCase()}, using the selected Old Bailey dataset filters.`;
 
 drawPdfPageHeader(pdf, "1. Findings & Visualisation", sourceReference);
 
+
 let y = 115;
+
 
 // Chip row for PDF header
 const chipY = y;
 let chipX = 40;
+
 
 chipX += drawChip(
   pdf,
@@ -3815,6 +3822,7 @@ drawChip(
 );
 
 y += 32;
+
 
 pdf.setFontSize(12);
 pdf.text(
