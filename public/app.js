@@ -3711,6 +3711,17 @@ async function downloadResearchSnapshotPdf() {
     format: "a4",
   });
 
+const exportDateTime = getExportDateTime().display;
+
+  const reportIdDate = new Date()
+    .toISOString()
+    .replace(/[-:T.Z]/g, "")
+    .slice(0, 14);
+
+  const researchId = `OBR-${reportIdDate}`;
+  const reportVersion = exportDateTime;
+
+
 // Chip colours  
 const offenceChipColour = [32, 76, 151];   // Blue
 const genderChipColour = [106, 76, 147];   // Purple
@@ -3776,11 +3787,7 @@ if (dateFrom && dateTo) {
 }
 
 const sourceReference =
-  `${offenceFilter} | ${sourceGender} | ${rangeText}`; 
-
-const researchId = "OBR-0174";
-
-const reportVersion = exportDateTime;  
+  `${offenceFilter} | ${sourceGender} | ${rangeText}`;   
 
 const reportSummary = noDataVisible
   ? `This report records a no-data export for ${sourceGender.toLowerCase()} ${offenceFilter.toLowerCase()} cases within ${rangeText.toLowerCase()}. The selected Old Bailey dataset filters did not return chart data.`
@@ -3969,19 +3976,13 @@ const executiveSummaryLines = pdf.splitTextToSize(
   480,
 );
 
+//pdf.text("Executive Summary", 50, y + 22);
+
 pdf.text(executiveSummaryLines, 50, y + 42);
 
-pdf.text(
-  `Research ID: ${researchId}`,
-  50,
-  y + 72,
-);
+pdf.text(`Research ID: ${researchId}`, 50, y + 72);
 
-pdf.text(
-  `Report Version: ${reportVersion}`,
-  250,
-  y + 72,
-);
+pdf.text(`Report Version: ${reportVersion}`, 250, y + 72);
 
 pdf.setTextColor(0, 0, 0);
 
