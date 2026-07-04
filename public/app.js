@@ -3944,7 +3944,7 @@ pdf.roundedRect(
   35,
   y,
   525,
-  70,
+  90,
   6,
   6,
   "FD",
@@ -3959,6 +3959,7 @@ pdf.setTextColor(38, 90, 165);
 
 pdf.text("Executive Summary", 50, y + 22);
 
+
 pdf.setFont("helvetica", "normal");
 pdf.setFontSize(10);
 pdf.setTextColor(60, 60, 60);
@@ -3970,9 +3971,21 @@ const executiveSummaryLines = pdf.splitTextToSize(
 
 pdf.text(executiveSummaryLines, 50, y + 42);
 
-y += 90;
+pdf.text(
+  `Research ID: ${researchId}`,
+  50,
+  y + 72,
+);
+
+pdf.text(
+  `Report Version: ${reportVersion}`,
+  250,
+  y + 72,
+);
 
 pdf.setTextColor(0, 0, 0);
+
+y += 110;
 
 const {
   analysisSummary,
