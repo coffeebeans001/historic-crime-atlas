@@ -4283,18 +4283,12 @@ summarySectionNumber++;
     genderComparisonSummary.femaleAverage,
   );
 
-  //const maleBarWidth =
-    //(genderComparisonSummary.maleAverage / maxAverage) * barMaxWidth;
-
-  //const femaleBarWidth =
-    //(genderComparisonSummary.femaleAverage / maxAverage) * barMaxWidth;
-
   pdf.setFontSize(10);
- pdf.setFont("helvetica", "bold");
-pdf.setFontSize(10);
-pdf.setTextColor(38, 90, 165);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.setTextColor(38, 90, 165);
 
-pdf.text("Comparison Visualisation", barX, barY);
+  pdf.text("Comparison Visualisation", barX, barY);
 
 barY += 20;
 
