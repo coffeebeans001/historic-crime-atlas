@@ -4405,6 +4405,44 @@ pdf.setTextColor(0, 0, 0);
 
 y += 10;
 
+// Research Limitations
+y = ensurePdfPageSpace(
+  pdf,
+  y,
+  120,
+  "2. Summary",
+  sourceReference,
+);
+
+y = drawSectionCallout(
+  pdf,
+  `2.${summarySectionNumber} Research Limitations`,
+  y,
+);
+
+summarySectionNumber++;
+
+pdf.setFont("helvetica", "normal");
+pdf.setFontSize(11);
+pdf.setTextColor(60, 60, 60);
+
+const limitationLines = [
+  "The findings are based only on the currently selected filters and visible chart data.",
+  "Small sample sizes may make percentage changes appear more extreme than the underlying case count suggests.",
+  "Missing, zero-value, or incomplete periods may affect the interpretation of long-term trends.",
+  "The report should be read as a research snapshot rather than a complete historical conclusion.",
+];
+
+for (const line of limitationLines) {
+  const wrappedLines = pdf.splitTextToSize(`• ${line}`, 500);
+  pdf.text(wrappedLines, 50, y);
+  y += wrappedLines.length * 14 + 8;
+}
+
+pdf.setTextColor(0, 0, 0);
+
+y += 10;
+
 pdf.addPage();
 
 let notesY = drawPdfPageHeader(pdf, "3. Research Notes", sourceReference);
