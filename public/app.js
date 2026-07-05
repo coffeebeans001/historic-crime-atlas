@@ -4028,7 +4028,7 @@ pdf.roundedRect(
   35,
   y,
   525,
-  125,
+  140,
   6,
   6,
   "FD",
@@ -4039,7 +4039,7 @@ pdf.rect(
   35,
   y,
   6,
-  125,
+  140,
   "F",
 );
 
@@ -4081,19 +4081,61 @@ pdf.text(
   y + 65,
 );
 
+const meterX = 50;
+const meterY = y + 88;
+const meterWidth = 220;
+const meterHeight = 12;
+
+// Background
+
+pdf.setFillColor(225, 225, 225);
+
+pdf.roundedRect(
+  meterX,
+  meterY,
+  meterWidth,
+  meterHeight,
+  3,
+  3,
+  "F",
+);
+
+// Filled portion
+
+pdf.setFillColor(40, 167, 69);
+
+pdf.roundedRect(
+  meterX,
+  meterY,
+  (confidenceScore / 100) * meterWidth,
+  meterHeight,
+  3,
+  3,
+  "F",
+);
+
+// Score text
+
 pdf.setFont("helvetica", "bold");
 pdf.setFontSize(10);
 pdf.setTextColor(40, 167, 69);
+
+pdf.text(
+  `${confidenceScore}%`,
+  meterX + meterWidth + 12,
+  meterY + 9,
+);
+
+pdf.text(
+  confidenceLabel,
+  meterX,
+  meterY + 28,
+);
+
 pdf.setFont("helvetica", "normal");
 pdf.setTextColor(60, 60, 60);
 
-pdf.text(
-  `Research confidence: ${confidenceScore}% (${confidenceLabel})`,
-  50,
-  y + 88,
-);
-
-y += 145;
+y += 155;
 
 pdf.setFontSize(9);
 
