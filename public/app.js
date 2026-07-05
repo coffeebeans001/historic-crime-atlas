@@ -4379,16 +4379,51 @@ summarySectionNumber++;
 
   pdf.setFontSize(11);
 
-  const insightLines = [
-    `Highest observed rate: ${historicalInsights.highestPoint.y.toFixed(1)}% in ${historicalInsights.highestPoint.x}`,
-    `Lowest observed rate: ${historicalInsights.lowestPoint.y.toFixed(1)}% in ${historicalInsights.lowestPoint.x}`,
-    `Largest period change: ${historicalInsights.largestChange.change.toFixed(1)} percentage points from ${historicalInsights.largestChange.from} to ${historicalInsights.largestChange.to}`,
-  ];
+  pdf.setFont("helvetica", "normal");
+pdf.setFontSize(11);
+pdf.setTextColor(60, 60, 60);
 
-  for (const line of insightLines) {
-    pdf.text(line, 50, y);
-    y += 16;
-  }
+const insightCards = [
+  {
+    label: "Highest observed rate",
+    value: `${historicalInsights.highestPoint.y.toFixed(1)}%`,
+    detail: `Year: ${historicalInsights.highestPoint.x}`,
+  },
+  {
+    label: "Lowest observed rate",
+    value: `${historicalInsights.lowestPoint.y.toFixed(1)}%`,
+    detail: `Year: ${historicalInsights.lowestPoint.x}`,
+  },
+  {
+    label: "Largest period change",
+    value: `${historicalInsights.largestChange.change.toFixed(1)} pts`,
+    detail: `${historicalInsights.largestChange.from} to ${historicalInsights.largestChange.to}`,
+  },
+];
+
+for (const card of insightCards) {
+  pdf.setFillColor(248, 250, 252);
+  pdf.setDrawColor(220, 225, 235);
+
+  pdf.roundedRect(50, y, 500, 46, 5, 5, "FD");
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(10);
+  pdf.setTextColor(38, 90, 165);
+  pdf.text(card.label, 65, y + 17);
+
+  pdf.setFontSize(13);
+  pdf.text(card.value, 390, y + 18);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+  pdf.setTextColor(90, 90, 90);
+  pdf.text(card.detail, 65, y + 34);
+
+  y += 56;
+}
+
+pdf.setTextColor(0, 0, 0);
 
   y += 10;
 }
