@@ -4443,6 +4443,44 @@ pdf.setTextColor(0, 0, 0);
 
 y += 10;
 
+// Recommendations / Next Steps
+y = ensurePdfPageSpace(
+  pdf,
+  y,
+  120,
+  "2. Summary",
+  sourceReference,
+);
+
+y = drawSectionCallout(
+  pdf,
+  `2.${summarySectionNumber} Recommendations / Next Steps`,
+  y,
+);
+
+summarySectionNumber++;
+
+pdf.setFont("helvetica", "normal");
+pdf.setFontSize(11);
+pdf.setTextColor(60, 60, 60);
+
+const recommendationLines = [
+  "Compare this offence category with another offence type to identify whether the pattern is specific or part of a wider trend.",
+  "Review years with unusually high or low conviction rates to identify possible historical or data-quality explanations.",
+  "Repeat the export using different gender filters to compare whether the trend changes across groups.",
+  "Use the findings as a starting point for deeper case-level review rather than as a final conclusion.",
+];
+
+for (const line of recommendationLines) {
+  const wrappedLines = pdf.splitTextToSize(`• ${line}`, 500);
+  pdf.text(wrappedLines, 50, y);
+  y += wrappedLines.length * 14 + 8;
+}
+
+pdf.setTextColor(0, 0, 0);
+
+y += 10;
+
 pdf.addPage();
 
 let notesY = drawPdfPageHeader(pdf, "3. Research Notes", sourceReference);
