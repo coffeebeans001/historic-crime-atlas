@@ -4008,6 +4008,19 @@ y += 140;
 
 // Data Quality
 
+const confidenceScore = dataQualitySummary.totalPeriods > 0
+  ? Math.round(
+      (dataQualitySummary.validPeriods / dataQualitySummary.totalPeriods) * 100
+    )
+  : 0;
+
+const confidenceLabel =
+  confidenceScore >= 85
+    ? "High confidence"
+    : confidenceScore >= 60
+      ? "Moderate confidence"
+      : "Low confidence";
+
 pdf.setFillColor(248, 250, 252);
 pdf.setDrawColor(220, 225, 235);
 
@@ -4015,7 +4028,7 @@ pdf.roundedRect(
   35,
   y,
   525,
-  105,
+  125,
   6,
   6,
   "FD",
@@ -4026,7 +4039,7 @@ pdf.rect(
   35,
   y,
   6,
-  105,
+  125,
   "F",
 );
 
@@ -4068,7 +4081,19 @@ pdf.text(
   y + 65,
 );
 
-y += 125;
+pdf.setFont("helvetica", "bold");
+pdf.setFontSize(10);
+pdf.setTextColor(40, 167, 69);
+pdf.setFont("helvetica", "normal");
+pdf.setTextColor(60, 60, 60);
+
+pdf.text(
+  `Research confidence: ${confidenceScore}% (${confidenceLabel})`,
+  50,
+  y + 88,
+);
+
+y += 145;
 
 pdf.setFontSize(9);
 
@@ -4108,8 +4133,6 @@ const executiveSummaryLines = pdf.splitTextToSize(
   reportSummary,
   480,
 );
-
-//pdf.text("Executive Summary", 50, y + 22);
 
 pdf.text(executiveSummaryLines, 50, y + 42);
 
