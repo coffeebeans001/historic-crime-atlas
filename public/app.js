@@ -3795,7 +3795,7 @@ const reportSummary = noDataVisible
 drawPdfPageHeader(pdf, "1. Findings & Visualisation", sourceReference);
 
 
-let y = 115;
+let y = 95;
 
 
 // Chip row for PDF header
@@ -3827,15 +3827,20 @@ drawChip(
   rangeChipColour,
 );
 
-y += 32;
+y += 35;
 
-
+// Page intro title
+pdf.setFont("helvetica", "bold");
 pdf.setFontSize(12);
+pdf.setTextColor(0, 0, 0);
+
 pdf.text(
   "Historic Criminal Case Analytics",
   40,
   y,
 );
+
+y += 22;
 
   const chartCanvas = document.getElementById("chart");
 
@@ -3850,6 +3855,8 @@ if (chartCanvas && !noDataVisible) {
     515,
     260,
   );
+
+
 } else {
   y = drawNoDataCallout(
     pdf,
@@ -3858,27 +3865,46 @@ if (chartCanvas && !noDataVisible) {
   );
 }
 
-pdf.setFontSize(14);
-pdf.text("Key finding from chart", 40, 400);
+// Key finding section
+y = 405;
 
-pdf.setFontSize(11);
-
-// Key finding
-const findingLines = pdf.splitTextToSize(
+const keyFindingLines = pdf.splitTextToSize(
   keyFinding,
   500,
 );
 
-pdf.text(findingLines, 40, 420);
+pdf.setFont("helvetica", "bold");
+pdf.setFontSize(12);
+pdf.setTextColor(38, 90, 165);
+//pdf.setTextColor(35, 65, 120);
 
-let page1Y =
-  420 + findingLines.length * 14 + 28;
+pdf.text(
+  "Key finding from chart",
+  40,
+  y,
+);
+
+y += 18;
+
+pdf.setFont("helvetica", "normal");
+pdf.setFontSize(10);
+pdf.setTextColor(60, 60, 60);
+
+pdf.text(
+  keyFindingLines,
+  40,
+  y,
+);
+
+y += keyFindingLines.length * 14 + 24;
+
+pdf.setTextColor(0, 0, 0);
 
 // Report Summary
 pdf.setFontSize(12);
-pdf.text("Report Summary", 40, page1Y);
+pdf.text("Report Summary", 40, y);
 
-page1Y += 20;
+y += 20;
 
 pdf.setFontSize(10);
 
@@ -3887,15 +3913,15 @@ const summaryLines = pdf.splitTextToSize(
   500,
 );
 
-pdf.text(summaryLines, 40, page1Y);
+pdf.text(summaryLines, 40, y);
 
-page1Y += summaryLines.length * 14 + 24;
+y += summaryLines.length * 14 + 24;
 
 // Statistical Summary
 pdf.setFontSize(12);
-pdf.text("Statistical Summary", 40, page1Y);
+pdf.text("Statistical Summary", 40, y);
 
-page1Y += 20;
+y += 20;
 
 pdf.setFontSize(10);
 
@@ -3909,18 +3935,18 @@ if (statisticalSummary) {
   ];
 
   for (const line of statLines) {
-    pdf.text(line, 40, page1Y);
-    page1Y += 16;
+    pdf.text(line, 40, y);
+    y += 16;
   }
 }
 
-page1Y += 20;
+y += 20;
 
 // Data Quality
 pdf.setFontSize(12);
-pdf.text("Data Quality", 40, page1Y);
+pdf.text("Data Quality", 40, y);
 
-page1Y += 20;
+y += 20;
 
 pdf.setFontSize(10);
 
@@ -3932,8 +3958,8 @@ const qualityLines = [
 ];
 
 for (const line of qualityLines) {
-  pdf.text(line, 40, page1Y);
-  page1Y += 16;
+  pdf.text(line, 40, y);
+  y += 16;
 } 
 
 pdf.setFontSize(9);
