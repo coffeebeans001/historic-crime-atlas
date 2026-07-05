@@ -3874,7 +3874,7 @@ const keyFindingLines = pdf.splitTextToSize(
 );
 
 pdf.setFont("helvetica", "bold");
-pdf.setFontSize(12);
+pdf.setFontSize(13);
 pdf.setTextColor(38, 90, 165);
 
 pdf.text(
@@ -3899,7 +3899,6 @@ y += keyFindingLines.length * 14 + 24;
 
 pdf.setTextColor(0, 0, 0);
 
-// Report Summary
 // Report Summary section
 pdf.setFont("helvetica", "bold");
 pdf.setFontSize(13);
