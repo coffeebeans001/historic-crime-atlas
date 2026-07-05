@@ -3600,6 +3600,8 @@ function drawChip(pdf, text, x, y, fillColor) {
 }
 
 function drawSectionCallout(pdf, title, y) {
+  y += 12;
+
   const x = 35;
   const width = 525;
   const height = 32;
@@ -3623,13 +3625,11 @@ function drawSectionCallout(pdf, title, y) {
   // Left accent bar
   pdf.setFillColor(38, 90, 165);
 
-  pdf.roundedRect(
+  pdf.rect(
     x,
     y - 18,
     6,
     height,
-    5,
-    5,
     "F"
   );
 
@@ -4449,22 +4449,58 @@ summarySectionNumber++;
 
   pdf.setFontSize(11);
 
-  pdf.text(
-    `Overall trend: ${trendInterpretation.trend}`,
-    50,
-    y,
-  );
+  pdf.setFillColor(248, 250, 252);
+pdf.setDrawColor(220, 225, 235);
 
-  y += 20;
+const trendLines = pdf.splitTextToSize(
+  trendInterpretation.interpretation,
+  470,
+);
 
-  const trendLines = pdf.splitTextToSize(
-    trendInterpretation.interpretation,
-    500,
-  );
+const trendBoxHeight = 70 + trendLines.length * 14;
 
-  pdf.text(trendLines, 50, y);
+pdf.roundedRect(
+  50,
+  y,
+  500,
+  trendBoxHeight,
+  6,
+  6,
+  "FD",
+);
 
-  y += trendLines.length * 14 + 12;
+pdf.setFillColor(38, 90, 165);
+pdf.rect(
+  50,
+  y,
+  6,
+  trendBoxHeight,
+  "F",
+);
+
+pdf.setFont("helvetica", "bold");
+pdf.setFontSize(11);
+pdf.setTextColor(38, 90, 165);
+
+pdf.text(
+  `Overall trend: ${trendInterpretation.trend}`,
+  65,
+  y + 24,
+);
+
+pdf.setFont("helvetica", "normal");
+pdf.setFontSize(10);
+pdf.setTextColor(60, 60, 60);
+
+pdf.text(
+  trendLines,
+  65,
+  y + 48,
+);
+
+y += trendBoxHeight + 18;
+
+pdf.setTextColor(0, 0, 0);
 }
 
 // Research Conclusions
