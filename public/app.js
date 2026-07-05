@@ -4367,6 +4367,44 @@ pdf.setTextColor(0, 0, 0);
 
 y += 10;
 
+// Research Methodology
+y = ensurePdfPageSpace(
+  pdf,
+  y,
+  120,
+  "2. Summary",
+  sourceReference,
+);
+
+y = drawSectionCallout(
+  pdf,
+  `2.${summarySectionNumber} Research Methodology`,
+  y,
+);
+
+summarySectionNumber++;
+
+pdf.setFont("helvetica", "normal");
+pdf.setFontSize(11);
+pdf.setTextColor(60, 60, 60);
+
+const methodologyLines = [
+  `The report uses the selected offence, gender, and date filters to analyse Old Bailey trial records.`,
+  `Conviction rates are calculated from the visible chart data for the selected period.`,
+  `Historical insights identify the highest observed rate, lowest observed rate, and largest period change.`,
+  `Data quality checks summarise valid, missing, and zero-value chart periods.`,
+];
+
+for (const line of methodologyLines) {
+  const wrappedLines = pdf.splitTextToSize(`• ${line}`, 500);
+  pdf.text(wrappedLines, 50, y);
+  y += wrappedLines.length * 14 + 8;
+}
+
+pdf.setTextColor(0, 0, 0);
+
+y += 10;
+
 pdf.addPage();
 
 let notesY = drawPdfPageHeader(pdf, "3. Research Notes", sourceReference);
