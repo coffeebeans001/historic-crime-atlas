@@ -3876,7 +3876,6 @@ const keyFindingLines = pdf.splitTextToSize(
 pdf.setFont("helvetica", "bold");
 pdf.setFontSize(12);
 pdf.setTextColor(38, 90, 165);
-//pdf.setTextColor(35, 65, 120);
 
 pdf.text(
   "Key finding from chart",
