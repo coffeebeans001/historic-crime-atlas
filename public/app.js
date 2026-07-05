@@ -3900,21 +3900,37 @@ y += keyFindingLines.length * 14 + 24;
 pdf.setTextColor(0, 0, 0);
 
 // Report Summary
-pdf.setFontSize(12);
-pdf.text("Report Summary", 40, y);
+// Report Summary section
+pdf.setFont("helvetica", "bold");
+pdf.setFontSize(13);
+pdf.setTextColor(38, 90, 165);
 
-y += 20;
+pdf.text(
+  "Report Summary",
+  40,
+  y,
+);
 
+y += 18;
+
+pdf.setFont("helvetica", "normal");
 pdf.setFontSize(10);
+pdf.setTextColor(60, 60, 60);
 
-const summaryLines = pdf.splitTextToSize(
+const reportSummaryLines = pdf.splitTextToSize(
   reportSummary,
   500,
 );
 
-pdf.text(summaryLines, 40, y);
+pdf.text(
+  reportSummaryLines,
+  40,
+  y,
+);
 
-y += summaryLines.length * 14 + 24;
+y += reportSummaryLines.length * 14 + 24;
+
+pdf.setTextColor(0, 0, 0);
 
 // Statistical Summary
 pdf.setFontSize(12);
