@@ -4007,24 +4007,68 @@ pdf.setTextColor(60, 60, 60);
 y += 140;
 
 // Data Quality
+
+pdf.setFillColor(248, 250, 252);
+pdf.setDrawColor(220, 225, 235);
+
+pdf.roundedRect(
+  35,
+  y,
+  525,
+  105,
+  6,
+  6,
+  "FD",
+);
+
+pdf.setFillColor(40, 167, 69);
+pdf.rect(
+  35,
+  y,
+  6,
+  105,
+  "F",
+);
+
+pdf.setFont("helvetica", "bold");
 pdf.setFontSize(12);
-pdf.text("Data Quality", 40, y);
+pdf.setTextColor(40, 167, 69);
 
-y += 20;
+pdf.text(
+  "Data Quality",
+  50,
+  y + 22,
+);
 
+pdf.setFont("helvetica", "normal");
 pdf.setFontSize(10);
+pdf.setTextColor(60, 60, 60);
 
-const qualityLines = [
+pdf.text(
   `Total chart periods: ${dataQualitySummary.totalPeriods}`,
-  `Valid chart periods: ${dataQualitySummary.validPeriods}`,
-  `Missing chart periods: ${dataQualitySummary.missingPeriods}`,
-  `Zero-value periods: ${dataQualitySummary.zeroValuePeriods}`,
-];
+  50,
+  y + 45,
+);
 
-for (const line of qualityLines) {
-  pdf.text(line, 40, y);
-  y += 16;
-} 
+pdf.text(
+  `Valid chart periods: ${dataQualitySummary.validPeriods}`,
+  290,
+  y + 45,
+);
+
+pdf.text(
+  `Missing chart periods: ${dataQualitySummary.missingPeriods}`,
+  50,
+  y + 65,
+);
+
+pdf.text(
+  `Zero-value periods: ${dataQualitySummary.zeroValuePeriods}`,
+  290,
+  y + 65,
+);
+
+y += 125;
 
 pdf.setFontSize(9);
 
