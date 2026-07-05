@@ -4325,6 +4325,48 @@ summarySectionNumber++;
   y += trendLines.length * 14 + 12;
 }
 
+// Research Conclusions
+y = ensurePdfPageSpace(
+  pdf,
+  y,
+  120,
+  "2. Summary",
+  sourceReference,
+);
+
+y = drawSectionCallout(
+  pdf,
+  `2.${summarySectionNumber} Research Conclusions`,
+  y,
+);
+
+summarySectionNumber++;
+
+pdf.setFont("helvetica", "normal");
+pdf.setFontSize(11);
+pdf.setTextColor(60, 60, 60);
+
+const conclusionLines = [
+  `The selected dataset shows an average conviction rate of ${statisticalSummary.average.toFixed(1)}%.`,
+  `The conviction rate varied by ${statisticalSummary.range.toFixed(1)} percentage points across the analysed period.`,
+  historicalInsights
+    ? `The highest observed rate was ${historicalInsights.highestPoint.y.toFixed(1)}% in ${historicalInsights.highestPoint.x}, while the lowest was ${historicalInsights.lowestPoint.y.toFixed(1)}% in ${historicalInsights.lowestPoint.x}.`
+    : "Historical high and low points were not available for this export.",
+  trendInterpretation
+    ? `Overall, the trend is best described as ${trendInterpretation.trend.toLowerCase()}.`
+    : "A trend interpretation was not available for this export.",
+];
+
+for (const line of conclusionLines) {
+  const wrappedLines = pdf.splitTextToSize(`• ${line}`, 500);
+  pdf.text(wrappedLines, 50, y);
+  y += wrappedLines.length * 14 + 8;
+}
+
+pdf.setTextColor(0, 0, 0);
+
+y += 10;
+
 pdf.addPage();
 
 let notesY = drawPdfPageHeader(pdf, "3. Research Notes", sourceReference);
