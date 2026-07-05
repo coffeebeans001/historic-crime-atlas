@@ -3932,29 +3932,79 @@ y += reportSummaryLines.length * 14 + 24;
 pdf.setTextColor(0, 0, 0);
 
 // Statistical Summary
+
+pdf.setFillColor(248, 250, 252);
+pdf.setDrawColor(220, 225, 235);
+
+pdf.roundedRect(
+  35,
+  y,
+  525,
+  120,
+  6,
+  6,
+  "FD",
+);
+
+pdf.setFillColor(38, 90, 165);
+pdf.rect(
+  35,
+  y,
+  6,
+  120,
+  "F",
+);
+
+pdf.setFont("helvetica", "bold");
 pdf.setFontSize(12);
-pdf.text("Statistical Summary", 40, y);
+pdf.setTextColor(38, 90, 165);
 
-y += 20;
+pdf.text(
+  "Statistical Summary",
+  50,
+  y + 22,
+);
 
+pdf.setFont("helvetica", "normal");
 pdf.setFontSize(10);
+pdf.setTextColor(60, 60, 60);
 
-if (statisticalSummary) {
-  const statLines = [
+  if (statisticalSummary) {
+
+  pdf.text(
     `Average conviction rate: ${statisticalSummary.average.toFixed(1)}%`,
+    50,
+    y + 45,
+  );
+
+  pdf.text(
     `Highest conviction rate: ${statisticalSummary.highest.toFixed(1)}%`,
+    50,
+    y + 63,
+  );
+
+  pdf.text(
     `Lowest conviction rate: ${statisticalSummary.lowest.toFixed(1)}%`,
+    290,
+    y + 63,
+  );
+
+  pdf.text(
     `Range: ${statisticalSummary.range.toFixed(1)} percentage points`,
+    50,
+    y + 81,
+  );
+
+  pdf.text(
     `Years analysed: ${statisticalSummary.yearsAnalysed}`,
-  ];
+    290,
+    y + 81,
+  );
 
-  for (const line of statLines) {
-    pdf.text(line, 40, y);
-    y += 16;
-  }
 }
+//}
 
-y += 20;
+y += 140;
 
 // Data Quality
 pdf.setFontSize(12);
