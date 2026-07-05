@@ -4283,38 +4283,86 @@ summarySectionNumber++;
     genderComparisonSummary.femaleAverage,
   );
 
-  const maleBarWidth =
-    (genderComparisonSummary.maleAverage / maxAverage) * barMaxWidth;
+  //const maleBarWidth =
+    //(genderComparisonSummary.maleAverage / maxAverage) * barMaxWidth;
 
-  const femaleBarWidth =
-    (genderComparisonSummary.femaleAverage / maxAverage) * barMaxWidth;
+  //const femaleBarWidth =
+    //(genderComparisonSummary.femaleAverage / maxAverage) * barMaxWidth;
 
   pdf.setFontSize(10);
-  pdf.text("Comparison Visualisation", barX, barY);
+ pdf.setFont("helvetica", "bold");
+pdf.setFontSize(10);
+pdf.setTextColor(38, 90, 165);
 
-  barY += 18;
+pdf.text("Comparison Visualisation", barX, barY);
 
-  pdf.text("Male", barX, barY);
+barY += 20;
 
-  // keep the rest of your male/female bar drawing code here
-  pdf.rect(barX + 60, barY - 9, maleBarWidth, barHeight, "F");
-pdf.text(
-  `${genderComparisonSummary.maleAverage.toFixed(1)}%`,
-  barX + 70 + maleBarWidth,
+function drawComparisonMeter(label, value, color, yPosition) {
+  const meterX = barX + 70;
+  const meterWidth = 220;
+  const meterHeight = 12;
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+  pdf.setTextColor(60, 60, 60);
+
+  pdf.text(label, barX, yPosition + 9);
+
+  pdf.setFillColor(225, 225, 225);
+  pdf.roundedRect(
+    meterX,
+    yPosition,
+    meterWidth,
+    meterHeight,
+    3,
+    3,
+    "F",
+  );
+
+  pdf.setFillColor(...color);
+  pdf.roundedRect(
+    meterX,
+    yPosition,
+    (value / maxAverage) * meterWidth,
+    meterHeight,
+    3,
+    3,
+    "F",
+  );
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setTextColor(...color);
+
+  pdf.text(
+    `${value.toFixed(1)}%`,
+    meterX + meterWidth + 12,
+    yPosition + 9,
+  );
+}
+
+drawComparisonMeter(
+  "Male",
+  genderComparisonSummary.maleAverage,
+  [38, 90, 165],
   barY,
 );
 
-barY += 22;
+barY += 24;
 
-pdf.text("Female", barX, barY);
-pdf.rect(barX + 60, barY - 9, femaleBarWidth, barHeight, "F");
-pdf.text(
-  `${genderComparisonSummary.femaleAverage.toFixed(1)}%`,
-  barX + 70 + femaleBarWidth,
+drawComparisonMeter(
+  "Female",
+  genderComparisonSummary.femaleAverage,
+  [106, 76, 147],
   barY,
 );
 
-y = barY + 24;
+barY += 28;
+
+pdf.setFont("helvetica", "normal");
+pdf.setTextColor(0, 0, 0);
+
+y = barY + 10;
   
 }
 
