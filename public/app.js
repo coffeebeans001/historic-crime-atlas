@@ -3970,6 +3970,18 @@ const historicalInsights = buildHistoricalInsights(points);
 
 const statisticalSummary = buildStatisticalSummary(points);  
 const dataQualitySummary = buildDataQualitySummary(points);
+const confidenceScore = dataQualitySummary.totalPeriods > 0
+  ? Math.round(
+      (dataQualitySummary.validPeriods / dataQualitySummary.totalPeriods) * 100
+    )
+  : 0;
+
+const confidenceLabel =
+  confidenceScore >= 85
+    ? "High confidence"
+    : confidenceScore >= 60
+      ? "Moderate confidence"
+      : "Low confidence";
 const genderComparisonSummary = buildGenderComparisonSummary();
 const trendInterpretation = buildTrendInterpretation(statisticalSummary);
 const pdfExportCount = getNextPdfExportCount();
@@ -4184,6 +4196,77 @@ y += reportSummaryLines.length * 14 + 24;
 
 pdf.setTextColor(0, 0, 0);
 
+// Research Highlights
+pdf.setFillColor(248, 250, 252);
+pdf.setDrawColor(220, 225, 235);
+
+pdf.roundedRect(
+  35,
+  y,
+  525,
+  48,
+  6,
+  6,
+  "FD",
+);
+
+pdf.setFillColor(38, 90, 165);
+pdf.rect(35, y, 6, 48, "F");
+
+pdf.setFont("helvetica", "bold");
+pdf.setFontSize(12);
+pdf.setTextColor(38, 90, 165);
+
+pdf.text("Research Highlights", 50, y + 22);
+
+pdf.setFont("helvetica", "normal");
+pdf.setFontSize(10);
+pdf.setTextColor(60, 60, 60);
+
+const highlightLines = [
+  historicalInsights
+    ? `Highest rate: ${historicalInsights.highestPoint.y.toFixed(1)}% in ${historicalInsights.highestPoint.x}`
+    : "Highest rate: not available",
+  statisticalSummary
+    ? `Average rate: ${statisticalSummary.average.toFixed(1)}%`
+    : "Average rate: not available",
+  `Research confidence: ${confidenceScore}% (${confidenceLabel})`
+];
+
+pdf.setFont("helvetica", "bold");
+pdf.setFontSize(9);
+pdf.setTextColor(120, 120, 120);
+
+pdf.text("Highest", 50, y + 35);
+pdf.text("Average", 220, y + 35);
+pdf.text("Confidence", 390, y + 35);
+
+pdf.setFont("helvetica", "normal");
+pdf.setFontSize(10);
+pdf.setTextColor(60, 60, 60);
+
+pdf.text(
+  `${historicalInsights.highestPoint.y.toFixed(1)}% (${historicalInsights.highestPoint.x})`,
+  50,
+  y + 47,
+);
+
+pdf.text(
+  `${statisticalSummary.average.toFixed(1)}%`,
+  220,
+  y + 47,
+);
+
+pdf.text(
+  `${confidenceScore}% (${confidenceLabel})`,
+  390,
+  y + 47,
+);
+
+y += 62;
+
+pdf.setTextColor(0, 0, 0);
+
 // Statistical Summary
 
 pdf.setFillColor(248, 250, 252);
@@ -4257,22 +4340,9 @@ pdf.setTextColor(60, 60, 60);
 }
 //}
 
-y += 140;
+y += 100;
 
 // Data Quality
-
-const confidenceScore = dataQualitySummary.totalPeriods > 0
-  ? Math.round(
-      (dataQualitySummary.validPeriods / dataQualitySummary.totalPeriods) * 100
-    )
-  : 0;
-
-const confidenceLabel =
-  confidenceScore >= 85
-    ? "High confidence"
-    : confidenceScore >= 60
-      ? "Moderate confidence"
-      : "Low confidence";
 
 pdf.setFillColor(248, 250, 252);
 pdf.setDrawColor(220, 225, 235);
@@ -4281,7 +4351,7 @@ pdf.roundedRect(
   35,
   y,
   525,
-  140,
+  105,
   6,
   6,
   "FD",
@@ -4292,7 +4362,7 @@ pdf.rect(
   35,
   y,
   6,
-  140,
+  105,
   "F",
 );
 
@@ -4335,7 +4405,7 @@ pdf.text(
 );
 
 const meterX = 50;
-const meterY = y + 88;
+const meterY = y + 78;
 const meterWidth = 220;
 const meterHeight = 12;
 
@@ -4388,7 +4458,7 @@ pdf.text(
 pdf.setFont("helvetica", "normal");
 pdf.setTextColor(60, 60, 60);
 
-y += 155;
+y += 120;
 
 pdf.setFontSize(9);
 
