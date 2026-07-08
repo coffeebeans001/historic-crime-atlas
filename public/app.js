@@ -4238,8 +4238,9 @@ pdf.setFontSize(9);
 pdf.setTextColor(120, 120, 120);
 
 pdf.text("Highest", 50, y + 35);
-pdf.text("Average", 220, y + 35);
-pdf.text("Confidence", 390, y + 35);
+pdf.text("Lowest", 190, y + 35);
+pdf.text("Average", 330, y + 35);
+pdf.text("Confidence", 450, y + 35);
 
 pdf.setFont("helvetica", "normal");
 pdf.setFontSize(10);
@@ -4252,14 +4253,20 @@ pdf.text(
 );
 
 pdf.text(
-  `${statisticalSummary.average.toFixed(1)}%`,
-  220,
+  `${historicalInsights.lowestPoint.y.toFixed(1)}% (${historicalInsights.lowestPoint.x})`,
+  190,
   y + 47,
 );
 
 pdf.text(
-  `${confidenceScore}% (${confidenceLabel})`,
-  390,
+  `${statisticalSummary.average.toFixed(1)}%`,
+  330,
+  y + 47,
+);
+
+pdf.text(
+  `${confidenceScore}%`,
+  450,
   y + 47,
 );
 
