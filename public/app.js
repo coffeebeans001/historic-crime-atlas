@@ -3897,6 +3897,49 @@ function buildHistoricalCommentary(
   return commentary;
 }
 
+function buildResearchSignificance(
+  statisticalSummary,
+  historicalInsights,
+  noDataVisible,
+) {
+  if (noDataVisible || !statisticalSummary) {
+    return [
+      "The available data is insufficient to assess the wider historical significance of the selected filters.",
+    ];
+  }
+
+  const significance = [];
+
+  if (statisticalSummary.range >= 50) {
+    significance.push(
+      "The wide variation in conviction rates suggests that the selected period experienced substantial changes in judicial outcomes.",
+    );
+  } else if (statisticalSummary.range >= 20) {
+    significance.push(
+      "Moderate variation in conviction rates suggests noticeable changes in judicial outcomes over time.",
+    );
+  } else {
+    significance.push(
+      "Conviction rates remained relatively stable throughout the selected period, indicating consistent judicial outcomes.",
+    );
+  }
+
+  if (historicalInsights) {
+    significance.push(
+      `The highest and lowest observed conviction rates occurred within a span of ${Math.abs(
+        historicalInsights.highestPoint.x -
+        historicalInsights.lowestPoint.x
+      )} years, highlighting periods worthy of further historical investigation.`,
+    );
+  }
+
+  significance.push(
+    "These findings provide a statistical starting point for deeper case-level historical analysis rather than a definitive historical conclusion.",
+  );
+
+  return significance;
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -4094,12 +4137,20 @@ y += keyFindingLines.length * 14 + 24;
 
 pdf.setTextColor(0, 0, 0);
 
+// ---------- Report content ----------
 const historicalCommentaryLines = buildHistoricalCommentary(
   statisticalSummary,
   historicalInsights,
   trendInterpretation,
   noDataVisible,
 );
+
+const researchSignificanceLines =
+  buildResearchSignificance(
+    statisticalSummary,
+    historicalInsights,
+    noDataVisible,
+  );
 
 // Report Summary section
 pdf.setFont("helvetica", "bold");
@@ -4693,6 +4744,17 @@ y = drawResearchSection(
   pdf,
   "Automatic Historical Commentary",
   historicalCommentaryLines,
+  y,
+  summarySectionNumber,
+  sourceReference,
+);
+
+summarySectionNumber++;
+
+y = drawResearchSection(
+  pdf,
+  "Research Significance",
+  researchSignificanceLines,
   y,
   summarySectionNumber,
   sourceReference,
