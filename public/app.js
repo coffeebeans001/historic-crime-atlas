@@ -4164,6 +4164,9 @@ const researchSignificanceLines =
     noDataVisible,
   );
 
+// ---------- Layout ----------
+const SECTION_SPACING = 20;  
+
 // Report Summary section
 pdf.setFont("helvetica", "bold");
 pdf.setFontSize(13);
