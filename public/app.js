@@ -4669,6 +4669,10 @@ const conclusionLines = [
     : "A trend interpretation was not available for this export.",
 ];
 
+historicalCommentaryLines.unshift(
+  "Commentary type: Automated interpretation based on selected chart data."
+);
+
 y = drawResearchSection(
   pdf,
   "Automatic Historical Commentary",
