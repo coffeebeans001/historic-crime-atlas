@@ -3811,6 +3811,44 @@ function drawResearchSection(
   return y;
 }
 
+function buildHistoricalCommentary(
+  statisticalSummary,
+  historicalInsights,
+  trendInterpretation,
+  noDataVisible,
+) {
+  if (noDataVisible || !statisticalSummary) {
+    return [
+      "The selected filters did not return enough chart data to support historical commentary.",
+      "Further interpretation would require a wider date range or a filter combination with more available records.",
+    ];
+  }
+
+  const commentary = [];
+
+  commentary.push(
+    `The selected data suggests an average conviction rate of ${statisticalSummary.average.toFixed(1)}% across the analysed period.`,
+  );
+
+  if (historicalInsights) {
+    commentary.push(
+      `The highest observed conviction rate was ${historicalInsights.highestPoint.y.toFixed(1)}% in ${historicalInsights.highestPoint.x}, compared with the lowest observed rate of ${historicalInsights.lowestPoint.y.toFixed(1)}% in ${historicalInsights.lowestPoint.x}.`,
+    );
+
+    commentary.push(
+      `The largest recorded period change was ${historicalInsights.largestChange.change.toFixed(1)} percentage points from ${historicalInsights.largestChange.from} to ${historicalInsights.largestChange.to}, suggesting a notable shift within the selected dataset.`,
+    );
+  }
+
+  if (trendInterpretation) {
+    commentary.push(
+      `Overall, the trend is best described as ${trendInterpretation.trend.toLowerCase()}, which should be considered alongside the data quality and period coverage shown in this report.`,
+    );
+  }
+
+  return commentary;
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -4007,6 +4045,13 @@ pdf.text(
 y += keyFindingLines.length * 14 + 24;
 
 pdf.setTextColor(0, 0, 0);
+
+const historicalCommentaryLines = buildHistoricalCommentary(
+  statisticalSummary,
+  historicalInsights,
+  trendInterpretation,
+  noDataVisible,
+);
 
 // Report Summary section
 pdf.setFont("helvetica", "bold");
@@ -4591,6 +4636,17 @@ const conclusionLines = [
     ? `Overall, the trend is best described as ${trendInterpretation.trend.toLowerCase()}.`
     : "A trend interpretation was not available for this export.",
 ];
+
+y = drawResearchSection(
+  pdf,
+  "Automatic Historical Commentary",
+  historicalCommentaryLines,
+  y,
+  summarySectionNumber,
+  sourceReference,
+);
+
+summarySectionNumber++;
 
 y = drawResearchSection(
   pdf,
