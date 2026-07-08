@@ -4405,7 +4405,7 @@ pdf.text(
 );
 
 const meterX = 50;
-const meterY = y + 78;
+const meterY = y + 73;
 const meterWidth = 220;
 const meterHeight = 12;
 
