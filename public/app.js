@@ -3766,24 +3766,6 @@ function drawComparisonMeter(
   pdf.setTextColor(0, 0, 0);
 }
 
-function drawResearchBullets(pdf, lines, x, y, maxWidth = 500) {
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(11);
-  pdf.setTextColor(60, 60, 60);
-
-  for (const line of lines) {
-    const wrappedLines = pdf.splitTextToSize(`• ${line}`, maxWidth);
-
-    pdf.text(wrappedLines, x, y);
-
-    y += wrappedLines.length * 14 + 8;
-  }
-
-  pdf.setTextColor(0, 0, 0);
-
-  return y + 10;
-}
-
 function drawResearchSection(
   pdf,
   title,
@@ -3806,9 +3788,59 @@ function drawResearchSection(
     y,
   );
 
-  y = drawResearchBullets(pdf, lines, 50, y);
+  y = drawResearchBullets(
+    pdf,
+    lines,
+    50,
+    y,
+  );
 
   return y;
+}
+
+function drawResearchBullets(pdf, lines, x, y, maxWidth = 500) {
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(11);
+  pdf.setTextColor(60, 60, 60);
+
+  for (const line of lines) {
+    const tagMatch = line.match(/^([^:]+):\s(.+)$/);
+
+    if (tagMatch) {
+      const tag = tagMatch[1];
+      const content = tagMatch[2];
+
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(38, 90, 165);
+
+      pdf.text(`• ${tag}:`, x, y);
+
+      const tagWidth = pdf.getTextWidth(`• ${tag}: `);
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(60, 60, 60);
+
+      const wrappedLines = pdf.splitTextToSize(
+        content,
+        maxWidth - tagWidth,
+      );
+
+      pdf.text(wrappedLines, x + tagWidth, y);
+
+      y += wrappedLines.length * 14 + 8;
+    } else {
+      const wrappedLines = pdf.splitTextToSize(`• ${line}`, maxWidth);
+
+      pdf.text(wrappedLines, x, y);
+
+      y += wrappedLines.length * 14 + 8;
+    }
+  }
+
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFont("helvetica", "normal");
+
+  return y + 10;
 }
 
 function buildHistoricalCommentary(
