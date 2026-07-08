@@ -3810,10 +3810,20 @@ function drawResearchBullets(pdf, lines, x, y, maxWidth = 500) {
       const tag = tagMatch[1];
       const content = tagMatch[2];
 
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(38, 90, 165);
+      const tagColours = {
+  Observation: [38, 90, 165],
+  Evidence: [40, 167, 69],
+  Interpretation: [106, 76, 147],
+  Caution: [190, 120, 20],
+  "Next step": [90, 90, 90],
+};
 
-      pdf.text(`• ${tag}:`, x, y);
+const tagColour = tagColours[tag] || [38, 90, 165];
+
+pdf.setFont("helvetica", "bold");
+pdf.setTextColor(...tagColour);
+
+pdf.text(`• ${tag}:`, x, y);
 
       const tagWidth = pdf.getTextWidth(`• ${tag}: `);
 
@@ -3862,10 +3872,6 @@ function buildHistoricalCommentary(
     `Observation: The selected data suggests an average conviction rate of ${statisticalSummary.average.toFixed(1)}% across the analysed period.`,
   );
 
-  commentary.push(
-  `Interpretation: This suggests that conviction outcomes for the selected filters were not evenly distributed across the analysed period.`,
-  );
-
   if (historicalInsights) {
     commentary.push(
       `Evidence: The highest observed conviction rate was ${historicalInsights.highestPoint.y.toFixed(1)}% in ${historicalInsights.highestPoint.x}, compared with the lowest observed rate of ${historicalInsights.lowestPoint.y.toFixed(1)}% in ${historicalInsights.lowestPoint.x}.`,
@@ -3876,11 +3882,17 @@ function buildHistoricalCommentary(
     );
   }
 
+    commentary.push(
+      `Interpretation: Taken together, these findings suggest that conviction outcomes were not evenly distributed across the analysed period.`,
+  );
+
   if (trendInterpretation) {
     commentary.push(
       `Caution: The trend is described as ${trendInterpretation.trend.toLowerCase()}, and should be interpreted alongside data quality and period coverage.`,
     );
   }
+
+  
 
   return commentary;
 }
