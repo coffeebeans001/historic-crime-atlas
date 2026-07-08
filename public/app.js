@@ -3862,6 +3862,10 @@ function buildHistoricalCommentary(
     `Observation: The selected data suggests an average conviction rate of ${statisticalSummary.average.toFixed(1)}% across the analysed period.`,
   );
 
+  commentary.push(
+  `Interpretation: This suggests that conviction outcomes for the selected filters were not evenly distributed across the analysed period.`,
+  );
+
   if (historicalInsights) {
     commentary.push(
       `Evidence: The highest observed conviction rate was ${historicalInsights.highestPoint.y.toFixed(1)}% in ${historicalInsights.highestPoint.x}, compared with the lowest observed rate of ${historicalInsights.lowestPoint.y.toFixed(1)}% in ${historicalInsights.lowestPoint.x}.`,
