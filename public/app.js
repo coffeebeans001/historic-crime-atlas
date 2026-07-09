@@ -4226,8 +4226,8 @@ y += reportSummaryLines.length * 14 + 24;
 pdf.setTextColor(0, 0, 0);
 
 // Research Highlights
-pdf.setFillColor(248, 250, 252);
-pdf.setDrawColor(220, 225, 235);
+pdf.setFillColor(...COLOUR_BACKGROUND);
+pdf.setDrawColor(...COLOUR_BORDER);
 
 pdf.roundedRect(
   35,
@@ -4305,7 +4305,7 @@ pdf.setTextColor(0, 0, 0);
 
 // Statistical Summary
 
-pdf.setFillColor(248, 250, 252);
+pdf.setFillColor(...COLOUR_BACKGROUND);
 pdf.setDrawColor(220, 225, 235);
 
 pdf.roundedRect(
@@ -4381,8 +4381,8 @@ y += 100;
 
 // Data Quality
 
-pdf.setFillColor(248, 250, 252);
-pdf.setDrawColor(220, 225, 235);
+pdf.setFillColor(...COLOUR_BACKGROUND);
+pdf.setDrawColor(...COLOUR_BORDER);
 
 pdf.roundedRect(
   35,
@@ -4504,7 +4504,7 @@ pdf.addPage();
 y = drawPdfPageHeader(pdf, "2. Summary", sourceReference);
 
 // Executive summary callout
-pdf.setFillColor(248, 250, 252);
+pdf.setFillColor(...COLOUR_BACKGROUND);
 pdf.setDrawColor(210, 220, 235);
 
 pdf.roundedRect(
@@ -4731,8 +4731,8 @@ const insightCards = [
 ];
 
 for (const card of insightCards) {
-  pdf.setFillColor(248, 250, 252);
-  pdf.setDrawColor(220, 225, 235);
+  pdf.setFillColor(...COLOUR_BACKGROUND);
+  pdf.setDrawColor(...COLOUR_BORDER);
 
   pdf.roundedRect(50, y, 500, 46, 5, 5, "FD");
 
@@ -4778,8 +4778,8 @@ summarySectionNumber++;
 
   pdf.setFontSize(FONT_SIZE_SUBSECTION);
 
-  pdf.setFillColor(248, 250, 252);
-pdf.setDrawColor(220, 225, 235);
+  pdf.setFillColor(...COLOUR_BACKGROUND);
+  pdf.setDrawColor(...COLOUR_BORDER);
 
 const trendLines = pdf.splitTextToSize(
   trendInterpretation.interpretation,
