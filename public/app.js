@@ -4180,7 +4180,7 @@ pdf.text(
 
 y += SECTION_SPACING;
 
-pdf.setFont(FONT_FAMILY, "normal");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
@@ -4207,7 +4207,7 @@ pdf.text(
 
 y += SECTION_SPACING;
 
-pdf.setFont(FONT_FAMILY, "normal");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
@@ -4249,7 +4249,7 @@ pdf.setTextColor(38, 90, 165);
 
 pdf.text("Research Highlights", 50, y + 22);
 
-pdf.setFont("helvetica", "normal");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
@@ -4272,7 +4272,7 @@ pdf.text("Lowest", 190, y + 35);
 pdf.text("Average", 330, y + 35);
 pdf.text("Confidence", 450, y + 35);
 
-pdf.setFont("helvetica", "normal");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
@@ -4338,7 +4338,7 @@ pdf.text(
   y + 22,
 );
 
-pdf.setFont("helvetica", "normal");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
@@ -4404,7 +4404,7 @@ pdf.rect(
   "F",
 );
 
-pdf.setFont("helvetica", "bold");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_SECTION);
 pdf.setTextColor(40, 167, 69);
 
@@ -4414,7 +4414,7 @@ pdf.text(
   y + 22,
 );
 
-pdf.setFont("helvetica", "normal");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
@@ -4493,7 +4493,7 @@ pdf.text(
   meterY + 28,
 );
 
-pdf.setFont("helvetica", "normal");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setTextColor(60, 60, 60);
 
 y += 120;
@@ -4528,7 +4528,7 @@ pdf.setTextColor(38, 90, 165);
 pdf.text("Executive Summary", 50, y + 22);
 
 
-pdf.setFont("helvetica", "normal");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
@@ -4646,7 +4646,7 @@ summarySectionNumber++;
   );
 
   pdf.setFontSize(FONT_SIZE_BODY);
-  pdf.setFont("FONT_FAMILY", FONT_STYLE_BOLD);
+  pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
   pdf.setFontSize(FONT_SIZE_BODY);
   pdf.setTextColor(38, 90, 165);
 
@@ -4678,12 +4678,12 @@ drawComparisonMeter(
 
 barY += 28;
 
-pdf.setFont("helvetica", "normal");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setTextColor(0, 0, 0);
 
 y = barY + 10;
 
-pdf.setFont("helvetica", "normal");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setTextColor(0, 0, 0);
 
 y = barY + 10;
@@ -4709,7 +4709,7 @@ summarySectionNumber++;
 
   pdf.setFontSize(11);
 
-  pdf.setFont("helvetica", "normal");
+  pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(11);
 pdf.setTextColor(60, 60, 60);
 
@@ -4737,7 +4737,7 @@ for (const card of insightCards) {
 
   pdf.roundedRect(50, y, 500, 46, 5, 5, "FD");
 
-  pdf.setFont("FONT_FAMILY", FONT_STYLE_BOLD);
+  pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
   pdf.setFontSize(FONT_SIZE_BODY);
   pdf.setTextColor(38, 90, 165);
   pdf.text(card.label, 65, y + 17);
@@ -4745,7 +4745,7 @@ for (const card of insightCards) {
   pdf.setFontSize(FONT_SIZE_TITLE);
   pdf.text(card.value, 390, y + 18);
 
-  pdf.setFont("helvetica", "normal");
+  pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
   pdf.setFontSize(FONT_SIZE_SMALL);
   pdf.setTextColor(90, 90, 90);
   pdf.text(card.detail, 65, y + 34);
@@ -4808,7 +4808,7 @@ pdf.rect(
   "F",
 );
 
-pdf.setFont("FONT_FAMILY", FONT_STYLE_BOLD);
+pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(11);
 pdf.setTextColor(38, 90, 165);
 
@@ -4818,7 +4818,7 @@ pdf.text(
   y + 24,
 );
 
-pdf.setFont("helvetica", "normal");
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
