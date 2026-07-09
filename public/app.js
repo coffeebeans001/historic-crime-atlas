@@ -4020,6 +4020,24 @@ const genderRaw =
 const sourceGender =
   genderRaw === "all" ? "All genders" : genderRaw;
 
+// ---------- Report content ----------
+const historicalCommentaryLines = buildHistoricalCommentary(
+  statisticalSummary,
+  historicalInsights,
+  trendInterpretation,
+  noDataVisible,
+);
+
+const researchSignificanceLines =
+  buildResearchSignificance(
+    statisticalSummary,
+    historicalInsights,
+    noDataVisible,
+  );
+
+// ---------- Layout ----------
+const SECTION_SPACING = 20;  
+
 const dateFrom = document.getElementById("from")?.value;
 const dateTo = document.getElementById("to")?.value;
 
@@ -4133,7 +4151,7 @@ pdf.text(
   y,
 );
 
-y += 18;
+y += SECTION_SPACING;
 
 pdf.setFont("helvetica", "normal");
 pdf.setFontSize(10);
@@ -4147,25 +4165,7 @@ pdf.text(
 
 y += keyFindingLines.length * 14 + 24;
 
-pdf.setTextColor(0, 0, 0);
-
-// ---------- Report content ----------
-const historicalCommentaryLines = buildHistoricalCommentary(
-  statisticalSummary,
-  historicalInsights,
-  trendInterpretation,
-  noDataVisible,
-);
-
-const researchSignificanceLines =
-  buildResearchSignificance(
-    statisticalSummary,
-    historicalInsights,
-    noDataVisible,
-  );
-
-// ---------- Layout ----------
-const SECTION_SPACING = 20;  
+pdf.setTextColor(0, 0, 0);  
 
 // Report Summary section
 pdf.setFont("helvetica", "bold");
@@ -4178,7 +4178,7 @@ pdf.text(
   y,
 );
 
-y += 18;
+y += SECTION_SPACING;
 
 pdf.setFont("helvetica", "normal");
 pdf.setFontSize(10);
@@ -4350,6 +4350,7 @@ pdf.setTextColor(60, 60, 60);
 }
 //}
 
+//y += SECTION_SPACING;
 y += 100;
 
 // Data Quality
@@ -4546,7 +4547,8 @@ const pdfSummarySections = [
 for (const [title, items] of pdfSummarySections) {
   pdf.setFontSize(13);
   pdf.text(title, 40, y);
-  y += 20;
+
+  y += SECTION_SPACING;
 
   pdf.setFontSize(11);
 
@@ -4604,7 +4606,7 @@ summarySectionNumber++;
     y += 16;
   }
 
-  y += 10;
+  y += SECTION_SPACING;
 
   const barX = 50;
   let barY = y + 10;
@@ -4746,7 +4748,7 @@ if (trendInterpretation) {
 
 summarySectionNumber++;
 
-  y += 20;
+ y += SECTION_SPACING;
 
   pdf.setFontSize(11);
 
