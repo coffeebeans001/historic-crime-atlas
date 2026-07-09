@@ -4577,7 +4577,7 @@ for (const [title, items] of pdfSummarySections) {
 
   y += SECTION_SPACING;
 
-  pdf.setFontSize(11);
+  pdf.setFontSize(FONT_SIZE_SUBSECTION);
 
   for (const item of items) {
     const lines = pdf.splitTextToSize(
@@ -4619,7 +4619,7 @@ if (genderComparisonSummary) {
 
 summarySectionNumber++;
 
-  pdf.setFontSize(11);
+  pdf.setFontSize(FONT_SIZE_SUBSECTION);
 
   const comparisonLines = [
     `Male average conviction rate: ${genderComparisonSummary.maleAverage.toFixed(1)}%`,
@@ -4707,10 +4707,10 @@ if (historicalInsights) {
 
 summarySectionNumber++;
 
-  pdf.setFontSize(11);
+  pdf.setFontSize(FONT_SIZE_SUBSECTION);
 
   pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
-pdf.setFontSize(11);
+pdf.setFontSize(FONT_SIZE_SUBSECTION);
 pdf.setTextColor(60, 60, 60);
 
 const insightCards = [
@@ -4777,7 +4777,7 @@ summarySectionNumber++;
 
  y += SECTION_SPACING;
 
-  pdf.setFontSize(11);
+  pdf.setFontSize(FONT_SIZE_SUBSECTION);
 
   pdf.setFillColor(248, 250, 252);
 pdf.setDrawColor(220, 225, 235);
@@ -4809,7 +4809,7 @@ pdf.rect(
 );
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
-pdf.setFontSize(11);
+pdf.setFontSize(FONT_SIZE_SUBSECTION);
 pdf.setTextColor(38, 90, 165);
 
 pdf.text(
@@ -4962,7 +4962,7 @@ let notesY = drawPdfPageHeader(pdf, "3. Research Notes", sourceReference);
 
 const notes = buildResearchNotes();
 
-pdf.setFontSize(11);
+pdf.setFontSize(FONT_SIZE_SUBSECTION);
 
 for (const note of notes) {
   const lines = pdf.splitTextToSize(
@@ -5004,7 +5004,7 @@ const metadataLines = [
   `Shareable URL: ${currentUrl}`,
 ];
 
-pdf.setFontSize(11);
+pdf.setFontSize(FONT_SIZE_SUBSECTION);
 
 for (const line of metadataLines) {
   const wrappedLines = pdf.splitTextToSize(
