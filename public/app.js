@@ -4036,7 +4036,34 @@ const researchSignificanceLines =
   );
 
 // ---------- Layout ----------
-const SECTION_SPACING = 20;  
+//const SECTION_SPACING = 20;  
+
+//const FONT_FAMILY = "helvetica";
+
+//const FONT_SIZE_TITLE = 13;
+//const FONT_SIZE_SECTION = 12;
+//const FONT_SIZE_BODY = 10;
+//const FONT_SIZE_SMALL = 9;
+
+// ---------- Design System ----------
+
+const FONT_FAMILY = "helvetica";
+
+const FONT_STYLE_NORMAL = "normal";
+const FONT_STYLE_BOLD = "bold";
+
+const FONT_SIZE_TITLE = 13;
+const FONT_SIZE_SECTION = 12;
+const FONT_SIZE_SUBSECTION = 11;
+const FONT_SIZE_BODY = 10;
+const FONT_SIZE_SMALL = 9;
+
+const SECTION_SPACING = 20;
+
+const COLOUR_PRIMARY = [38, 90, 165];
+const COLOUR_TEXT = [60, 60, 60];
+const COLOUR_BORDER = [220, 225, 235];
+const COLOUR_BACKGROUND = [248, 250, 252];
 
 const dateFrom = document.getElementById("from")?.value;
 const dateTo = document.getElementById("to")?.value;
@@ -4098,8 +4125,8 @@ drawChip(
 y += 35;
 
 // Page intro title
-pdf.setFont("helvetica", "bold");
-pdf.setFontSize(12);
+pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+pdf.setFontSize(FONT_SIZE_SECTION);
 pdf.setTextColor(0, 0, 0);
 
 pdf.text(
@@ -4141,8 +4168,8 @@ const keyFindingLines = pdf.splitTextToSize(
   500,
 );
 
-pdf.setFont("helvetica", "bold");
-pdf.setFontSize(13);
+pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+pdf.setFontSize(FONT_SIZE_TITLE);
 pdf.setTextColor(38, 90, 165);
 
 pdf.text(
@@ -4153,8 +4180,8 @@ pdf.text(
 
 y += SECTION_SPACING;
 
-pdf.setFont("helvetica", "normal");
-pdf.setFontSize(10);
+pdf.setFont(FONT_FAMILY, "normal");
+pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
 pdf.text(
@@ -4168,8 +4195,8 @@ y += keyFindingLines.length * 14 + 24;
 pdf.setTextColor(0, 0, 0);  
 
 // Report Summary section
-pdf.setFont("helvetica", "bold");
-pdf.setFontSize(13);
+pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+pdf.setFontSize(FONT_SIZE_TITLE);
 pdf.setTextColor(38, 90, 165);
 
 pdf.text(
@@ -4180,8 +4207,8 @@ pdf.text(
 
 y += SECTION_SPACING;
 
-pdf.setFont("helvetica", "normal");
-pdf.setFontSize(10);
+pdf.setFont(FONT_FAMILY, "normal");
+pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
 const reportSummaryLines = pdf.splitTextToSize(
@@ -4216,14 +4243,14 @@ pdf.roundedRect(
 pdf.setFillColor(38, 90, 165);
 pdf.rect(35, y, 6, 48, "F");
 
-pdf.setFont("helvetica", "bold");
-pdf.setFontSize(12);
+pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+pdf.setFontSize(FONT_SIZE_TITLE);
 pdf.setTextColor(38, 90, 165);
 
 pdf.text("Research Highlights", 50, y + 22);
 
 pdf.setFont("helvetica", "normal");
-pdf.setFontSize(10);
+pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
 const highlightLines = [
@@ -4236,8 +4263,8 @@ const highlightLines = [
   `Research confidence: ${confidenceScore}% (${confidenceLabel})`
 ];
 
-pdf.setFont("helvetica", "bold");
-pdf.setFontSize(9);
+pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+pdf.setFontSize(FONT_SIZE_SMALL);
 pdf.setTextColor(120, 120, 120);
 
 pdf.text("Highest", 50, y + 35);
@@ -4246,7 +4273,7 @@ pdf.text("Average", 330, y + 35);
 pdf.text("Confidence", 450, y + 35);
 
 pdf.setFont("helvetica", "normal");
-pdf.setFontSize(10);
+pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
 pdf.text(
@@ -4301,8 +4328,8 @@ pdf.rect(
   "F",
 );
 
-pdf.setFont("helvetica", "bold");
-pdf.setFontSize(12);
+pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+pdf.setFontSize(FONT_SIZE_SECTION);
 pdf.setTextColor(38, 90, 165);
 
 pdf.text(
@@ -4312,7 +4339,7 @@ pdf.text(
 );
 
 pdf.setFont("helvetica", "normal");
-pdf.setFontSize(10);
+pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
   if (statisticalSummary) {
@@ -4378,7 +4405,7 @@ pdf.rect(
 );
 
 pdf.setFont("helvetica", "bold");
-pdf.setFontSize(12);
+pdf.setFontSize(FONT_SIZE_SECTION);
 pdf.setTextColor(40, 167, 69);
 
 pdf.text(
@@ -4388,7 +4415,7 @@ pdf.text(
 );
 
 pdf.setFont("helvetica", "normal");
-pdf.setFontSize(10);
+pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
 pdf.text(
@@ -4450,8 +4477,8 @@ pdf.roundedRect(
 
 // Score text
 
-pdf.setFont("helvetica", "bold");
-pdf.setFontSize(10);
+pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+pdf.setFontSize(FONT_SIZE_SMALL);
 pdf.setTextColor(40, 167, 69);
 
 pdf.text(
@@ -4494,15 +4521,15 @@ pdf.roundedRect(
 pdf.setFillColor(38, 90, 165);
 pdf.rect(35, y, 6, 70, "F");
 
-pdf.setFont("helvetica", "bold");
-pdf.setFontSize(12);
+pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+pdf.setFontSize(FONT_SIZE_SECTION);
 pdf.setTextColor(38, 90, 165);
 
 pdf.text("Executive Summary", 50, y + 22);
 
 
 pdf.setFont("helvetica", "normal");
-pdf.setFontSize(10);
+pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
 const executiveSummaryLines = pdf.splitTextToSize(
@@ -4545,7 +4572,7 @@ const pdfSummarySections = [
 ];
 
 for (const [title, items] of pdfSummarySections) {
-  pdf.setFontSize(13);
+  pdf.setFontSize(FONT_SIZE_TITLE);
   pdf.text(title, 40, y);
 
   y += SECTION_SPACING;
@@ -4618,9 +4645,9 @@ summarySectionNumber++;
     genderComparisonSummary.femaleAverage,
   );
 
-  pdf.setFontSize(10);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
+  pdf.setFontSize(FONT_SIZE_BODY);
+  pdf.setFont("FONT_FAMILY", FONT_STYLE_BOLD);
+  pdf.setFontSize(FONT_SIZE_BODY);
   pdf.setTextColor(38, 90, 165);
 
  pdf.text("Comparison Visualisation", barX, barY);
@@ -4710,16 +4737,16 @@ for (const card of insightCards) {
 
   pdf.roundedRect(50, y, 500, 46, 5, 5, "FD");
 
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
+  pdf.setFont("FONT_FAMILY", FONT_STYLE_BOLD);
+  pdf.setFontSize(FONT_SIZE_BODY);
   pdf.setTextColor(38, 90, 165);
   pdf.text(card.label, 65, y + 17);
 
-  pdf.setFontSize(13);
+  pdf.setFontSize(FONT_SIZE_TITLE);
   pdf.text(card.value, 390, y + 18);
 
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(9);
+  pdf.setFontSize(FONT_SIZE_SMALL);
   pdf.setTextColor(90, 90, 90);
   pdf.text(card.detail, 65, y + 34);
 
@@ -4781,7 +4808,7 @@ pdf.rect(
   "F",
 );
 
-pdf.setFont("helvetica", "bold");
+pdf.setFont("FONT_FAMILY", FONT_STYLE_BOLD);
 pdf.setFontSize(11);
 pdf.setTextColor(38, 90, 165);
 
@@ -4792,7 +4819,7 @@ pdf.text(
 );
 
 pdf.setFont("helvetica", "normal");
-pdf.setFontSize(10);
+pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(60, 60, 60);
 
 pdf.text(
