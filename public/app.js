@@ -4035,18 +4035,7 @@ const researchSignificanceLines =
     noDataVisible,
   );
 
-// ---------- Layout ----------
-//const SECTION_SPACING = 20;  
-
-//const FONT_FAMILY = "helvetica";
-
-//const FONT_SIZE_TITLE = 13;
-//const FONT_SIZE_SECTION = 12;
-//const FONT_SIZE_BODY = 10;
-//const FONT_SIZE_SMALL = 9;
-
 // ---------- Design System ----------
-
 const FONT_FAMILY = "helvetica";
 
 const FONT_STYLE_NORMAL = "normal";
@@ -4060,10 +4049,20 @@ const FONT_SIZE_SMALL = 9;
 
 const SECTION_SPACING = 20;
 
+// ---------- Colour Palette ----------
+
 const COLOUR_PRIMARY = [38, 90, 165];
 const COLOUR_TEXT = [60, 60, 60];
-const COLOUR_BORDER = [220, 225, 235];
+const COLOUR_TEXT_LIGHT = [120, 120, 120];
+
 const COLOUR_BACKGROUND = [248, 250, 252];
+const COLOUR_BORDER = [220, 225, 235];
+
+const COLOUR_SUCCESS = [40, 167, 69];
+const COLOUR_WARNING = [190, 120, 20];
+const COLOUR_ACCENT = [106, 76, 147];
+
+const COLOUR_BLACK = [0, 0, 0];
 
 const dateFrom = document.getElementById("from")?.value;
 const dateTo = document.getElementById("to")?.value;
@@ -4170,7 +4169,7 @@ const keyFindingLines = pdf.splitTextToSize(
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_TITLE);
-pdf.setTextColor(38, 90, 165);
+pdf.setTextColor(...COLOUR_PRIMARY);
 
 pdf.text(
   "Key finding from chart",
@@ -4197,7 +4196,7 @@ pdf.setTextColor(0, 0, 0);
 // Report Summary section
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_TITLE);
-pdf.setTextColor(38, 90, 165);
+pdf.setTextColor(...COLOUR_PRIMARY);
 
 pdf.text(
   "Report Summary",
@@ -4240,12 +4239,12 @@ pdf.roundedRect(
   "FD",
 );
 
-pdf.setFillColor(38, 90, 165);
+pdf.setFillColor(...COLOUR_PRIMARY);
 pdf.rect(35, y, 6, 48, "F");
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_TITLE);
-pdf.setTextColor(38, 90, 165);
+pdf.setTextColor(...COLOUR_PRIMARY);
 
 pdf.text("Research Highlights", 50, y + 22);
 
@@ -4319,7 +4318,7 @@ pdf.roundedRect(
   "FD",
 );
 
-pdf.setFillColor(38, 90, 165);
+pdf.setFillColor(...COLOUR_PRIMARY);
 pdf.rect(
   35,
   y,
@@ -4330,7 +4329,7 @@ pdf.rect(
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_SECTION);
-pdf.setTextColor(38, 90, 165);
+pdf.setTextColor(...COLOUR_PRIMARY);
 
 pdf.text(
   "Statistical Summary",
@@ -4518,12 +4517,12 @@ pdf.roundedRect(
   "FD",
 );
 
-pdf.setFillColor(38, 90, 165);
+pdf.setFillColor(...COLOUR_PRIMARY);
 pdf.rect(35, y, 6, 70, "F");
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_SECTION);
-pdf.setTextColor(38, 90, 165);
+pdf.setTextColor(...COLOUR_PRIMARY);
 
 pdf.text("Executive Summary", 50, y + 22);
 
@@ -4648,7 +4647,7 @@ summarySectionNumber++;
   pdf.setFontSize(FONT_SIZE_BODY);
   pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
   pdf.setFontSize(FONT_SIZE_BODY);
-  pdf.setTextColor(38, 90, 165);
+  pdf.setTextColor(...COLOUR_PRIMARY);
 
  pdf.text("Comparison Visualisation", barX, barY);
 
@@ -4739,7 +4738,7 @@ for (const card of insightCards) {
 
   pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
   pdf.setFontSize(FONT_SIZE_BODY);
-  pdf.setTextColor(38, 90, 165);
+  pdf.setTextColor(...COLOUR_PRIMARY);
   pdf.text(card.label, 65, y + 17);
 
   pdf.setFontSize(FONT_SIZE_TITLE);
@@ -4799,7 +4798,7 @@ pdf.roundedRect(
   "FD",
 );
 
-pdf.setFillColor(38, 90, 165);
+pdf.setFillColor(...COLOUR_PRIMARY);
 pdf.rect(
   50,
   y,
@@ -4810,7 +4809,7 @@ pdf.rect(
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_SUBSECTION);
-pdf.setTextColor(38, 90, 165);
+pdf.setTextColor(...COLOUR_PRIMARY);
 
 pdf.text(
   `Overall trend: ${trendInterpretation.trend}`,
