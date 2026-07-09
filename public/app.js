@@ -4181,7 +4181,7 @@ y += SECTION_SPACING;
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
-pdf.setTextColor(60, 60, 60);
+pdf.setTextColor(...COLOUR_TEXT);
 
 pdf.text(
   keyFindingLines,
@@ -4208,7 +4208,7 @@ y += SECTION_SPACING;
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
-pdf.setTextColor(60, 60, 60);
+pdf.setTextColor(...COLOUR_TEXT);
 
 const reportSummaryLines = pdf.splitTextToSize(
   reportSummary,
@@ -4250,7 +4250,7 @@ pdf.text("Research Highlights", 50, y + 22);
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
-pdf.setTextColor(60, 60, 60);
+pdf.setTextColor(...COLOUR_TEXT);
 
 const highlightLines = [
   historicalInsights
@@ -4273,7 +4273,7 @@ pdf.text("Confidence", 450, y + 35);
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
-pdf.setTextColor(60, 60, 60);
+pdf.setTextColor(...COLOUR_TEXT);
 
 pdf.text(
   `${historicalInsights.highestPoint.y.toFixed(1)}% (${historicalInsights.highestPoint.x})`,
@@ -4339,7 +4339,7 @@ pdf.text(
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
-pdf.setTextColor(60, 60, 60);
+pdf.setTextColor(...COLOUR_TEXT);
 
   if (statisticalSummary) {
 
@@ -4415,7 +4415,7 @@ pdf.text(
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
-pdf.setTextColor(60, 60, 60);
+pdf.setTextColor(...COLOUR_TEXT);
 
 pdf.text(
   `Total chart periods: ${dataQualitySummary.totalPeriods}`,
@@ -4493,7 +4493,7 @@ pdf.text(
 );
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
-pdf.setTextColor(60, 60, 60);
+pdf.setTextColor(...COLOUR_TEXT);
 
 y += 120;
 
@@ -4529,7 +4529,7 @@ pdf.text("Executive Summary", 50, y + 22);
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
-pdf.setTextColor(60, 60, 60);
+pdf.setTextColor(...COLOUR_TEXT);
 
 const executiveSummaryLines = pdf.splitTextToSize(
   reportSummary,
@@ -4660,7 +4660,7 @@ drawComparisonMeter(
   maxAverage,
   barX,
   barY,
-  [38, 90, 165],
+  COLOUR_PRIMARY,
 );
 
 barY += 24;
@@ -4710,7 +4710,7 @@ summarySectionNumber++;
 
   pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_SUBSECTION);
-pdf.setTextColor(60, 60, 60);
+pdf.setTextColor(...COLOUR_TEXT);
 
 const insightCards = [
   {
@@ -4819,7 +4819,7 @@ pdf.text(
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
-pdf.setTextColor(60, 60, 60);
+pdf.setTextColor(...COLOUR_TEXT);
 
 pdf.text(
   trendLines,
