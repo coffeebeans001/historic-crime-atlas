@@ -4498,7 +4498,7 @@ pdf.setTextColor(60, 60, 60);
 
 y += 120;
 
-pdf.setFontSize(9);
+pdf.setFontSize(FONT_SIZE_SMALL);
 
 pdf.addPage();
 
