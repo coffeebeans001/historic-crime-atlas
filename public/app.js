@@ -4245,7 +4245,7 @@ pdf.roundedRect(
 );
 
 pdf.setFillColor(...COLOUR_PRIMARY);
-pdf.rect(35, y, 6, 48, "F");
+pdf.rect(CARD_X, y, ACCENT_BAR_WIDTH, 48, "F");
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_TITLE);
@@ -4325,9 +4325,9 @@ pdf.roundedRect(
 
 pdf.setFillColor(...COLOUR_PRIMARY);
 pdf.rect(
-  35,
+  CARD_X,
   y,
-  6,
+  ACCENT_BAR_WIDTH,
   120,
   "F",
 );
@@ -4401,9 +4401,9 @@ pdf.roundedRect(
 
 pdf.setFillColor(...COLOUR_SUCCESS);
 pdf.rect(
-  35,
+  CARD_X,
   y,
-  6,
+  ACCENT_BAR_WIDTH,
   105,
   "F",
 );
@@ -4523,7 +4523,7 @@ pdf.roundedRect(
 );
 
 pdf.setFillColor(...COLOUR_PRIMARY);
-pdf.rect(35, y, 6, 70, "F");
+pdf.rect(CARD_X, y, ACCENT_BAR_WIDTH, 70, "F");
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_SECTION);
@@ -4798,8 +4798,8 @@ pdf.roundedRect(
   y,
   500,
   trendBoxHeight,
-  6,
-  6,
+  CARD_RADIUS,
+  ACCENT_BAR_WIDTH,
   "FD",
 );
 
@@ -4807,7 +4807,7 @@ pdf.setFillColor(...COLOUR_PRIMARY);
 pdf.rect(
   50,
   y,
-  6,
+  ACCENT_BAR_WIDTH,
   trendBoxHeight,
   "F",
 );
