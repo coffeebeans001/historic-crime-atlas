@@ -4072,7 +4072,6 @@ const ACCENT_BAR_WIDTH = 6;
 const dateFrom = document.getElementById("from")?.value;
 const dateTo = document.getElementById("to")?.value;
 
-
 let rangeText = "Full dataset";
 
 if (dateFrom && dateTo) {
