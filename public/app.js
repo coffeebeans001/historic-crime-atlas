@@ -4126,7 +4126,7 @@ y += 35;
 // Page intro title
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_SECTION);
-pdf.setTextColor(0, 0, 0);
+pdf.setTextColor(...COLOUR_BLACK);
 
 pdf.text(
   "Historic Criminal Case Analytics",
@@ -4191,7 +4191,7 @@ pdf.text(
 
 y += keyFindingLines.length * 14 + 24;
 
-pdf.setTextColor(0, 0, 0);  
+pdf.setTextColor(...COLOUR_BLACK);  
 
 // Report Summary section
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
@@ -4223,7 +4223,7 @@ pdf.text(
 
 y += reportSummaryLines.length * 14 + 24;
 
-pdf.setTextColor(0, 0, 0);
+pdf.setTextColor(...COLOUR_BLACK);
 
 // Research Highlights
 pdf.setFillColor(...COLOUR_BACKGROUND);
@@ -4264,7 +4264,7 @@ const highlightLines = [
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_SMALL);
-pdf.setTextColor(120, 120, 120);
+pdf.setTextColor(...COLOUR_TEXT_LIGHT);
 
 pdf.text("Highest", 50, y + 35);
 pdf.text("Lowest", 190, y + 35);
@@ -4301,12 +4301,12 @@ pdf.text(
 
 y += 62;
 
-pdf.setTextColor(0, 0, 0);
+pdf.setTextColor(...COLOUR_BLACK);
 
 // Statistical Summary
 
 pdf.setFillColor(...COLOUR_BACKGROUND);
-pdf.setDrawColor(220, 225, 235);
+pdf.setDrawColor(...COLOUR_BORDER);
 
 pdf.roundedRect(
   35,
@@ -4394,7 +4394,7 @@ pdf.roundedRect(
   "FD",
 );
 
-pdf.setFillColor(40, 167, 69);
+pdf.setFillColor(...COLOUR_SUCCESS);
 pdf.rect(
   35,
   y,
@@ -4405,7 +4405,7 @@ pdf.rect(
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_SECTION);
-pdf.setTextColor(40, 167, 69);
+pdf.setTextColor(...COLOUR_SUCCESS);
 
 pdf.text(
   "Data Quality",
@@ -4478,7 +4478,7 @@ pdf.roundedRect(
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(FONT_SIZE_SMALL);
-pdf.setTextColor(40, 167, 69);
+pdf.setTextColor(...COLOUR_SUCCESS);
 
 pdf.text(
   `${confidenceScore}%`,
@@ -4542,7 +4542,7 @@ pdf.text(`Research ID: ${researchId}`, 50, y + 72);
 
 pdf.text(`Report Version: ${reportVersion}`, 250, y + 72);
 
-pdf.setTextColor(0, 0, 0);
+pdf.setTextColor(...COLOUR_BLACK);
 
 y += 110;
 
@@ -4678,12 +4678,12 @@ drawComparisonMeter(
 barY += 28;
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
-pdf.setTextColor(0, 0, 0);
+pdf.setTextColor(...COLOUR_BLACK);
 
 y = barY + 10;
 
 pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
-pdf.setTextColor(0, 0, 0);
+pdf.setTextColor(...COLOUR_BLACK);
 
 y = barY + 10;
   
@@ -4752,7 +4752,7 @@ for (const card of insightCards) {
   y += 56;
 }
 
-pdf.setTextColor(0, 0, 0);
+pdf.setTextColor(...COLOUR_BLACK);
 
   y += 10;
 }
@@ -4829,7 +4829,7 @@ pdf.text(
 
 y += trendBoxHeight + 18;
 
-pdf.setTextColor(0, 0, 0);
+pdf.setTextColor(...COLOUR_BLACK);
 }
 
 // Research Conclusions
