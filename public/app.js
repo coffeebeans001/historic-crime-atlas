@@ -4672,7 +4672,7 @@ drawComparisonMeter(
   maxAverage,
   barX,
   barY,
-  [106, 76, 147],
+  COLOUR_ACCENT,
 );
 
 barY += 28;
