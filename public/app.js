@@ -4235,12 +4235,12 @@ pdf.setFillColor(...COLOUR_BACKGROUND);
 pdf.setDrawColor(...COLOUR_BORDER);
 
 pdf.roundedRect(
-  35,
+  CARD_X,
   y,
-  525,
+  CARD_WIDTH,
   48,
-  6,
-  6,
+  CARD_RADIUS,
+  ACCENT_BAR_WIDTH,
   "FD",
 );
 
@@ -4314,12 +4314,12 @@ pdf.setFillColor(...COLOUR_BACKGROUND);
 pdf.setDrawColor(...COLOUR_BORDER);
 
 pdf.roundedRect(
-  35,
+  CARD_X,
   y,
-  525,
+  CARD_WIDTH,
   120,
-  6,
-  6,
+  CARD_RADIUS,
+  ACCENT_BAR_WIDTH,
   "FD",
 );
 
@@ -4390,12 +4390,12 @@ pdf.setFillColor(...COLOUR_BACKGROUND);
 pdf.setDrawColor(...COLOUR_BORDER);
 
 pdf.roundedRect(
-  35,
+  CARD_X,
   y,
-  525,
+  CARD_WIDTH,
   105,
-  6,
-  6,
+  CARD_RADIUS,
+  ACCENT_BAR_WIDTH,
   "FD",
 );
 
@@ -4513,12 +4513,12 @@ pdf.setFillColor(...COLOUR_BACKGROUND);
 pdf.setDrawColor(210, 220, 235);
 
 pdf.roundedRect(
-  35,
+  CARD_X,
   y,
-  525,
+  CARD_WIDTH,
   90,
-  6,
-  6,
+  CARD_RADIUS,
+  ACCENT_BAR_WIDTH,
   "FD",
 );
 
