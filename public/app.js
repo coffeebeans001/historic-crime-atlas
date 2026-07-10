@@ -4050,7 +4050,6 @@ const FONT_SIZE_SMALL = 9;
 const SECTION_SPACING = 20;
 
 // ---------- Colour Palette ----------
-
 const COLOUR_PRIMARY = [38, 90, 165];
 const COLOUR_TEXT = [60, 60, 60];
 const COLOUR_TEXT_LIGHT = [120, 120, 120];
@@ -4063,6 +4062,12 @@ const COLOUR_WARNING = [190, 120, 20];
 const COLOUR_ACCENT = [106, 76, 147];
 
 const COLOUR_BLACK = [0, 0, 0];
+
+// ---------- Card Layout ----------
+const CARD_X = 35;
+const CARD_WIDTH = 525;
+const CARD_RADIUS = 6;
+const ACCENT_BAR_WIDTH = 6;
 
 const dateFrom = document.getElementById("from")?.value;
 const dateTo = document.getElementById("to")?.value;
