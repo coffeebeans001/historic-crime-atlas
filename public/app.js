@@ -3565,7 +3565,7 @@ function buildHistoricalInsights(points) {
   };
 }
 
-function drawChip(pdf, text, x, y, fillColor) {
+function drawPdfChip(pdf, text, x, y, fillColor) {
   pdf.setFillColor(...fillColor);
   pdf.setDrawColor(...fillColor);
 
@@ -4101,7 +4101,7 @@ const chipY = y;
 let chipX = 40;
 
 
-chipX += drawChip(
+chipX += drawPdfChip(
   pdf,
   offenceFilter,
   chipX,
@@ -4109,7 +4109,7 @@ chipX += drawChip(
   offenceChipColour,
 ) + 8;
 
-chipX += drawChip(
+chipX += drawPdfChip(
   pdf,
   sourceGender,
   chipX,
@@ -4117,7 +4117,7 @@ chipX += drawChip(
   genderChipColour,
 ) + 8;
 
-drawChip(
+drawPdfChip(
   pdf,
   rangeText,
   chipX,
