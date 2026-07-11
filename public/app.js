@@ -3869,7 +3869,7 @@ function buildHistoricalCommentary(
   const commentary = [];
 
   commentary.push(
-    `Observation: The selected data suggests an average conviction rate of ${statisticalSummary.average.toFixed(1)}% across the analysed period.`,
+    `Observation: The selected data suggests an average conviction rate of ${statisticalSummary.average.toFixed(1)}% across the selected period.`,
   );
 
   if (historicalInsights) {
@@ -3883,7 +3883,7 @@ function buildHistoricalCommentary(
   }
 
     commentary.push(
-      `Interpretation: Taken together, these findings suggest that conviction outcomes were not evenly distributed across the analysed period.`,
+      `Interpretation: Taken together, these findings suggest that conviction outcomes were not evenly distributed across the selected period.`,
   );
 
   if (trendInterpretation) {
@@ -4842,7 +4842,7 @@ pdf.setTextColor(...COLOUR_BLACK);
 // Research Conclusions
 const conclusionLines = [
   `The selected dataset shows an average conviction rate of ${statisticalSummary.average.toFixed(1)}%.`,
-  `The conviction rate varied by ${statisticalSummary.range.toFixed(1)} percentage points across the analysed period.`,
+  `The conviction rate varied by ${statisticalSummary.range.toFixed(1)} percentage points across the selected period.`,
   historicalInsights
     ? `The highest observed rate was ${historicalInsights.highestPoint.y.toFixed(1)}% in ${historicalInsights.highestPoint.x}, while the lowest was ${historicalInsights.lowestPoint.y.toFixed(1)}% in ${historicalInsights.lowestPoint.x}.`
     : "Historical high and low points were not available for this export.",
