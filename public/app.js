@@ -4308,7 +4308,13 @@ y += 62;
 pdf.setTextColor(...COLOUR_BLACK);
 
 // Statistical Summary
-
+y = ensurePdfPageSpace(
+  pdf,
+  y,
+  120,
+  "1. Findings & Visualisation",
+  sourceReference,
+);
 pdf.setFillColor(...COLOUR_BACKGROUND);
 pdf.setDrawColor(...COLOUR_BORDER);
 
@@ -4318,7 +4324,7 @@ pdf.roundedRect(
   CARD_WIDTH,
   120,
   CARD_RADIUS,
-  ACCENT_BAR_WIDTH,
+  CARD_RADIUS,
   "FD",
 );
 
@@ -4378,13 +4384,10 @@ pdf.setTextColor(...COLOUR_TEXT);
   );
 
 }
-//}
 
-//y += SECTION_SPACING;
 y += 100;
 
 // Data Quality
-
 pdf.setFillColor(...COLOUR_BACKGROUND);
 pdf.setDrawColor(...COLOUR_BORDER);
 
