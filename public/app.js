@@ -4609,7 +4609,7 @@ if (genderComparisonSummary) {
   y = ensurePdfPageSpace(
     pdf,
     y,
-    130,
+    160,
     "2. Summary",
     sourceReference,
   );
