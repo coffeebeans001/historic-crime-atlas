@@ -274,6 +274,8 @@
       src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"
     ></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
     <!-- Your app (MUST be after the plugin) -->
     <script defer src="/app.js"></script>
   </head>
@@ -447,6 +449,12 @@
       <small id="last-export-status" class="muted"></small>
       <button id="download-pdf-btn">Download PDF</button>
     </div>
+
+    <button id="download-map-btn" type="button">
+      Download map (PNG)
+    </button>
+
+    <small id="map-export-status" class="muted"></small>
 
     <button id="download-snapshot-pdf-btn" type="button">
        Export multi-page PDF

@@ -2528,6 +2528,9 @@ function buildResearchNotes() {
 
 }
 
+// =========================
+// Research Snapshot Export
+// =========================
 async function downloadResearchSnapshot() {
   const start = performance.now();
   validateSnapshotExportReadiness();
@@ -2638,6 +2641,91 @@ async function downloadResearchSnapshot() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }, "image/png");
 }
+
+// =========================
+// Research Map Snapshot
+// =========================
+async function downloadResearchMap() {
+  const mapElement = document.getElementById("map");
+  const statusElement = document.getElementById("map-export-status");
+
+  if (!mapElement) {
+    console.error("Map export failed: #map was not found.");
+
+    if (statusElement) {
+      statusElement.textContent = "Map export failed: map not found.";
+    }
+
+    return;
+  }
+
+  if (!map) {
+    console.error("Map export failed: Leaflet map is not initialised.");
+
+    if (statusElement) {
+      statusElement.textContent = "Map export failed: map not ready.";
+    }
+
+    return;
+  }
+
+  if (typeof html2canvas !== "function") {
+    console.error("Map export failed: html2canvas is not loaded.");
+
+    if (statusElement) {
+      statusElement.textContent =
+        "Map export failed: export library not loaded.";
+    }
+
+    return;
+  }
+
+  try {
+    if (statusElement) {
+      statusElement.textContent = "Preparing map export...";
+    }
+
+    // Ensure Leaflet has the correct container dimensions.
+    map.invalidateSize();
+
+    // Give map tiles and marker clusters time to settle.
+    await waitForMapTiles(baseTiles);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    const mapCanvas = await html2canvas(mapElement, {
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: "#ffffff",
+      scale: 2,
+      logging: false,
+    });
+
+    const mapImageUrl = mapCanvas.toDataURL("image/png");
+
+    const downloadLink = document.createElement("a");
+
+    downloadLink.href = mapImageUrl;
+    downloadLink.download = "old-bailey-research-map.png";
+
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+
+    if (statusElement) {
+      statusElement.textContent = "Map exported successfully.";
+    }
+
+    console.info("Map exported: old-bailey-research-map.png");
+  } catch (error) {
+    console.error("Map export failed:", error);
+
+    if (statusElement) {
+      statusElement.textContent =
+        "Map export failed. Check the console for details.";
+    }
+  }
+}
+
 
 function wrapText(text, maxChars = 90) {
   if (!text) return [];
@@ -3940,6 +4028,93 @@ function buildResearchSignificance(
   return significance;
 }
 
+// ======================================================
+// Research Map Snapshot Export
+// ======================================================
+async function downloadResearchMap() {
+  const mapElement = document.getElementById("map");
+  const statusElement = document.getElementById("map-export-status");
+
+  if (!mapElement) {
+    console.error("Map export failed: #map was not found.");
+
+    if (statusElement) {
+      statusElement.textContent = "Map export failed: map not found.";
+    }
+
+    return;
+  }
+
+  if (!map) {
+    console.error("Map export failed: Leaflet map is not initialised.");
+
+    if (statusElement) {
+      statusElement.textContent = "Map export failed: map not ready.";
+    }
+
+    return;
+  }
+
+  if (typeof html2canvas !== "function") {
+    console.error("Map export failed: html2canvas is not loaded.");
+
+    if (statusElement) {
+      statusElement.textContent =
+        "Map export failed: export library not loaded.";
+    }
+
+    return;
+  }
+
+  try {
+    if (statusElement) {
+      statusElement.textContent = "Preparing map export...";
+    }
+
+    // Ensure Leaflet has the correct container dimensions.
+    map.invalidateSize();
+
+    // Give map tiles and marker clusters time to settle.
+    await waitForVisibleMapTiles(baseTiles);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    const mapCanvas = await html2canvas(mapElement, {
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: "#ffffff",
+      scale: 2,
+      logging: false,
+    });
+
+    const mapImageUrl = mapCanvas.toDataURL("image/png");
+
+    const downloadLink = document.createElement("a");
+
+    downloadLink.href = mapImageUrl;
+    downloadLink.download = "old-bailey-research-map.png";
+
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+
+    if (statusElement) {
+      statusElement.textContent = "Map exported successfully.";
+    }
+
+    console.info("Map exported: old-bailey-research-map.png");
+  } catch (error) {
+    console.error("Map export failed:", error);
+
+    if (statusElement) {
+      statusElement.textContent =
+        "Map export failed. Check the console for details.";
+    }
+  }
+}
+
+// ======================================================
+// PDF Export
+// ======================================================
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -5389,20 +5564,46 @@ function onMapClick(e) {
   scheduleUrlSync();
 }
 
+// =========================
+// Research Map Snapshot
+// =========================
+function waitForVisibleMapTiles(tileLayer, timeout = 3000) {
+  return new Promise((resolve) => {
+    if (!tileLayer || !tileLayer.isLoading()) {
+      resolve();
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      tileLayer.off("load", handleLoad);
+      resolve();
+    }, timeout);
+
+    function handleLoad() {
+      clearTimeout(timeoutId);
+      resolve();
+    }
+
+    tileLayer.once("load", handleLoad);
+  });
+}
+
+
 function ensureMap() {
   if (!map) {
     map = L.map("map").setView([currentCenter.lat, currentCenter.lng], 13);
   }
 
   if (!baseTiles) {
-    baseTiles = L.tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap contributors",
-      },
-    ).addTo(map);
-  }
+  baseTiles = L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      maxZoom: 19,
+      crossOrigin: true,
+      attribution: "&copy; OpenStreetMap contributors",
+    },
+  ).addTo(map);
+}
 
   if (!markersLayer) {
     markersLayer = L.markerClusterGroup({
@@ -5882,6 +6083,8 @@ if (useGpsBtn)
     );
   });
 
+
+
 // Initialise map immediately (optional)
 ensureMap();
 
@@ -6068,6 +6271,15 @@ async function init() {
         console.error(err);
       }
     });
+
+    const downloadMapButton = document.getElementById("download-map-btn");
+
+    if (downloadMapButton) {
+      downloadMapButton.addEventListener("click", async () => {
+        await downloadResearchMap();
+      });
+    }
+
     const pdfBtn = document.getElementById("download-pdf-btn");
 
     if (pdfBtn) {
