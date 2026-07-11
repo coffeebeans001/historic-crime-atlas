@@ -4761,14 +4761,21 @@ pdf.setTextColor(...COLOUR_BLACK);
   y += 10;
 }
 
+const trendLines = pdf.splitTextToSize(
+  trendInterpretation.interpretation,
+  470,
+);
+
+const trendBoxHeight = 70 + trendLines.length * 14;
+
 if (trendInterpretation) {
   y = ensurePdfPageSpace(
-    pdf,
-    y,
-    90,
-    "2. Summary",
-    sourceReference,
-  );
+  pdf,
+  y,
+  trendBoxHeight + SECTION_SPACING,
+  "2. Summary",
+  sourceReference,
+);
 
   y = drawSectionCallout(
   pdf,
@@ -4784,13 +4791,6 @@ summarySectionNumber++;
 
   pdf.setFillColor(...COLOUR_BACKGROUND);
   pdf.setDrawColor(...COLOUR_BORDER);
-
-const trendLines = pdf.splitTextToSize(
-  trendInterpretation.interpretation,
-  470,
-);
-
-const trendBoxHeight = 70 + trendLines.length * 14;
 
 pdf.roundedRect(
   50,
