@@ -4697,7 +4697,7 @@ if (historicalInsights) {
   y = ensurePdfPageSpace(
     pdf,
     y,
-    100,
+    190,
     "2. Summary",
     sourceReference,
   );
