@@ -5954,7 +5954,8 @@ async function fetchNearby() {
 
       // Create marker
       const marker = L.marker([lat, lng]);
-      //marker.year = new Date(r.trial_date).getFullYear(); // Popup for click/pin
+      marker.caseData = r;
+       // Popup for click/pin
       marker.year = r.trial_date
         ? Number(String(r.trial_date).slice(0, 4))
         : null;
