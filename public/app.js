@@ -3341,15 +3341,6 @@ function updateSessionStatus() {
 
   const parts = buildSessionStatusParts();
 
-  //const updated =
-    //document
-      //.getElementById("last-updated")
-      //?.textContent?.replace("Last updated: ", "") || "";
-
-  //if (updated) {
-    //parts.push(updated);
-  //}
-
   el.textContent = parts.join(" • ");
 }
 
@@ -4403,6 +4394,27 @@ async function buildResearchMapSnapshot(mapCanvas) {
 // Research Map Snapshot Export
 // ======================================================
 async function downloadResearchMap() {
+  const offence =
+  getSelectedOptionText("group", "all offences");
+
+const gender =
+  getSelectedOptionText("gender", "all genders");
+
+const rangeText =
+  getMapSnapshotDateRange();
+
+const mapFilename = [
+  "research-map",
+  offence,
+  gender,
+  rangeText,
+]
+  .map((part) => slugifyFilenamePart(part))
+  .filter(Boolean)
+  .join("-");
+
+
+
   const mapElement = document.getElementById("map");
   const statusElement = document.getElementById("map-export-status");
 
@@ -4464,7 +4476,7 @@ async function downloadResearchMap() {
     const downloadLink = document.createElement("a");
 
     downloadLink.href = mapImageUrl;
-    downloadLink.download = "old-bailey-research-map.png";
+    downloadLink.download = `${mapFilename}.png`;
 
     document.body.appendChild(downloadLink);
     downloadLink.click();
@@ -5605,6 +5617,16 @@ pdf.save(`${safePdfName}.pdf`);
 console.info(
   `PDF exported: ${safePdfName}.pdf`,
 );
+}
+
+function slugifyFilenamePart(value, separator = "-") {
+  return String(value ?? "")
+    .trim()
+    .replace(/\//g, "-")          // <-- Add this line
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, separator)
+    .replace(new RegExp(`^\\${separator}+|\\${separator}+$`, "g"), "");
 }
 
 async function render() {
