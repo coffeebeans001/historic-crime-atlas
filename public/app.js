@@ -2607,7 +2607,6 @@ async function downloadResearchSnapshot() {
   updateResearchIdStatus();
   updateLastExportStatus();
 
-  //const researchId = `${stateId}-${exportCount}`;
   const researchId = `${stateId}-${snapshotExportCount}`;  
 
   const exportTime = new Date().toLocaleTimeString([], {
@@ -2652,86 +2651,6 @@ async function downloadResearchSnapshot() {
 // =========================
 // Research Map Snapshot
 // =========================
-async function downloadResearchMap() {
-  const mapElement = document.getElementById("map");
-  const statusElement = document.getElementById("map-export-status");
-
-  if (!mapElement) {
-    console.error("Map export failed: #map was not found.");
-
-    if (statusElement) {
-      statusElement.textContent = "Map export failed: map not found.";
-    }
-
-    return;
-  }
-
-  if (!map) {
-    console.error("Map export failed: Leaflet map is not initialised.");
-
-    if (statusElement) {
-      statusElement.textContent = "Map export failed: map not ready.";
-    }
-
-    return;
-  }
-
-  if (typeof html2canvas !== "function") {
-    console.error("Map export failed: html2canvas is not loaded.");
-
-    if (statusElement) {
-      statusElement.textContent =
-        "Map export failed: export library not loaded.";
-    }
-
-    return;
-  }
-
-  try {
-    if (statusElement) {
-      statusElement.textContent = "Preparing map export...";
-    }
-
-    // Ensure Leaflet has the correct container dimensions.
-    map.invalidateSize();
-
-    // Give map tiles and marker clusters time to settle.
-    await waitForMapTiles(baseTiles);
-    await new Promise((resolve) => setTimeout(resolve, 250));
-
-    const mapCanvas = await html2canvas(mapElement, {
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: "#ffffff",
-      scale: 2,
-      logging: false,
-    });
-
-    const mapImageUrl = mapCanvas.toDataURL("image/png");
-
-    const downloadLink = document.createElement("a");
-
-    downloadLink.href = mapImageUrl;
-    downloadLink.download = "old-bailey-research-map.png";
-
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    downloadLink.remove();
-
-    if (statusElement) {
-      statusElement.textContent = "Map exported successfully.";
-    }
-
-    console.info("Map exported: old-bailey-research-map.png");
-  } catch (error) {
-    console.error("Map export failed:", error);
-
-    if (statusElement) {
-      statusElement.textContent =
-        "Map export failed. Check the console for details.";
-    }
-  }
-}
 
 
 function wrapText(text, maxChars = 90) {
@@ -4097,7 +4016,24 @@ function drawWrappedCanvasText(
   return currentY + lineHeight;
 }
 
+function getObrResearchId() {
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+
+  const reportIdDate =
+    `${year}${month}${day}${hours}${minutes}${seconds}`;
+
+  return `OBR-${reportIdDate}`;
+}
+
 async function buildResearchMapSnapshot(mapCanvas) {
+ 
   const snapshotCanvas =
     document.createElement("canvas");
 
@@ -4109,6 +4045,7 @@ async function buildResearchMapSnapshot(mapCanvas) {
     );
   }
 
+  
   const snapshotWidth = 1400;
   const outerPadding = 70;
   const headerHeight = 190;
@@ -4390,6 +4327,15 @@ async function buildResearchMapSnapshot(mapCanvas) {
   return snapshotCanvas;
 }
 
+function getResearchId() {
+  const reportIdDate = new Date()
+    .toISOString()
+    .replace(/[-:T.Z]/g, "")
+    .slice(0, 14);
+
+  return `OBR-${reportIdDate}`;
+}
+
 // ======================================================
 // Research Map Snapshot Export
 // ======================================================
@@ -4404,12 +4350,14 @@ const gender = getSelectedOptionText("gender", "all genders");
 
 const rangeText = getMapSnapshotDateRange();
 
+
+
 const filenameRange =
   fromDate && toDate
     ? `${formatFilenameDate(fromDate)}-to-${formatFilenameDate(toDate)}`
     : "full-dataset";
 
-const mapFilename = [
+const exportFilename = [
   "research-map",
   offence,
   gender,
@@ -4475,15 +4423,21 @@ const mapFilename = [
       logging: false,
     });
 
-    const snapshotCanvas = await buildResearchMapSnapshot(mapCanvas);
+    const researchId = getResearchId();
+
+    const snapshotCanvas =
+      await buildResearchMapSnapshot(
+        mapCanvas,
+        researchId,
+      );
 
     const mapImageUrl = snapshotCanvas.toDataURL("image/png");
 
     const downloadLink = document.createElement("a");
 
     downloadLink.href = mapImageUrl;
-    downloadLink.download = `${mapFilename}.png`;
-
+    downloadLink.download = `${researchId}-${exportFilename}.png`;
+    
     document.body.appendChild(downloadLink);
     downloadLink.click();
     downloadLink.remove();
@@ -4517,12 +4471,7 @@ async function downloadResearchSnapshotPdf() {
 
   const exportDateTime = getExportDateTime().display;
 
-  const reportIdDate = new Date()
-    .toISOString()
-    .replace(/[-:T.Z]/g, "")
-    .slice(0, 14);
-
-  const researchId = `OBR-${reportIdDate}`;
+  const researchId = getResearchId();
   const reportVersion = exportDateTime; 
 
 // Chip colours  
