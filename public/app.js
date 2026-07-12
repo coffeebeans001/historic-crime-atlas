@@ -4394,20 +4394,26 @@ async function buildResearchMapSnapshot(mapCanvas) {
 // Research Map Snapshot Export
 // ======================================================
 async function downloadResearchMap() {
-  const offence =
-  getSelectedOptionText("group", "all offences");
+  const fromDate = document.getElementById("from")?.value;
 
-const gender =
-  getSelectedOptionText("gender", "all genders");
+  const toDate = document.getElementById("to")?.value;
 
-const rangeText =
-  getMapSnapshotDateRange();
+  const offence = getSelectedOptionText("group", "all offences");
+
+const gender = getSelectedOptionText("gender", "all genders");
+
+const rangeText = getMapSnapshotDateRange();
+
+const filenameRange =
+  fromDate && toDate
+    ? `${formatFilenameDate(fromDate)}-to-${formatFilenameDate(toDate)}`
+    : "full-dataset";
 
 const mapFilename = [
   "research-map",
   offence,
   gender,
-  rangeText,
+  filenameRange,
 ]
   .map((part) => slugifyFilenamePart(part))
   .filter(Boolean)
@@ -5627,6 +5633,19 @@ function slugifyFilenamePart(value, separator = "-") {
     .replace(/[^\w\s-]/g, "")
     .replace(/[\s_-]+/g, separator)
     .replace(new RegExp(`^\\${separator}+|\\${separator}+$`, "g"), "");
+}
+
+function formatFilenameDate(value) {
+  if (!value) return "";
+
+  const datePart = String(value).slice(0, 10);
+  const [year, month, day] = datePart.split("-");
+
+  if (!year || !month || !day) {
+    return "";
+  }
+
+  return `${year}-${month}-${day}`;
 }
 
 async function render() {
