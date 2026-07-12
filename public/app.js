@@ -1445,9 +1445,16 @@ async function copyShareableLink() {
   await navigator.clipboard.writeText(window.location.href);
 }
 
-function formatDisplayDate(dateString) {
-  if (!dateString) return "";
-  const [year, month, day] = dateString.split("-");
+function formatDisplayDate(value) {
+  if (!value) return "Not available";
+
+  const datePart = String(value).slice(0, 10);
+  const [year, month, day] = datePart.split("-");
+
+  if (!year || !month || !day) {
+    return String(value);
+  }
+
   return `${day}/${month}/${year}`;
 }
 
@@ -4028,6 +4035,370 @@ function buildResearchSignificance(
   return significance;
 }
 
+function getSelectedOptionText(elementId, fallback = "All") {
+  const element = document.getElementById(elementId);
+
+  if (!element) return fallback;
+
+  const selectedOption =
+    element.options?.[element.selectedIndex];
+
+  return selectedOption?.textContent?.trim()
+    || element.value
+    || fallback;
+}
+
+function getMapSnapshotDateRange() {
+  const dateFrom =
+    document.getElementById("from")?.value;
+
+  const dateTo =
+    document.getElementById("to")?.value;
+
+  if (dateFrom && dateTo) {
+    return `${formatDisplayDate(dateFrom)} to ${formatDisplayDate(dateTo)}`;
+  }
+
+  if (dateFrom) {
+    return `From ${formatDisplayDate(dateFrom)}`;
+  }
+
+  if (dateTo) {
+    return `Up to ${formatDisplayDate(dateTo)}`;
+  }
+
+  return "Full dataset";
+}
+
+function drawWrappedCanvasText(
+  ctx,
+  text,
+  x,
+  y,
+  maxWidth,
+  lineHeight,
+) {
+  const words = String(text || "Not available").split(/\s+/);
+  let line = "";
+  let currentY = y;
+
+  for (const word of words) {
+    const testLine = line
+      ? `${line} ${word}`
+      : word;
+
+    if (
+      ctx.measureText(testLine).width > maxWidth
+      && line
+    ) {
+      ctx.fillText(line, x, currentY);
+      line = word;
+      currentY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+
+  if (line) {
+    ctx.fillText(line, x, currentY);
+  }
+
+  return currentY + lineHeight;
+}
+
+async function buildResearchMapSnapshot(mapCanvas) {
+  const snapshotCanvas =
+    document.createElement("canvas");
+
+  const ctx = snapshotCanvas.getContext("2d");
+
+  if (!ctx) {
+    throw new Error(
+      "Unable to create the Research Map Snapshot canvas.",
+    );
+  }
+
+  const snapshotWidth = 1400;
+  const outerPadding = 70;
+  const headerHeight = 190;
+  const mapWidth = snapshotWidth - outerPadding * 2;
+
+  const mapAspectRatio =
+    mapCanvas.height / mapCanvas.width;
+
+  const mapHeight =
+    Math.round(mapWidth * mapAspectRatio);
+
+  const selectedCase =
+    window.__nearbyUI?.pinnedMarker?.caseData
+    ?? null;
+
+  const informationPanelHeight =
+    selectedCase ? 300 : 220;
+
+  const footerHeight = 90;
+
+  snapshotCanvas.width = snapshotWidth;
+  snapshotCanvas.height =
+    outerPadding
+    + headerHeight
+    + mapHeight
+    + 35
+    + informationPanelHeight
+    + footerHeight;
+
+  // Background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(
+    0,
+    0,
+    snapshotCanvas.width,
+    snapshotCanvas.height,
+  );
+
+  const offence =
+    getSelectedOptionText("group", "All offences");
+
+  const gender =
+    getSelectedOptionText("gender", "All genders");
+
+  const rangeText = getMapSnapshotDateRange();
+
+  // Main title
+  ctx.fillStyle = "#265aa5";
+  ctx.font = "bold 34px Arial";
+  ctx.fillText(
+    "Historic Criminal Case Analytics",
+    outerPadding,
+    outerPadding + 34,
+  );
+
+  ctx.fillStyle = "#3c3c3c";
+  ctx.font = "bold 25px Arial";
+  ctx.fillText(
+    "Research Map Snapshot",
+    outerPadding,
+    outerPadding + 78,
+  );
+
+  // Filter line
+  ctx.fillStyle = "#5a5a5a";
+  ctx.font = "20px Arial";
+  ctx.fillText(
+    `${offence} | ${gender} | ${rangeText}`,
+    outerPadding,
+    outerPadding + 122,
+  );
+
+  // Separator
+  ctx.strokeStyle = "#dce1eb";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(
+    outerPadding,
+    outerPadding + 150,
+  );
+  ctx.lineTo(
+    snapshotWidth - outerPadding,
+    outerPadding + 150,
+  );
+  ctx.stroke();
+
+  const mapX = outerPadding;
+  const mapY = outerPadding + headerHeight;
+
+  // Map border
+  ctx.strokeStyle = "#dce1eb";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(
+    mapX - 1,
+    mapY - 1,
+    mapWidth + 2,
+    mapHeight + 2,
+  );
+
+  ctx.drawImage(
+    mapCanvas,
+    mapX,
+    mapY,
+    mapWidth,
+    mapHeight,
+  );
+
+  const panelX = outerPadding;
+  const panelY = mapY + mapHeight + 35;
+  const panelWidth = mapWidth;
+
+  // Information panel
+  ctx.fillStyle = "#f8fafc";
+  ctx.strokeStyle = "#dce1eb";
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+  ctx.roundRect(
+    panelX,
+    panelY,
+    panelWidth,
+    informationPanelHeight,
+    14,
+  );
+  ctx.fill();
+  ctx.stroke();
+
+  // Accent bar
+  ctx.fillStyle = selectedCase
+    ? "#265aa5"
+    : "#28a745";
+
+  ctx.fillRect(
+    panelX,
+    panelY,
+    10,
+    informationPanelHeight,
+  );
+
+  ctx.fillStyle = selectedCase
+    ? "#265aa5"
+    : "#28a745";
+
+  ctx.font = "bold 24px Arial";
+  ctx.fillText(
+    selectedCase
+      ? "Highlighted Case"
+      : "Map Summary",
+    panelX + 32,
+    panelY + 42,
+  );
+
+  ctx.fillStyle = "#3c3c3c";
+  ctx.font = "19px Arial";
+
+  if (selectedCase) {
+    const leftX = panelX + 32;
+    const rightX = panelX + 650;
+
+    ctx.font = "bold 18px Arial";
+    ctx.fillText("Defendant", leftX, panelY + 84);
+    ctx.fillText("Trial date", rightX, panelY + 84);
+
+    ctx.font = "19px Arial";
+    ctx.fillText(
+      selectedCase.defendant_name
+        || selectedCase.defendant
+        || "Not available",
+      leftX,
+      panelY + 112,
+    );
+
+    ctx.fillText(
+      selectedCase.trial_date
+        ? formatDisplayDate(selectedCase.trial_date)
+        : "Not available",
+      rightX,
+      panelY + 112,
+    );
+
+    ctx.font = "bold 18px Arial";
+    ctx.fillText("Offence", leftX, panelY + 158);
+    ctx.fillText("Verdict", rightX, panelY + 158);
+
+    ctx.font = "19px Arial";
+
+    drawWrappedCanvasText(
+      ctx,
+      selectedCase.offence
+        || selectedCase.offence_name
+        || "Not available",
+      leftX,
+      panelY + 186,
+      520,
+      24,
+    );
+
+    ctx.fillText(
+      selectedCase.verdict || "Not available",
+      rightX,
+      panelY + 186,
+    );
+
+    ctx.font = "bold 18px Arial";
+    ctx.fillText("Location", leftX, panelY + 232);
+
+    ctx.font = "19px Arial";
+    ctx.fillText(
+      selectedCase.trial_location
+        || selectedCase.location
+        || "Not available",
+      leftX,
+      panelY + 260,
+    );
+  } else {
+    const markerCount =
+      markersLayer?.getLayers?.().length ?? 0;
+
+    const radiusValue =
+      document.getElementById("radius")?.value;
+
+    ctx.fillStyle = "#3c3c3c";
+    ctx.font = "19px Arial";
+
+    ctx.fillText(
+      `Markers shown: ${markerCount}`,
+      panelX + 32,
+      panelY + 88,
+    );
+
+    ctx.fillText(
+      `Search radius: ${
+        radiusValue
+          ? `${radiusValue} km`
+          : "Not specified"
+      }`,
+      panelX + 32,
+      panelY + 126,
+    );
+
+    ctx.fillText(
+      "No individual case was selected when this map was exported.",
+      panelX + 32,
+      panelY + 164,
+    );
+  }
+
+  // Footer
+  const exportDateTime =
+    getExportDateTime().display;
+
+  const footerY =
+    panelY + informationPanelHeight + 52;
+
+  ctx.strokeStyle = "#dce1eb";
+  ctx.beginPath();
+  ctx.moveTo(outerPadding, footerY - 25);
+  ctx.lineTo(snapshotWidth - outerPadding, footerY - 25);
+  ctx.stroke();
+
+  ctx.fillStyle = "#5a5a5a";
+  ctx.font = "17px Arial";
+
+  ctx.fillText(
+    "Old Bailey Analytics research workspace",
+    outerPadding,
+    footerY,
+  );
+
+  ctx.textAlign = "right";
+  ctx.fillText(
+    `Exported: ${exportDateTime}`,
+    snapshotWidth - outerPadding,
+    footerY,
+  );
+
+  ctx.textAlign = "left";
+
+  return snapshotCanvas;
+}
+
 // ======================================================
 // Research Map Snapshot Export
 // ======================================================
@@ -4086,7 +4457,9 @@ async function downloadResearchMap() {
       logging: false,
     });
 
-    const mapImageUrl = mapCanvas.toDataURL("image/png");
+    const snapshotCanvas = await buildResearchMapSnapshot(mapCanvas);
+
+    const mapImageUrl = snapshotCanvas.toDataURL("image/png");
 
     const downloadLink = document.createElement("a");
 
