@@ -2541,6 +2541,7 @@ function buildResearchNotes() {
 async function downloadResearchSnapshot() {
   const start = performance.now();
   validateSnapshotExportReadiness();
+  const researchId = getResearchId();
 
   //const exportCount = getNextSnapshotExportCount();
   const snapshotExportCount = getNextSnapshotExportCount();
@@ -2607,7 +2608,7 @@ async function downloadResearchSnapshot() {
   updateResearchIdStatus();
   updateLastExportStatus();
 
-  const researchId = `${stateId}-${snapshotExportCount}`;  
+  //const researchId = `${stateId}-${snapshotExportCount}`;  
 
   const exportTime = new Date().toLocaleTimeString([], {
     hour: "2-digit",
@@ -4327,14 +4328,14 @@ async function buildResearchMapSnapshot(mapCanvas) {
   return snapshotCanvas;
 }
 
-function getResearchId() {
-  const reportIdDate = new Date()
-    .toISOString()
-    .replace(/[-:T.Z]/g, "")
-    .slice(0, 14);
+//function getResearchId() {
+  //const reportIdDate = new Date()
+    //.toISOString()
+    //.replace(/[-:T.Z]/g, "")
+    //.slice(0, 14);
 
-  return `OBR-${reportIdDate}`;
-}
+  //return `OBR-${reportIdDate}`;
+//}
 
 // ======================================================
 // Research Map Snapshot Export
@@ -4349,6 +4350,7 @@ async function downloadResearchMap() {
 const gender = getSelectedOptionText("gender", "all genders");
 
 const rangeText = getMapSnapshotDateRange();
+const researchId = getResearchId();
 
 
 
@@ -5597,6 +5599,31 @@ function formatFilenameDate(value) {
   return `${year}-${month}-${day}`;
 }
 
+let currentResearchId = null;
+
+function createResearchId() {
+  const reportIdDate = new Date()
+    .toISOString()
+    .replace(/[-:T.Z]/g, "")
+    .slice(0, 14);
+
+  return `OBR-${reportIdDate}`;
+}
+
+function getResearchId() {
+  if (!currentResearchId) {
+    currentResearchId = createResearchId();
+  }
+
+  return currentResearchId;
+}
+
+function refreshResearchId() {
+  currentResearchId = createResearchId();
+
+  return currentResearchId;
+}
+
 async function render() {
   ensureChart();
 
@@ -6819,6 +6846,7 @@ copyResearchIdBtn.textContent = "Copied ✓";
 
 const refreshResearchIdBtn =
   document.getElementById("refresh-research-id-btn");
+const refreshedResearchId = refreshResearchId();  
 
 refreshResearchIdBtn?.addEventListener("click", () => {
   writeUrlState();
