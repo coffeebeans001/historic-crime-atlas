@@ -4041,8 +4041,11 @@ function getObrResearchId() {
   return `OBR-${reportIdDate}`;
 }
 
-async function buildResearchMapSnapshot(mapCanvas) {
- 
+async function buildResearchMapSnapshot(
+  mapCanvas,
+  researchId,
+) {
+
   const snapshotCanvas =
     document.createElement("canvas");
 
@@ -4318,33 +4321,31 @@ async function buildResearchMapSnapshot(mapCanvas) {
   ctx.fillStyle = "#5a5a5a";
   ctx.font = "17px Arial";
 
-  ctx.fillText(
-    "Old Bailey Analytics research workspace",
-    outerPadding,
-    footerY,
-  );
+ ctx.fillText(
+  "Old Bailey Analytics research workspace",
+  outerPadding,
+  footerY,
+);
 
-  ctx.textAlign = "right";
-  ctx.fillText(
-    `Exported: ${exportDateTime}`,
-    snapshotWidth - outerPadding,
-    footerY,
-  );
+// Research ID
+ctx.fillText(
+  `Research ID: ${researchId}`,
+  outerPadding,
+  footerY + 18,
+);
 
-  ctx.textAlign = "left";
+ctx.textAlign = "right";
 
-  return snapshotCanvas;
+ctx.fillText(
+  `Exported: ${exportDateTime}`,
+  snapshotWidth - outerPadding,
+  footerY,
+);
+
+ctx.textAlign = "left";
+
+return snapshotCanvas;
 }
-
-//function getResearchId() {
-  //const reportIdDate = new Date()
-    //.toISOString()
-    //.replace(/[-:T.Z]/g, "")
-    //.slice(0, 14);
-
-  //return `OBR-${reportIdDate}`;
-//}
-
 // ======================================================
 // Research Map Snapshot Export
 // ======================================================
@@ -4481,11 +4482,14 @@ async function downloadResearchSnapshotPdf() {
 
   let mapPageNumber = null;
 
+  const includeMapInPdf =
+  document.getElementById("include-map-pdf")?.checked
+  ?? true;
+
   const exportDateTime = getExportDateTime().display;
-
   const researchId = getResearchId();
-  const reportVersion = exportDateTime; 
-
+  const reportVersion = exportDateTime;
+  
 // Chip colours  
 const offenceChipColour = [32, 76, 151];   // Blue
 const genderChipColour = [106, 76, 147];   // Purple
@@ -5596,7 +5600,8 @@ const safePdfName =
 const mapElement = document.getElementById("map");
 
 if (
-  mapElement
+  includeMapInPdf
+  && mapElement
   && map
   && typeof html2canvas === "function"
 ) {
@@ -5620,7 +5625,7 @@ if (
       },
     );
 
-    const researchId = getResearchId();
+    //const researchId = getResearchId();
 
     const mapSnapshotCanvas =
       await buildResearchMapSnapshot(

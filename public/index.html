@@ -456,9 +456,37 @@
 
     <small id="map-export-status" class="muted"></small>
 
-    <button id="download-snapshot-pdf-btn" type="button">
-       Export multi-page PDF
-    </button>
+    
+  <div
+  style="
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  "
+>
+  <button id="download-snapshot-pdf-btn" type="button">
+    Export multi-page PDF
+  </button>
+
+  <label
+    for="include-map-pdf"
+    style="
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    "
+  >
+    <input
+      id="include-map-pdf"
+      type="checkbox"
+      checked
+    />
+    Include research map
+  </label>
+</div>
       <button id="copy-snapshot-url-btn" type="button">Copy snapshot URL</button>
      <button id="copy-research-id-btn" type="button">
         Copy research ID
