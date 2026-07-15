@@ -2335,7 +2335,7 @@ const generationTime =
 const snapshotSize =
   `${exportCanvas.width} × ${exportCanvas.height}px`;  
 
-const researchId = `${stateId}-${exportCount}`;
+const researchId = getResearchId();
 
 // timestamp
 drawSnapshotSectionHeading(
@@ -3280,14 +3280,19 @@ function getCurrentResearchId() {
   return `${stateId}-${exportCount}`;
 }
 
-function updateResearchIdStatus(researchId = getResearchId()) {
-  const el = document.getElementById("research-id-status");
+function updateResearchIdStatus(
+  researchId = getResearchId(),
+) {
+  const el =
+    document.getElementById("research-id-status");
+
   if (!el) return;
 
-  const refreshedAt = new Date().toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const refreshedAt =
+    new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   el.textContent =
     `Research ID: ${researchId} • refreshed ${refreshedAt}`;
@@ -6867,9 +6872,7 @@ const refreshResearchIdBtn =
 refreshResearchIdBtn?.addEventListener("click", () => {
   const refreshedResearchId = refreshResearchId();
 
-  updateResearchIdDisplay(refreshedResearchId);
   updateResearchIdStatus(refreshedResearchId);
-
   writeUrlState();
 
   refreshResearchIdBtn.textContent = "Refreshed ✓";
