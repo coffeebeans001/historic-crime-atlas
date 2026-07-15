@@ -5551,16 +5551,33 @@ for (const line of metadataLines) {
 
 const { file: exportFileTime } = getExportDateTime();
 
-const safePdfName = [
-  "old-bailey-research-report",
-  `export-${String(pdfExportCount).padStart(4, "0")}`,
-  stateId,
-  exportFileTime,
+const fromDate =
+  document.getElementById("from")?.value;
+
+const toDate =
+  document.getElementById("to")?.value;
+
+const filenameRange =
+  fromDate && toDate
+    ? `${formatFilenameDate(fromDate)}-to-${formatFilenameDate(toDate)}`
+    : fromDate
+      ? `from-${formatFilenameDate(fromDate)}`
+      : toDate
+        ? `up-to-${formatFilenameDate(toDate)}`
+        : "full-dataset";
+
+const exportFilename = [
+  "research-report",
+  offenceFilter,
+  sourceGender,
+  filenameRange,
 ]
-  .join("-")
-  .replace(/[^\w-]/g, "")
-  .replace(/-+/g, "-")
-  .toLowerCase();
+  .map((part) => slugifyFilenamePart(part))
+  .filter(Boolean)
+  .join("-");
+
+const safePdfName =
+  `${getResearchId()}-${exportFilename}`;
 
 const totalPages = pdf.internal.getNumberOfPages();
 
