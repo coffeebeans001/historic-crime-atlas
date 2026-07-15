@@ -4476,6 +4476,8 @@ async function downloadResearchSnapshotPdf() {
     format: "a4",
   });
 
+  let mapPageNumber = null;
+
   const exportDateTime = getExportDateTime().display;
 
   const researchId = getResearchId();
@@ -5584,12 +5586,139 @@ const exportFilename = [
 const safePdfName =
   `${getResearchId()}-${exportFilename}`;
 
-const totalPages = pdf.internal.getNumberOfPages();
+// ======================================
+// Research Map Snapshot PDF page
+// ======================================
 
-for (let i = 1; i <= totalPages; i++) {
-  pdf.setPage(i);
-  drawPdfFooter(pdf, i, totalPages, exportDateTime);
+const mapElement = document.getElementById("map");
+
+if (
+  mapElement
+  && map
+  && typeof html2canvas === "function"
+) {
+  try {
+    map.invalidateSize();
+
+    await waitForVisibleMapTiles(baseTiles);
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 250);
+    });
+
+    const mapCanvas = await html2canvas(
+      mapElement,
+      {
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: "#ffffff",
+        scale: 2,
+        logging: false,
+      },
+    );
+
+    const researchId = getResearchId();
+
+    const mapSnapshotCanvas =
+      await buildResearchMapSnapshot(
+        mapCanvas,
+        researchId,
+      );
+
+    const mapImage =
+      mapSnapshotCanvas.toDataURL(
+        "image/png",
+        1.0,
+      );
+
+    pdf.addPage();
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+pdf.setFontSize(18);
+pdf.setTextColor(...COLOUR_PRIMARY);
+
+pdf.text(
+  "Appendix A — Research Map",
+  40,
+  50,
+);
+
+pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
+pdf.setFontSize(10);
+pdf.setTextColor(...COLOUR_TEXT);
+
+pdf.text(
+  "Geographic distribution of cases matching the selected research filters.",
+  40,
+  68,
+);
+
+    mapPageNumber =
+      pdf.getNumberOfPages();
+
+    const pageWidth =
+      pdf.internal.pageSize.getWidth();
+
+    const pageHeight =
+      pdf.internal.pageSize.getHeight();
+
+    const marginX = 35;
+    const marginY = 35;
+
+    const availableWidth =
+      pageWidth - marginX * 2;
+
+    const availableHeight =
+      pageHeight - marginY * 2;
+
+    const imageRatio =
+      mapSnapshotCanvas.width /
+      mapSnapshotCanvas.height;
+
+    let imageWidth = availableWidth;
+    let imageHeight =
+      imageWidth / imageRatio;
+
+    if (imageHeight > availableHeight) {
+      imageHeight = availableHeight;
+      imageWidth =
+        imageHeight * imageRatio;
+    }
+
+    const imageX =
+      (pageWidth - imageWidth) / 2;
+
+    const imageY = 90;
+
+    pdf.addImage(
+      mapImage,
+      "PNG",
+      imageX,
+      imageY,
+      imageWidth,
+      imageHeight,
+    );
+  } catch (error) {
+    console.error(
+      "PDF map page could not be created:",
+      error,
+    );
+  }
 }  
+
+const pageCount = pdf.getNumberOfPages();
+
+for (let i = 1; i <= pageCount; i++) {
+  pdf.setPage(i);
+
+  if (i !== mapPageNumber) {
+    drawPdfPageFooter(
+      pdf,
+      i,
+      pageCount,
+    );
+  }
+}
 
 pdf.save(`${safePdfName}.pdf`);
 
