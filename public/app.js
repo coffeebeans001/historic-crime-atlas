@@ -5714,18 +5714,50 @@ pdf.text(
   }
 }  
 
-const pageCount = pdf.getNumberOfPages();
+const totalPages =
+  pdf.internal.getNumberOfPages();
 
-for (let i = 1; i <= pageCount; i++) {
+for (let i = 1; i <= totalPages; i++) {
   pdf.setPage(i);
 
-  if (i !== mapPageNumber) {
-    drawPdfPageFooter(
-      pdf,
-      i,
-      pageCount,
+  if (i === mapPageNumber) {
+    pdf.setFont(
+      FONT_FAMILY,
+      FONT_STYLE_NORMAL,
     );
+
+    pdf.setFontSize(
+      FONT_SIZE_SMALL,
+    );
+
+    pdf.setTextColor(
+      ...COLOUR_TEXT_LIGHT,
+    );
+
+    const pageWidth =
+      pdf.internal.pageSize.getWidth();
+
+    const pageHeight =
+      pdf.internal.pageSize.getHeight();
+
+    pdf.text(
+      `Page ${i} of ${totalPages}`,
+      pageWidth - 40,
+      pageHeight - 24,
+      {
+        align: "right",
+      },
+    );
+
+    continue;
   }
+
+  drawPdfFooter(
+    pdf,
+    i,
+    totalPages,
+    exportDateTime,
+  );
 }
 
 pdf.save(`${safePdfName}.pdf`);
