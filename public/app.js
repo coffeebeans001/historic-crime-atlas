@@ -3280,7 +3280,7 @@ function getCurrentResearchId() {
   return `${stateId}-${exportCount}`;
 }
 
-function updateResearchIdStatus() {
+function updateResearchIdStatus(researchId = getResearchId()) {
   const el = document.getElementById("research-id-status");
   if (!el) return;
 
@@ -3290,7 +3290,7 @@ function updateResearchIdStatus() {
   });
 
   el.textContent =
-    `Research ID: ${getCurrentResearchId()} • refreshed ${refreshedAt}`;
+    `Research ID: ${researchId} • refreshed ${refreshedAt}`;
 }
 
 function updateChartDataStatus() {
@@ -6863,11 +6863,14 @@ copyResearchIdBtn.textContent = "Copied ✓";
 
 const refreshResearchIdBtn =
   document.getElementById("refresh-research-id-btn");
-const refreshedResearchId = refreshResearchId();  
 
 refreshResearchIdBtn?.addEventListener("click", () => {
+  const refreshedResearchId = refreshResearchId();
+
+  updateResearchIdDisplay(refreshedResearchId);
+  updateResearchIdStatus(refreshedResearchId);
+
   writeUrlState();
-  updateResearchIdStatus();
 
   refreshResearchIdBtn.textContent = "Refreshed ✓";
 
