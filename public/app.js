@@ -6671,59 +6671,86 @@ async function init() {
       }
     });
   }
-  const copyLinkBtn = document.getElementById("copy-link-btn");
-  if (copyLinkBtn) {
-    copyLinkBtn.addEventListener("click", async () => {
-      try {
-        await copyShareableLink();
-        copyLinkBtn.textContent = "Copied link";
-        setTimeout(() => {
-          copyLinkBtn.textContent = "Copy shareable link";
-        }, 1200);
-      } catch (err) {
-        console.error(err);
-      }
-    });
+  const copyLinkBtn =
+  document.getElementById("copy-link-btn");
 
-    const downloadMapButton = document.getElementById("download-map-btn");
+if (copyLinkBtn) {
+  copyLinkBtn.addEventListener("click", async () => {
+    try {
+      await copyShareableLink();
 
-    if (downloadMapButton) {
-      downloadMapButton.addEventListener("click", async () => {
-        await downloadResearchMap();
-      });
+      copyLinkBtn.textContent = "Copied link";
+
+      setTimeout(() => {
+        copyLinkBtn.textContent =
+          "Copy shareable link";
+      }, 1200);
+    } catch (err) {
+      console.error(err);
     }
+  });
+} // closes copyLinkBtn block
 
-    const pdfBtn = document.getElementById("download-pdf-btn");
 
-    if (pdfBtn) {
-      pdfBtn.addEventListener("click", async () => {
-        try {
-          await downloadSnapshotAsPDF();
-        } catch (err) {
-          console.error("PDF download failed:", err);
-        }
-      });
+const downloadMapButton =
+  document.getElementById("download-map-btn");
 
-      const downloadSnapshotPdfBtn =
-  document.getElementById("download-snapshot-pdf-btn");
+if (downloadMapButton) {
+  downloadMapButton.addEventListener(
+    "click",
+    async () => {
+      await downloadResearchMap();
+    },
+  );
+}
 
-downloadSnapshotPdfBtn?.addEventListener("click", async () => {
-  downloadSnapshotPdfBtn.disabled = true;
-  downloadSnapshotPdfBtn.textContent = "Building PDF…";
 
-  try {
-    await downloadResearchSnapshotPdf();
-    downloadSnapshotPdfBtn.textContent = "PDF exported ✓";
-  } catch (err) {
-    console.error(err);
-    downloadSnapshotPdfBtn.textContent = "PDF failed";
-  } finally {
-    setTimeout(() => {
-      downloadSnapshotPdfBtn.disabled = false;
-      downloadSnapshotPdfBtn.textContent = "Export multi-page PDF";
-    }, 1200);
-  }
-});
+const pdfBtn =
+  document.getElementById("download-pdf-btn");
+
+if (pdfBtn) {
+  pdfBtn.addEventListener("click", async () => {
+    try {
+      await downloadSnapshotAsPDF();
+    } catch (err) {
+      console.error("PDF download failed:", err);
+    }
+  });
+}
+
+
+const downloadSnapshotPdfBtn =
+  document.getElementById(
+    "download-snapshot-pdf-btn",
+  );
+
+downloadSnapshotPdfBtn?.addEventListener(
+  "click",
+  async () => {
+    downloadSnapshotPdfBtn.disabled = true;
+    downloadSnapshotPdfBtn.textContent =
+      "Building PDF…";
+
+    try {
+      await downloadResearchSnapshotPdf();
+
+      downloadSnapshotPdfBtn.textContent =
+        "PDF exported ✓";
+    } catch (err) {
+      console.error(err);
+
+      downloadSnapshotPdfBtn.textContent =
+        "PDF failed";
+    } finally {
+      setTimeout(() => {
+        downloadSnapshotPdfBtn.disabled = false;
+        downloadSnapshotPdfBtn.textContent =
+          "Export multi-page PDF";
+      }, 1200);
+    }
+  },
+);
+  
 
       const researchNoteEl = document.getElementById("research-note");
       const researchNoteStatus = document.getElementById(
@@ -7015,8 +7042,7 @@ refreshResearchIdBtn?.addEventListener("click", () => {
           }
         });
       });
-    }
-  }
+   
 
   const downloadSnapshotBtn = document.getElementById("download-snapshot-btn");
 
