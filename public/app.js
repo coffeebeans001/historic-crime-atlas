@@ -3597,17 +3597,20 @@ function drawPdfChip(pdf, text, x, y, fillColor) {
   );
 
   pdf.setTextColor(255, 255, 255);
-  pdf.setFontSize(10);
+pdf.setFontSize(10);
 
-  pdf.text(
-    text,
-    x + paddingX,
-    y + 12
-  );
+pdf.text(
+  text,
+  x + (width / 2),
+  y + 12,
+  {
+    align: "center",
+  },
+);
 
-  pdf.setTextColor(0, 0, 0);
+pdf.setTextColor(0, 0, 0);
 
-  return width;
+return width;
 }
 
 function drawSectionCallout(pdf, title, y) {
