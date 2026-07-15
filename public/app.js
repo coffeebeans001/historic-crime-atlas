@@ -5655,8 +5655,13 @@ pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(10);
 pdf.setTextColor(...COLOUR_TEXT);
 
+const mapAppendixLines = pdf.splitTextToSize(
+  "This map shows the geographic distribution of cases matching the selected offence, gender and date filters. Marker clusters represent multiple cases located within the same visible area.",
+  510,
+);
+
 pdf.text(
-  "Geographic distribution of cases matching the selected research filters.",
+  mapAppendixLines,
   40,
   68,
 );
@@ -5696,7 +5701,7 @@ pdf.text(
     const imageX =
       (pageWidth - imageWidth) / 2;
 
-    const imageY = 90;
+    const imageY = 102;
 
     pdf.addImage(
       mapImage,
