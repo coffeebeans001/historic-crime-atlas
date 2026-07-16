@@ -4371,13 +4371,8 @@ const exportFilename = [
     await waitForVisibleMapTiles(baseTiles);
     await new Promise((resolve) => setTimeout(resolve, 250));
 
-    const mapCanvas = await html2canvas(mapElement, {
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: "#ffffff",
-      scale: 2,
-      logging: false,
-    });
+    const mapCanvas =
+  await captureResearchMapCanvas();
 
     const researchId = getResearchId();
 
@@ -5565,16 +5560,8 @@ if (
       setTimeout(resolve, 250);
     });
 
-    const mapCanvas = await html2canvas(
-      mapElement,
-      {
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: "#ffffff",
-        scale: 2,
-        logging: false,
-      },
-    );
+    const mapCanvas =
+  await captureResearchMapCanvas();
 
     const mapSnapshotCanvas =
       await buildResearchMapSnapshot(
@@ -5767,6 +5754,34 @@ function refreshResearchId() {
   currentResearchId = createResearchId();
 
   return currentResearchId;
+}
+
+async function captureResearchMapCanvas() {
+  const mapElement = document.getElementById("map");
+
+  if (!mapElement) {
+    throw new Error("Map element was not found.");
+  }
+
+  if (!map) {
+    throw new Error("Leaflet map is not initialised.");
+  }
+
+  map.invalidateSize();
+
+  await waitForVisibleMapTiles(baseTiles);
+
+  await new Promise((resolve) => {
+    setTimeout(resolve, 250);
+  });
+
+  return html2canvas(mapElement, {
+    useCORS: true,
+    allowTaint: false,
+    backgroundColor: "#ffffff",
+    scale: 2,
+    logging: false,
+  });
 }
 
 async function render() {
