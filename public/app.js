@@ -33,6 +33,7 @@ function setCiAlpha(alpha) {
   });
 }
 
+// TODO: Confirm whether CI animation is still invoked before removing.
 function animateCi(show, durationMs = 250) {
   if (!chart) return;
 
@@ -2543,7 +2544,6 @@ async function downloadResearchSnapshot() {
   validateSnapshotExportReadiness();
   const researchId = getResearchId();
 
-  //const exportCount = getNextSnapshotExportCount();
   const snapshotExportCount = getNextSnapshotExportCount();
 
   const chartTitle =
@@ -2607,8 +2607,7 @@ async function downloadResearchSnapshot() {
   updateSessionStatus();
   updateResearchIdStatus();
   updateLastExportStatus();
-
-  //const researchId = `${stateId}-${snapshotExportCount}`;  
+  
 
   const exportTime = new Date().toLocaleTimeString([], {
     hour: "2-digit",
@@ -5576,8 +5575,6 @@ if (
         logging: false,
       },
     );
-
-    //const researchId = getResearchId();
 
     const mapSnapshotCanvas =
       await buildResearchMapSnapshot(
