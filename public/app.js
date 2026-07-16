@@ -2690,60 +2690,6 @@ function roundRect(ctx, x, y, width, height, radius, fillColor) {
   ctx.fill();
 }
 
-async function downloadSnapshotAsPDF() {
-  const exportCanvas = await buildResearchSnapshotCanvas();
-  if (!exportCanvas) return;
-
-  const imgData = exportCanvas.toDataURL("image/png");
-  const { jsPDF } = window.jspdf;
-
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "px",
-    format: "a4",
-  });
-
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-
-  const margin = 24;
-  const availableWidth = pageWidth - margin * 2;
-  const availableHeight = pageHeight - margin * 2;
-
-  const canvasWidth = exportCanvas.width;
-  const canvasHeight = exportCanvas.height;
-
-  const widthRatio = availableWidth / canvasWidth;
-  const heightRatio = availableHeight / canvasHeight;
-  const scale = Math.min(widthRatio, heightRatio);
-
-  const imgWidth = canvasWidth * scale;
-  const imgHeight = canvasHeight * scale;
-
-  const x = (pageWidth - imgWidth) / 2;
-  const y = margin;
-
-  pdf.setFillColor(255, 255, 255);
-  pdf.rect(0, 0, pageWidth, pageHeight, "F");
-  pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
-
-  const chartTitle =
-    chart.options?.plugins?.title?.text?.toString().trim() ||
-    "research-snapshot";
-
-  const { file: exportFileTime } = getExportDateTime();
-
-  const safeTitle = (chartTitle || "research-snapshot")
-    .replace(/[^\w\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "_")
-    .toLowerCase();
-
-  pdf.save(`${safeTitle}-${exportFileTime}.pdf`);
-}
-
-
-
 function getYRangeFromSeries(seriesArr) {
   const values = (seriesArr || [])
     .flatMap((series) => series.data || [])
