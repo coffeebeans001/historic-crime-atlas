@@ -6884,21 +6884,6 @@ if (downloadMapButton) {
   );
 }
 
-
-const pdfBtn =
-  document.getElementById("download-pdf-btn");
-
-if (pdfBtn) {
-  pdfBtn.addEventListener("click", async () => {
-    try {
-      await downloadSnapshotAsPDF();
-    } catch (err) {
-      console.error("PDF download failed:", err);
-    }
-  });
-}
-
-
 const downloadSnapshotPdfBtn =
   document.getElementById(
     "download-snapshot-pdf-btn",
