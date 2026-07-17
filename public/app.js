@@ -569,6 +569,7 @@ function ensureChart() {
 
       responsive: true,
       maintainAspectRatio: false,
+      devicePixelRatio: 2,
       interaction: { mode: "nearest", intersect: false },
       layout: {
         padding: {
