@@ -592,6 +592,29 @@ function ensureChart() {
             padding: 8,
           },
         },
+        x: {
+      type: "linear",
+
+      ticks: {
+  padding: 8,
+
+  stepSize:
+    bucket === "decade"
+      ? 20
+      : 1,
+
+  autoSkip: true,
+  maxTicksLimit: 11,
+  minRotation: 0,
+  maxRotation: 0,
+
+  callback: (value) =>
+    Number.isInteger(value)
+      ? String(value)
+      : "",
+},
+  },
+
         y: {
           min: 0,
           max: 100,
