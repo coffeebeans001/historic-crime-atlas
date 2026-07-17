@@ -6859,12 +6859,15 @@ downloadSnapshotPdfBtn?.addEventListener(
 
       downloadSnapshotPdfBtn.textContent =
         "PDF exported ✓";
-    } catch (err) {
-      console.error(err);
+          } catch (err) {
+        console.error(
+          "PDF export failed:",
+          err,
+        );
 
-      downloadSnapshotPdfBtn.textContent =
-        "PDF failed";
-    } finally {
+        downloadSnapshotPdfBtn.textContent =
+          "PDF export failed";
+      } finally {
       setTimeout(() => {
         downloadSnapshotPdfBtn.disabled = false;
         downloadSnapshotPdfBtn.textContent =
