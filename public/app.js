@@ -4403,7 +4403,7 @@ const exportFilename = [
 
     if (statusElement) {
       statusElement.textContent =
-        "Map export failed. Check the console for details.";
+        "Map export failed. Please try again. See the browser console for technical details.";
     }
   }
 }
