@@ -2,6 +2,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { readCsvFile } from "../src/import/csvReader.js";
+import { transformRecords } from "../src/import/transformer.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,12 +22,14 @@ async function runImport() {
   console.log("");
 
   try {
-    const records = await readCsvFile(csvFilePath);
+    const rawRecords = await readCsvFile(csvFilePath);
+const transformedRecords = transformRecords(rawRecords);
 
-    console.log(`Rows read: ${records.length}`);
-    console.log("");
+console.log(`Rows read: ${rawRecords.length}`);
+console.log(`Rows transformed: ${transformedRecords.length}`);
+console.log("");
 
-    records.forEach((record, index) => {
+transformedRecords.forEach((record, index) => {
       console.log(`Row ${index + 1}`);
       console.log(record);
       console.log("");
