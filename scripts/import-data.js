@@ -5,6 +5,7 @@ import { readCsvFile } from "../src/import/csvReader.js";
 import { transformRecords } from "../src/import/transformer.js";
 import { validateRecords } from "../src/import/validator.js";
 import { detectDuplicates } from "../src/import/duplicateChecker.js";
+import { detectDatabaseDuplicates } from "../src/import/databaseDuplicateChecker.js";
 import { writeImportReports } from "../src/import/reportWriter.js";
 import { resolveTrialRelations } from "../src/import/relationResolver.js";
 
@@ -46,10 +47,14 @@ const rawRecords = await readCsvFile(csvFilePath);
 const transformedRecords = transformRecords(rawRecords);
 const validation = validateRecords(transformedRecords);
 const duplicateCheck = detectDuplicates(validation.results);
+const databaseDuplicateCheck = await detectDatabaseDuplicates(duplicateCheck.uniqueRecords);
 
 const relationResults = [];
 
-for (const item of duplicateCheck.uniqueRecords) {
+for (
+  const item of
+    databaseDuplicateCheck.readyRecords
+) { 
   const relations = await resolveTrialRelations(
     item.record,
     {
@@ -90,6 +95,48 @@ const reportFiles =
       createdDefendants.length,
   });  
 
+  databaseDuplicateCheck.databaseDuplicates.forEach(
+  (item) => {
+    console.log(
+      `Database duplicate check — Row ${item.rowNumber}`
+    );
+
+    console.log("Status: DATABASE_DUPLICATE");
+
+    console.log(
+      `Source case ID: ${
+        item.record.source_case_id
+      }`
+    );
+
+    console.log(
+      `- Existing trial ID: ${
+        item.existingTrial.id
+      }`
+    );
+
+    console.log("");
+  }
+);
+
+databaseDuplicateCheck.readyRecords.forEach(
+  (item) => {
+    console.log(
+      `Database duplicate check — Row ${item.rowNumber}`
+    );
+
+    console.log("Status: READY_FOR_INSERT");
+
+    console.log(
+      `Source case ID: ${
+        item.record.source_case_id
+      }`
+    );
+
+    console.log("");
+  }
+);
+
 relationResults.forEach((result) => {
   console.log(`Database relationship check — Row ${result.rowNumber}`);
 
@@ -119,7 +166,9 @@ console.log(`Rows read: ${rawRecords.length}`);
 console.log(`Rows transformed: ${transformedRecords.length}`);
 console.log(`Unique valid rows: ${duplicateCheck.uniqueRecords.length}`);
 console.log(`Invalid rows: ${validation.invalidRecords.length}`);
-console.log(`Duplicate rows: ${duplicateCheck.duplicateRecords.length}`);
+console.log(`CSV duplicate rows: ${duplicateCheck.duplicateRecords.length}`);
+console.log(`Database duplicates: ${databaseDuplicateCheck.databaseDuplicates.length}`);
+console.log(`Ready for insertion: ${databaseDuplicateCheck.readyRecords.length}`);
 console.log("");
 
 console.log(`Resolved database rows: ${resolvedRows.length}`);
