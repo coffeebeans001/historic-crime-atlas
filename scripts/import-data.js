@@ -10,6 +10,10 @@ import { resolveTrialRelations } from "../src/import/relationResolver.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const createMissingDefendants =
+  process.argv.includes(
+    "--create-missing-defendants"
+  );
 
 async function runImport() {
   const csvFilePath = path.join(
@@ -30,6 +34,11 @@ async function runImport() {
   console.log("Old Bailey CSV Import");
   console.log("---------------------");
   console.log(`Reading: ${csvFilePath}`);
+  console.log(
+  `Create missing defendants: ${
+    createMissingDefendants ? "YES" : "NO"
+  }`
+);
   console.log("");
 
   try {
@@ -38,10 +47,15 @@ const transformedRecords = transformRecords(rawRecords);
 const validation = validateRecords(transformedRecords);
 const duplicateCheck = detectDuplicates(validation.results);
 
- const relationResults = [];
+const relationResults = [];
 
 for (const item of duplicateCheck.uniqueRecords) {
-  const relations = await resolveTrialRelations(item.record);
+  const relations = await resolveTrialRelations(
+    item.record,
+    {
+      createMissingDefendants,
+    }
+  );
 
   relationResults.push({
     rowNumber: item.rowNumber,
@@ -50,14 +64,55 @@ for (const item of duplicateCheck.uniqueRecords) {
   });
 }
 
-const reportFiles = await writeImportReports({
-  reportDirectory,
-  sourceFile: csvFilePath,
-  rawRecords,
-  transformedRecords,
-  validation,
-  duplicateCheck,
-  dryRun: true,
+const resolvedRows = relationResults.filter(
+  (result) => result.missingReferences.length === 0
+);
+
+const unresolvedRows = relationResults.filter(
+  (result) => result.missingReferences.length > 0
+);
+
+const createdDefendants =
+  relationResults.filter(
+    (result) => result.defendantCreated
+  );
+
+const reportFiles =
+  await writeImportReports({
+    reportDirectory,
+    sourceFile: csvFilePath,
+    rawRecords,
+    transformedRecords,
+    validation,
+    duplicateCheck,
+    dryRun: !createMissingDefendants,
+    databaseChanges:
+      createdDefendants.length,
+  });  
+
+relationResults.forEach((result) => {
+  console.log(`Database relationship check — Row ${result.rowNumber}`);
+
+   if (result.missingReferences.length > 0) {
+    console.log("Status: UNRESOLVED");
+
+    result.missingReferences.forEach((message) => {
+      console.log(`- ${message}`);
+    });
+
+    console.log("");
+    return;
+  }
+
+  console.log("Status: RESOLVED");
+
+   if (result.defendantCreated) {
+  console.log(`- Defendant created: ${result.defendant.defendant_name}`);
+}
+  console.log(`- defendant_id: ${result.defendant.defendant_id}`);
+  console.log(`- judge_id: ${result.judge.judge_id}`);
+  console.log(`- offence_id: ${result.offence.offence_id}`);
+  console.log("");
 });
 
 console.log(`Rows read: ${rawRecords.length}`);
@@ -65,6 +120,11 @@ console.log(`Rows transformed: ${transformedRecords.length}`);
 console.log(`Unique valid rows: ${duplicateCheck.uniqueRecords.length}`);
 console.log(`Invalid rows: ${validation.invalidRecords.length}`);
 console.log(`Duplicate rows: ${duplicateCheck.duplicateRecords.length}`);
+console.log("");
+
+console.log(`Resolved database rows: ${resolvedRows.length}`);
+console.log(`Unresolved database rows: ${unresolvedRows.length}`);
+console.log(`Defendants created: ${createdDefendants.length}`);
 console.log("");
 
 validation.results.forEach((result) => {
@@ -97,51 +157,13 @@ validation.results.forEach((result) => {
     return;
   }
 
-const resolvedRows = relationResults.filter(
-  (result) => result.missingReferences.length === 0
-);
-
-const unresolvedRows = relationResults.filter(
-  (result) => result.missingReferences.length > 0
-);
-
-relationResults.forEach((result) => {
-  console.log(`Database relationship check — Row ${result.rowNumber}`);
-
-  if (result.missingReferences.length > 0) {
-    console.log("Status: UNRESOLVED");
-
-    result.missingReferences.forEach((message) => {
-      console.log(`- ${message}`);
-    });
-
-    console.log("");
-    return;
-  }
-
-  console.log("Status: RESOLVED");
-  console.log(
-    `- defendant_id: ${result.defendant.defendant_id}`
-  );
-  console.log(
-    `- judge_id: ${result.judge.judge_id}`
-  );
-  console.log(
-    `- offence_id: ${result.offence.offence_id}`
-  );
-  console.log("");
-});
-
-console.log(`Resolved database rows: ${resolvedRows.length}`);
-console.log(`Unresolved database rows: ${unresolvedRows.length}`);
-console.log("");
-
   console.log("Status: VALID");
   console.log(`Source case ID: ${result.record.source_case_id}`);
   console.log("");
 });
     console.log("Import preview completed.");
-    console.log("Database changes: 0");
+    console.log(
+  `Database changes: ${createdDefendants.length}`);
     console.log("");
     console.log("Reports generated:");
     console.log(`- Summary: ${reportFiles.summaryPath}`);

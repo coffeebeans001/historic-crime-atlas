@@ -90,6 +90,7 @@ function convertRowsToCsv(rows, columns) {
  *     }>
  *   },
  *   dryRun?: boolean
+ *   databaseChanges?: number
  * }} options
  *
  * @returns {Promise<{
@@ -106,6 +107,7 @@ export async function writeImportReports({
   validation,
   duplicateCheck,
   dryRun = true,
+  databaseChanges = 0,
 }) {
   const resolvedReportDirectory =
     path.resolve(reportDirectory);
@@ -143,7 +145,7 @@ export async function writeImportReports({
     invalidRows: validation.invalidRecords.length,
     duplicateRows:
       duplicateCheck.duplicateRecords.length,
-    databaseChanges: 0,
+    databaseChanges,
   };
 
   const rejectedRows =

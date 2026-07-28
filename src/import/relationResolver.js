@@ -74,6 +74,97 @@ export async function findOffenceByName(offenceName) {
 }
 
 /**
+ * Creates a new defendant.
+ *
+ * @param {{
+ *   defendant_name: string,
+ *   defendant_age?: number|null,
+ *   gender?: string|null
+ * }} record
+ *
+ * @returns {Promise<{
+ *   defendant_id: number,
+ *   defendant_name: string,
+ *   age: number|null,
+ *   gender: string|null,
+ *   party_type: string
+ * }>}
+ */
+export async function createDefendant(record) {
+  const defendantName = record.defendant_name;
+  const age = record.defendant_age ?? null;
+  const gender = record.gender ?? "Unknown";
+  const partyType = "Individual";
+
+  const [result] = await pool.execute(
+    `
+      INSERT INTO defendants (
+        defendant_name,
+        age,
+        gender,
+        party_type
+      )
+      VALUES (?, ?, ?, ?)
+    `,
+    [
+      defendantName,
+      age,
+      gender,
+      partyType,
+    ]
+  );
+
+  return {
+    defendant_id: result.insertId,
+    defendant_name: defendantName,
+    age,
+    gender,
+    party_type: partyType,
+  };
+}
+
+/**
+ * Finds an existing defendant or optionally creates one.
+ *
+ * @param {Record<string, unknown>} record
+ * @param {{ createIfMissing?: boolean }} options
+ *
+ * @returns {Promise<{
+ *   defendant: object|null,
+ *   created: boolean
+ * }>}
+ */
+export async function resolveDefendant(
+  record,
+  { createIfMissing = false } = {}
+) {
+  const existingDefendant =
+    await findDefendantByName(record.defendant_name);
+
+  if (existingDefendant) {
+    return {
+      defendant: existingDefendant,
+      created: false,
+    };
+  }
+
+  if (!createIfMissing) {
+    return {
+      defendant: null,
+      created: false,
+    };
+  }
+
+  const createdDefendant =
+    await createDefendant(record);
+
+  return {
+    defendant: createdDefendant,
+    created: true,
+  };
+}
+
+/**
  * Resolves all related database records for one trial.
  *
  * @param {Record<string, unknown>} record
@@ -84,16 +175,42 @@ export async function findOffenceByName(offenceName) {
  *   missingReferences: string[]
  * }>}
  */
-export async function resolveTrialRelations(record) {
-  const [defendant, judge, offence] = await Promise.all([
-    findDefendantByName(record.defendant_name),
+/**
+ * Resolves all related database records for one trial.
+ *
+ * Missing defendants may be created when explicitly enabled.
+ * Missing judges and offences remain unresolved.
+ *
+ * @param {Record<string, unknown>} record
+ * @param {{ createMissingDefendants?: boolean }} options
+ *
+ * @returns {Promise<{
+ *   defendant: object|null,
+ *   judge: object|null,
+ *   offence: object|null,
+ *   defendantCreated: boolean,
+ *   missingReferences: string[]
+ * }>}
+ */
+export async function resolveTrialRelations(
+  record,
+  { createMissingDefendants = false } = {}
+) {
+  const [
+    defendantResult,
+    judge,
+    offence,
+  ] = await Promise.all([
+    resolveDefendant(record, {
+      createIfMissing: createMissingDefendants,
+    }),
     findJudgeByName(record.judge_name),
     findOffenceByName(record.offence),
   ]);
 
   const missingReferences = [];
 
-  if (!defendant) {
+  if (!defendantResult.defendant) {
     missingReferences.push(
       `Defendant not found: ${record.defendant_name}`
     );
@@ -112,9 +229,10 @@ export async function resolveTrialRelations(record) {
   }
 
   return {
-    defendant,
+    defendant: defendantResult.defendant,
     judge,
     offence,
+    defendantCreated: defendantResult.created,
     missingReferences,
   };
 }
