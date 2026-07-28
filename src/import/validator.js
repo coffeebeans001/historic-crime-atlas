@@ -2,6 +2,7 @@ const ALLOWED_GENDERS = new Set([
   "Male",
   "Female",
   "Unknown",
+  "Other",
 ]);
 
 const ALLOWED_VERDICTS = new Set([
