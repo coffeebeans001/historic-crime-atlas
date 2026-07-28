@@ -6,15 +6,15 @@ import { transformRecords } from "../src/import/transformer.js";
 import { validateRecords } from "../src/import/validator.js";
 import { detectDuplicates } from "../src/import/duplicateChecker.js";
 import { detectDatabaseDuplicates } from "../src/import/databaseDuplicateChecker.js";
-import { writeImportReports } from "../src/import/reportWriter.js";
 import { resolveTrialRelations } from "../src/import/relationResolver.js";
+import { importResolvedTrials } from "../src/import/trialImporter.js";
+import { writeImportReports } from "../src/import/reportWriter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const createMissingDefendants =
-  process.argv.includes(
-    "--create-missing-defendants"
-  );
+const insertTrials = process.argv.includes("--insert-trials");
+
+const createMissingDefendants = insertTrials || process.argv.includes("--create-missing-defendants");
 
 async function runImport() {
   const csvFilePath = path.join(
@@ -35,12 +35,20 @@ async function runImport() {
   console.log("Old Bailey CSV Import");
   console.log("---------------------");
   console.log(`Reading: ${csvFilePath}`);
-  console.log(
+
+console.log(
   `Create missing defendants: ${
     createMissingDefendants ? "YES" : "NO"
   }`
 );
-  console.log("");
+
+console.log(
+  `Insert trials: ${
+    insertTrials ? "YES" : "NO"
+  }`
+);
+
+console.log("");
 
   try {
 const rawRecords = await readCsvFile(csvFilePath);
@@ -48,6 +56,7 @@ const transformedRecords = transformRecords(rawRecords);
 const validation = validateRecords(transformedRecords);
 const duplicateCheck = detectDuplicates(validation.results);
 const databaseDuplicateCheck = await detectDatabaseDuplicates(duplicateCheck.uniqueRecords);
+
 
 const relationResults = [];
 
@@ -69,6 +78,15 @@ for (
   });
 }
 
+let trialImportResults = [];
+
+if (insertTrials) {
+  trialImportResults =
+    await importResolvedTrials(
+      relationResults
+    );
+}
+
 const resolvedRows = relationResults.filter(
   (result) => result.missingReferences.length === 0
 );
@@ -82,6 +100,31 @@ const createdDefendants =
     (result) => result.defendantCreated
   );
 
+const insertedTrials =
+  trialImportResults.filter(
+    (result) =>
+      result.status === "INSERTED"
+  );
+
+const transactionDuplicates =
+  trialImportResults.filter(
+    (result) =>
+      result.status ===
+      "DATABASE_DUPLICATE"
+  );
+
+const failedTrials =
+  trialImportResults.filter(
+    (result) =>
+      result.status === "FAILED"
+  );
+
+const unresolvedTrialImports =
+  trialImportResults.filter(
+    (result) =>
+      result.status === "UNRESOLVED"
+  );  
+
 const reportFiles =
   await writeImportReports({
     reportDirectory,
@@ -92,7 +135,8 @@ const reportFiles =
     duplicateCheck,
     dryRun: !createMissingDefendants,
     databaseChanges:
-      createdDefendants.length,
+    createdDefendants.length +
+    insertedTrials.length,
   });  
 
   databaseDuplicateCheck.databaseDuplicates.forEach(
@@ -174,7 +218,51 @@ console.log("");
 console.log(`Resolved database rows: ${resolvedRows.length}`);
 console.log(`Unresolved database rows: ${unresolvedRows.length}`);
 console.log(`Defendants created: ${createdDefendants.length}`);
+console.log(`Trials inserted: ${insertedTrials.length}`);
+console.log(`Transaction duplicates: ${transactionDuplicates.length}`);
+console.log(`Unresolved trial imports: ${unresolvedTrialImports.length}`);
+console.log(`Failed trial imports: ${failedTrials.length}`);
 console.log("");
+
+trialImportResults.forEach((result) => {
+  console.log(
+    `Trial import — Row ${result.rowNumber}`
+  );
+
+  console.log(`Status: ${result.status}`);
+
+  console.log(
+    `Source case ID: ${
+      result.record.source_case_id
+    }`
+  );
+
+  if (result.status === "INSERTED") {
+    console.log(
+      `- New trial ID: ${result.trialId}`
+    );
+  }
+
+  if (
+    result.status ===
+      "DATABASE_DUPLICATE" &&
+    result.existingTrialId
+  ) {
+    console.log(
+      `- Existing trial ID: ${
+        result.existingTrialId
+      }`
+    );
+  }
+
+  if (result.errors?.length > 0) {
+    result.errors.forEach((error) => {
+      console.log(`- ${error}`);
+    });
+  }
+
+  console.log("");
+});
 
 validation.results.forEach((result) => {
   console.log(`Row ${result.rowNumber}`);
@@ -212,7 +300,11 @@ validation.results.forEach((result) => {
 });
     console.log("Import preview completed.");
     console.log(
-  `Database changes: ${createdDefendants.length}`);
+  `Database changes: ${
+    createdDefendants.length +
+    insertedTrials.length
+  }`
+);
     console.log("");
     console.log("Reports generated:");
     console.log(`- Summary: ${reportFiles.summaryPath}`);
