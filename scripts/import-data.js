@@ -9,6 +9,11 @@ import { detectDatabaseDuplicates } from "../src/import/databaseDuplicateChecker
 import { resolveTrialRelations } from "../src/import/relationResolver.js";
 import { importResolvedTrials } from "../src/import/trialImporter.js";
 import { writeImportReports } from "../src/import/reportWriter.js";
+import {
+  createImportHistory,
+  completeImportHistory,
+  failImportHistory,
+} from "../src/import/importHistory.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,6 +55,8 @@ console.log(
 
 console.log("");
 
+let importId = null;
+
   try {
 const rawRecords = await readCsvFile(csvFilePath);
 const transformedRecords = transformRecords(rawRecords);
@@ -57,6 +64,18 @@ const validation = validateRecords(transformedRecords);
 const duplicateCheck = detectDuplicates(validation.results);
 const databaseDuplicateCheck = await detectDatabaseDuplicates(duplicateCheck.uniqueRecords);
 
+if (insertTrials) {
+  importId = await createImportHistory({
+    sourceFile: csvFilePath,
+    rowsRead: rawRecords.length,
+    rowsInvalid:
+      validation.invalidRecords.length,
+    rowsDuplicate:
+      duplicateCheck.duplicateRecords.length +
+      databaseDuplicateCheck
+        .databaseDuplicates.length,
+  });
+}
 
 const relationResults = [];
 
@@ -83,7 +102,8 @@ let trialImportResults = [];
 if (insertTrials) {
   trialImportResults =
     await importResolvedTrials(
-      relationResults
+      relationResults,
+      { importId }
     );
 }
 
@@ -224,6 +244,26 @@ console.log(`Unresolved trial imports: ${unresolvedTrialImports.length}`);
 console.log(`Failed trial imports: ${failedTrials.length}`);
 console.log("");
 
+if (importId !== null) {
+  console.log(`Import history ID: ${importId}`);
+}
+
+if (insertTrials && importId !== null) {
+  await completeImportHistory({
+    importId,
+    rowsInserted:
+      insertedTrials.length,
+    rowsDuplicate:
+      duplicateCheck.duplicateRecords.length +
+      databaseDuplicateCheck
+        .databaseDuplicates.length +
+      transactionDuplicates.length,
+    rowsFailed:
+      failedTrials.length +
+      unresolvedTrialImports.length,
+  });
+}
+
 trialImportResults.forEach((result) => {
   console.log(
     `Trial import — Row ${result.rowNumber}`
@@ -298,8 +338,13 @@ validation.results.forEach((result) => {
   console.log(`Source case ID: ${result.record.source_case_id}`);
   console.log("");
 });
-    console.log("Import preview completed.");
-    console.log(
+    if (insertTrials) {
+  console.log("Import completed.");
+} else {
+  console.log("Import preview completed.");
+}
+
+console.log(
   `Database changes: ${
     createdDefendants.length +
     insertedTrials.length
@@ -311,6 +356,19 @@ validation.results.forEach((result) => {
     console.log(`- Rejected rows: ${reportFiles.rejectedRowsPath}`);
     console.log(`- Duplicate rows: ${reportFiles.duplicateRowsPath}`);
   } catch (error) {
+  if (insertTrials && importId !== null) {
+    try {
+      await failImportHistory({
+        importId,
+      });
+    } catch (historyError) {
+      console.error(
+        "Could not mark import history as failed."
+      );
+      console.error(historyError.message);
+    }
+  }
+
   console.error("Import failed.");
   console.error(error.message);
   process.exitCode = 1;

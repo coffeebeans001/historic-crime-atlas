@@ -48,7 +48,8 @@ async function findExistingTrial(
 async function insertTrial(
   connection,
   record,
-  relations
+  relations,
+  importId
 ) {
   const [result] = await connection.execute(
     `
@@ -69,11 +70,12 @@ async function insertTrial(
         appeal_outcome,
         defendant_id,
         judge_id,
-        offence_id
+        offence_id,
+        import_id
       )
-      VALUES (
+            VALUES (
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?, ?, ?
       )
     `,
     [
@@ -94,6 +96,7 @@ async function insertTrial(
       relations.defendant.defendant_id,
       relations.judge.judge_id,
       relations.offence.offence_id,
+      importId ?? null,
     ]
   );
 
@@ -128,7 +131,8 @@ async function insertTrial(
  * }>}
  */
 export async function importTrialWithTransaction(
-  item
+  item,
+  { importId = null } = {}
 ) {
   if (
     !item.defendant ||
@@ -174,7 +178,8 @@ export async function importTrialWithTransaction(
         defendant: item.defendant,
         judge: item.judge,
         offence: item.offence,
-      }
+      },
+      importId
     );
 
     await connection.commit();
@@ -235,13 +240,17 @@ export async function importTrialWithTransaction(
  * @returns {Promise<Array<object>>}
  */
 export async function importResolvedTrials(
-  relationResults
+  relationResults,
+  { importId = null } = {}
 ) {
   const results = [];
 
   for (const item of relationResults) {
     const result =
-      await importTrialWithTransaction(item);
+  await importTrialWithTransaction(
+    item,
+    { importId }
+  );
 
     results.push(result);
   }
