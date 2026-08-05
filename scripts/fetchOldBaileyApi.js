@@ -1,5 +1,142 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+
 import { transformOldBaileyRecord } from
   "../src/import/transformOldBaileyRecord.js";
+
+function createFileTimestamp() {
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}`;
+}
+
+async function writeApiReviewReport({
+  query,
+  records,
+  transformedRecords,
+  qualitySummary,
+  readyForImport,
+  reviewRequired,
+}) {
+  const generatedAt = new Date().toISOString();
+  const fileTimestamp = createFileTimestamp();
+
+  const reportDirectory = path.resolve(
+    "data",
+    "import-reports"
+  );
+
+  await fs.mkdir(reportDirectory, {
+    recursive: true,
+  });
+
+  const reviewedRecords = transformedRecords.map(
+    (record, index) => {
+      const source = records[index]?._source ?? {};
+      const transcriptLength = source.text?.length ?? 0;
+
+      const missingFields = [];
+
+      if (!record.source_case_id) {
+        missingFields.push("source_case_id");
+      }
+
+      if (!record.defendant_name) {
+        missingFields.push("defendant_name");
+      }
+
+      if (!record.offence) {
+        missingFields.push("offence");
+      }
+
+      if (!record.verdict) {
+        missingFields.push("verdict");
+      }
+
+      if (!record.trial_date) {
+        missingFields.push("trial_date");
+      }
+
+      if (!record.source_url) {
+        missingFields.push("source_url");
+      }
+
+      return {
+        recordNumber: index + 1,
+        status:
+          missingFields.length === 0
+            ? "READY"
+            : "REVIEW_REQUIRED",
+        missingFields,
+        transcriptLength,
+        transcriptPossiblyTruncated:
+          transcriptLength === 500,
+        transformedRecord: record,
+        originalSource: {
+          idkey: source.idkey ?? null,
+          title: source.title ?? null,
+          images: source.images ?? [],
+          text: source.text ?? null,
+        },
+      };
+    }
+  );
+
+  const report = {
+    reportType: "Old Bailey API Import Review",
+    reportVersion: "1.2",
+    generatedAt,
+    query,
+    summary: {
+      recordsReturned: records.length,
+      recordsTransformed: transformedRecords.length,
+      readyForImport,
+      needsReview: reviewRequired,
+      missingSourceCaseId:
+        qualitySummary.missingSourceCaseId,
+      missingDefendantName:
+        qualitySummary.missingDefendantName,
+      missingOffence:
+        qualitySummary.missingOffence,
+      missingVerdict:
+        qualitySummary.missingVerdict,
+      missingTrialDate:
+        qualitySummary.missingTrialDate,
+      missingSourceUrl:
+        qualitySummary.missingSourceUrl,
+    },
+    records: reviewedRecords,
+  };
+
+  const reportFileName =
+    `api-import-review-${query}-${fileTimestamp}.json`;
+
+  const safeReportFileName = reportFileName.replace(
+    /[^a-zA-Z0-9._-]/g,
+    "-"
+  );
+
+  const reportPath = path.join(
+    reportDirectory,
+    safeReportFileName
+  );
+
+  await fs.writeFile(
+    reportPath,
+    JSON.stringify(report, null, 2),
+    "utf8"
+  );
+
+  return reportPath;
+}
 
 const searchTerm = process.argv[2] || "Sheffield";
 
@@ -220,7 +357,17 @@ console.log(`Missing trial date: ${qualitySummary.missingTrialDate}`);
 
 console.log("\n====================================");
 
+const reportPath = await writeApiReviewReport({
+  query: searchTerm,
+  records,
+  transformedRecords,
+  qualitySummary,
+  readyForImport,
+  reviewRequired,
+});
 
+console.log("\nAPI review report created:");
+console.log(reportPath);
 
   } catch (error) {
     console.error(error.message);
