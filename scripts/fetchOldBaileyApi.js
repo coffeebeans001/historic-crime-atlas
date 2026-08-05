@@ -121,43 +121,104 @@ console.log(`Missing verdict: ${qualitySummary.missingVerdict}`);
 console.log(`Missing trial date: ${qualitySummary.missingTrialDate}`);
 console.log(`Missing source URL: ${qualitySummary.missingSourceUrl}`);
 
-console.log("\n========== RECORDS NEEDING REVIEW ==========\n");
+console.log("\n========== OLD BAILEY API IMPORT REVIEW ==========\n");
+
+let readyForImport = 0;
+let reviewRequired = 0;
 
 transformedRecords.forEach((record, index) => {
-  const missingFields = [];
 
-  if (!record.verdict) {
-    missingFields.push("verdict");
-  }
+    const source = records[index]._source;
 
-  if (!record.trial_date) {
-    missingFields.push("trial date");
-  }
+    const transcriptLength =
+        source.text?.length ?? 0;
 
-  if (missingFields.length === 0) {
-    return;
-  }
+    const transcriptTruncated =
+        transcriptLength === 500;
 
-  const originalRecord = records[index];
-  const source = originalRecord?._source || {};
+    const missing = [];
 
-  const textPreview = source.text
-    ? source.text.replace(/\s+/g, " ").slice(-350)
-    : "No transcript text";
+    if (!record.defendant_name)
+        missing.push("Defendant");
 
-  console.log(`Record ${index + 1}`);
-  console.log("----------------------------------------");
-  console.log(`Missing: ${missingFields.join(", ")}`);
-  console.log(`Source ID: ${source.idkey ?? "Missing"}`);
-  console.log(`Original title: ${source.title ?? "Missing"}`);
-  console.log(`Transcript length: ${source.text?.length ?? 0}`);
-  console.log(`Transcript appears truncated: ${source.text && !/[.!?]["']?$/.test(source.text.trim()) ? "Possibly" : "No"}`
-);
-  console.log(`Transcript ending: ${textPreview}`);
-  console.log("");
+    if (!record.verdict)
+        missing.push("Verdict");
+
+    if (!record.trial_date)
+        missing.push("Trial Date");
+
+    const ready =
+        missing.length === 0;
+
+    if (ready)
+        readyForImport++;
+    else
+        reviewRequired++;
+
+    console.log("----------------------------------------");
+
+    console.log(`Record ${index + 1}`);
+
+    console.log(`Status: ${
+        ready
+            ? "READY"
+            : "REVIEW REQUIRED"
+    }`);
+
+    console.log("");
+
+    console.log(`Source ID: ${record.source_case_id}`);
+
+    console.log(`Title: ${source.title}`);
+
+    console.log(`Defendant: ${
+        record.defendant_name ?? "Missing"
+    }`);
+
+    console.log(`Offence: ${
+        record.offence ?? "Missing"
+    }`);
+
+    console.log(`Verdict: ${
+        record.verdict ?? "Missing"
+    }`);
+
+    console.log(`Trial date: ${
+        record.trial_date ?? "Missing"
+    }`);
+
+    console.log(`Transcript length: ${transcriptLength}`);
+
+    console.log(`Source URL: ${
+        record.source_url
+            ? "Present"
+            : "Missing"
+    }`);
+
+    console.log(`Transcript truncated: ${
+        transcriptTruncated
+            ? "Yes"
+            : "No"
+    }`);
+
+    console.log("");
 });
 
-console.log("============================================");
+console.log("==============================================");
+
+console.log("\n========== IMPORT SUMMARY ==========\n");
+
+console.log(`Records returned: ${records.length}`);
+console.log(`Records transformed: ${transformedRecords.length}`);
+
+console.log(`Ready for import: ${readyForImport}`);
+console.log(`Needs review: ${reviewRequired}`);
+
+console.log(`Missing defendant: ${qualitySummary.missingDefendantName}`);
+console.log(`Missing verdict: ${qualitySummary.missingVerdict}`);
+console.log(`Missing trial date: ${qualitySummary.missingTrialDate}`);
+
+console.log("\n====================================");
 
 
 
