@@ -1,155 +1,21 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-
 import { transformOldBaileyRecord } from
   "../src/import/transformOldBaileyRecord.js";
 
 import { validateOldBaileyApiRecord } from
-  "../src/import/validateOldBaileyApiRecord.js";  
+  "../src/import/validateOldBaileyApiRecord.js"; 
+  
+import { summariseTransformation } from
+  "../src/import/summariseTransformation.js";
 
-function createFileTimestamp() {
-  const now = new Date();
+import { summariseValidation } from
+  "../src/import/summariseValidation.js";
 
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
+import { createApiReviewRecords } from
+  "../src/import/createApiReviewRecords.js";
 
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-  const seconds = String(now.getSeconds()).padStart(2, "0");
+import { writeApiReviewReport } from
+  "../src/import/writeApiReviewReport.js";  
 
-  return `${year}-${month}-${day}T${hours}-${minutes}-${seconds}`;
-}
-
-async function writeApiReviewReport({
-  query,
-  records,
-  transformedRecords,
-  qualitySummary,
-  validationResults,
-  validationSummary,
-  readyForImport,
-  reviewRequired,
-}) {
-  const generatedAt = new Date().toISOString();
-  const fileTimestamp = createFileTimestamp();
-
-  const reportDirectory = path.resolve(
-    "data",
-    "import-reports"
-  );
-
-  await fs.mkdir(reportDirectory, {
-    recursive: true,
-  });
-
-  const reviewedRecords = transformedRecords.map(
-    (record, index) => {
-      const source = records[index]?._source ?? {};
-      const transcriptLength = source.text?.length ?? 0;
-      const validation = validationResults[index];
-
-      const missingFields = [];
-
-      if (!record.source_case_id) {
-        missingFields.push("source_case_id");
-      }
-
-      if (!record.defendant_name) {
-        missingFields.push("defendant_name");
-      }
-
-      if (!record.offence) {
-        missingFields.push("offence");
-      }
-
-      if (!record.verdict) {
-        missingFields.push("verdict");
-      }
-
-      if (!record.trial_date) {
-        missingFields.push("trial_date");
-      }
-
-      if (!record.source_url) {
-        missingFields.push("source_url");
-      }
-
-      return {
-        recordNumber: index + 1,
-        status:
-          missingFields.length === 0
-            ? "READY"
-            : "REVIEW_REQUIRED",
-        missingFields,
-        validation: {
-          status: validation.status,
-          isValid: validation.isValid,
-          errors: validation.errors,
-          warnings: validation.warnings,
-        },
-        transcriptLength,
-        transcriptPossiblyTruncated:
-          transcriptLength === 500,
-        transformedRecord: record,
-        originalSource: {
-          idkey: source.idkey ?? null,
-          title: source.title ?? null,
-          images: source.images ?? [],
-          text: source.text ?? null,
-        },
-      };
-    }
-  );
-
-  const report = {
-    reportType: "Old Bailey API Import Review",
-    reportVersion: "1.2",
-    generatedAt,
-    query,
-    summary: {
-      recordsReturned: records.length,
-      recordsTransformed: transformedRecords.length,
-      readyForImport,
-      needsReview: reviewRequired,
-      missingSourceCaseId:
-        qualitySummary.missingSourceCaseId,
-      missingDefendantName:
-        qualitySummary.missingDefendantName,
-      missingOffence:
-        qualitySummary.missingOffence,
-      missingVerdict:
-        qualitySummary.missingVerdict,
-      missingTrialDate:
-        qualitySummary.missingTrialDate,
-      missingSourceUrl:
-        qualitySummary.missingSourceUrl,
-      validation: validationSummary,  
-    },
-    records: reviewedRecords,
-  };
-
-  const reportFileName =
-    `api-import-review-${query}-${fileTimestamp}.json`;
-
-  const safeReportFileName = reportFileName.replace(
-    /[^a-zA-Z0-9._-]/g,
-    "-"
-  );
-
-  const reportPath = path.join(
-    reportDirectory,
-    safeReportFileName
-  );
-
-  await fs.writeFile(
-    reportPath,
-    JSON.stringify(report, null, 2),
-    "utf8"
-  );
-
-  return reportPath;
-}
 
 const searchTerm = process.argv[2] || "Sheffield";
 
@@ -206,9 +72,29 @@ const transformedRecords = records.map((record) =>
   transformOldBaileyRecord(record)
 );
 
+const qualitySummary =
+  summariseTransformation(transformedRecords);
+
 const validationResults = transformedRecords.map(
   (record) => validateOldBaileyApiRecord(record)
 );
+
+const validationSummary =
+  summariseValidation(validationResults);
+
+const reviewedRecords = createApiReviewRecords({
+  records,
+  transformedRecords,
+  validationResults,
+});  
+
+const readyForImport = reviewedRecords.filter(
+  (record) => record.status === "READY"
+).length;
+
+const reviewRequired = reviewedRecords.filter(
+  (record) => record.status === "REVIEW_REQUIRED"
+).length;
 
 console.log("\n========== TRANSFORMED RECORDS ==========\n");
 
@@ -223,62 +109,7 @@ transformedRecords.forEach((record, index) => {
   console.log("");
 });
 
-const qualitySummary = transformedRecords.reduce(
-  (summary, record) => {
-    if (!record.source_case_id) {
-      summary.missingSourceCaseId += 1;
-    }
-
-    if (!record.defendant_name) {
-      summary.missingDefendantName += 1;
-    }
-
-    if (!record.offence) {
-      summary.missingOffence += 1;
-    }
-
-    if (!record.verdict) {
-      summary.missingVerdict += 1;
-    }
-
-    if (!record.trial_date) {
-      summary.missingTrialDate += 1;
-    }
-
-    if (!record.source_url) {
-      summary.missingSourceUrl += 1;
-    }
-
-    return summary;
-  },
-  {
-    totalTransformed: transformedRecords.length,
-    missingSourceCaseId: 0,
-    missingDefendantName: 0,
-    missingOffence: 0,
-    missingVerdict: 0,
-    missingTrialDate: 0,
-    missingSourceUrl: 0,
-  }
-);
-
-console.log("========== TRANSFORMATION QUALITY ==========\n");
-console.log(`Records transformed: ${qualitySummary.totalTransformed}`);
-console.log(
-  `Missing source case ID: ${qualitySummary.missingSourceCaseId}`
-);
-console.log(
-  `Missing defendant name: ${qualitySummary.missingDefendantName}`
-);
-console.log(`Missing offence: ${qualitySummary.missingOffence}`);
-console.log(`Missing verdict: ${qualitySummary.missingVerdict}`);
-console.log(`Missing trial date: ${qualitySummary.missingTrialDate}`);
-console.log(`Missing source URL: ${qualitySummary.missingSourceUrl}`);
-
 console.log("\n========== OLD BAILEY API IMPORT REVIEW ==========\n");
-
-let readyForImport = 0;
-let reviewRequired = 0;
 
 transformedRecords.forEach((record, index) => {
 
@@ -303,11 +134,6 @@ transformedRecords.forEach((record, index) => {
 
     const ready =
         missing.length === 0;
-
-    if (ready)
-        readyForImport++;
-    else
-        reviewRequired++;
 
     console.log("----------------------------------------");
 
@@ -359,34 +185,6 @@ transformedRecords.forEach((record, index) => {
 });
 
 console.log("==============================================");
-
-const validationSummary = validationResults.reduce(
-  (summary, result) => {
-    if (result.status === "VALID") {
-      summary.valid += 1;
-    }
-
-    if (result.status === "VALID_WITH_WARNINGS") {
-      summary.validWithWarnings += 1;
-    }
-
-    if (result.status === "INVALID") {
-      summary.invalid += 1;
-    }
-
-    summary.totalErrors += result.errors.length;
-    summary.totalWarnings += result.warnings.length;
-
-    return summary;
-  },
-  {
-    valid: 0,
-    validWithWarnings: 0,
-    invalid: 0,
-    totalErrors: 0,
-    totalWarnings: 0,
-  }
-);
 
 console.log("\n========== API VALIDATION ==========\n");
 
@@ -448,10 +246,8 @@ const reportPath = await writeApiReviewReport({
   records,
   transformedRecords,
   qualitySummary,
-  validationResults,
   validationSummary,
-  readyForImport,
-  reviewRequired,
+  reviewedRecords,
 });
 
 console.log("\nAPI review report created:");
