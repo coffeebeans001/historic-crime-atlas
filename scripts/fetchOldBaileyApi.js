@@ -4,6 +4,9 @@ import path from "node:path";
 import { transformOldBaileyRecord } from
   "../src/import/transformOldBaileyRecord.js";
 
+import { validateOldBaileyApiRecord } from
+  "../src/import/validateOldBaileyApiRecord.js";  
+
 function createFileTimestamp() {
   const now = new Date();
 
@@ -23,6 +26,8 @@ async function writeApiReviewReport({
   records,
   transformedRecords,
   qualitySummary,
+  validationResults,
+  validationSummary,
   readyForImport,
   reviewRequired,
 }) {
@@ -42,6 +47,7 @@ async function writeApiReviewReport({
     (record, index) => {
       const source = records[index]?._source ?? {};
       const transcriptLength = source.text?.length ?? 0;
+      const validation = validationResults[index];
 
       const missingFields = [];
 
@@ -76,6 +82,12 @@ async function writeApiReviewReport({
             ? "READY"
             : "REVIEW_REQUIRED",
         missingFields,
+        validation: {
+          status: validation.status,
+          isValid: validation.isValid,
+          errors: validation.errors,
+          warnings: validation.warnings,
+        },
         transcriptLength,
         transcriptPossiblyTruncated:
           transcriptLength === 500,
@@ -112,6 +124,7 @@ async function writeApiReviewReport({
         qualitySummary.missingTrialDate,
       missingSourceUrl:
         qualitySummary.missingSourceUrl,
+      validation: validationSummary,  
     },
     records: reviewedRecords,
   };
@@ -191,6 +204,10 @@ async function fetchOldBaileyRecords() {
 
 const transformedRecords = records.map((record) =>
   transformOldBaileyRecord(record)
+);
+
+const validationResults = transformedRecords.map(
+  (record) => validateOldBaileyApiRecord(record)
 );
 
 console.log("\n========== TRANSFORMED RECORDS ==========\n");
@@ -343,6 +360,75 @@ transformedRecords.forEach((record, index) => {
 
 console.log("==============================================");
 
+const validationSummary = validationResults.reduce(
+  (summary, result) => {
+    if (result.status === "VALID") {
+      summary.valid += 1;
+    }
+
+    if (result.status === "VALID_WITH_WARNINGS") {
+      summary.validWithWarnings += 1;
+    }
+
+    if (result.status === "INVALID") {
+      summary.invalid += 1;
+    }
+
+    summary.totalErrors += result.errors.length;
+    summary.totalWarnings += result.warnings.length;
+
+    return summary;
+  },
+  {
+    valid: 0,
+    validWithWarnings: 0,
+    invalid: 0,
+    totalErrors: 0,
+    totalWarnings: 0,
+  }
+);
+
+console.log("\n========== API VALIDATION ==========\n");
+
+validationResults.forEach((result, index) => {
+  const record = transformedRecords[index];
+
+  console.log(`Record ${index + 1}`);
+  console.log("----------------------------------------");
+  console.log(
+    `Source ID: ${record.source_case_id ?? "Missing"}`
+  );
+  console.log(`Status: ${result.status}`);
+
+  if (result.errors.length > 0) {
+    console.log("Errors:");
+
+    result.errors.forEach((error) => {
+      console.log(`  - ${error}`);
+    });
+  }
+
+  if (result.warnings.length > 0) {
+    console.log("Warnings:");
+
+    result.warnings.forEach((warning) => {
+      console.log(`  - ${warning}`);
+    });
+  }
+
+  console.log("");
+});
+
+console.log("========== VALIDATION SUMMARY ==========\n");
+console.log(`Valid: ${validationSummary.valid}`);
+console.log(
+  `Valid with warnings: ${validationSummary.validWithWarnings}`
+);
+console.log(`Invalid: ${validationSummary.invalid}`);
+console.log(`Total errors: ${validationSummary.totalErrors}`);
+console.log(`Total warnings: ${validationSummary.totalWarnings}`);
+console.log("\n========================================");
+
 console.log("\n========== IMPORT SUMMARY ==========\n");
 
 console.log(`Records returned: ${records.length}`);
@@ -362,6 +448,8 @@ const reportPath = await writeApiReviewReport({
   records,
   transformedRecords,
   qualitySummary,
+  validationResults,
+  validationSummary,
   readyForImport,
   reviewRequired,
 });
