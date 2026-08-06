@@ -16,6 +16,9 @@ import { createApiReviewRecords } from
 import { writeApiReviewReport } from
   "../src/import/writeApiReviewReport.js";  
 
+import { fetchOldBaileyRecordById } from
+  "../src/import/fetchOldBaileyRecordById.js";  
+
 const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 10;
 
@@ -76,15 +79,41 @@ async function fetchOldBaileyRecords() {
     const totalResults = data?.hits?.total ?? 0;
     const apiRecords = data.hits?.hits ?? [];
     const records = apiRecords.slice(0, batchSize);
+    
+      if (records.length === 0) {
+      console.log("No records selected for processing.");
+      return;
+    }
+
+    const firstRecordId = records[0]?._source?.idkey;
+
+      if (!firstRecordId) {
+      throw new Error("The first selected record does not contain an idkey.");
+    }
+
+    console.log("========== SINGLE RECORD TEST ==========");
+    console.log(`Requesting record: ${firstRecordId}`);
+
+    const singleRecordResult =
+      await fetchOldBaileyRecordById(firstRecordId);
+
+    console.log(`Requested ID: ${singleRecordResult.requestedId}`);
+    console.log(`Matching records: ${singleRecordResult.totalResults}`);
+    console.log(
+      `Records returned: ${singleRecordResult.records.length}`
+    );
+    const singleRecord = singleRecordResult.records[0];
+
+    console.log(
+      "Single-record source keys:",
+      Object.keys(singleRecord?._source ?? {})
+    );
+
+    console.log("========================================\n");
 
     console.log(`Total matching records: ${totalResults}`);
     console.log(`Records returned by API: ${apiRecords.length}`);
     console.log(`Records selected for processing: ${records.length}\n`);
-
-    if (records.length === 0) {
-      console.log("No records found.");
-      return;
-    }
 
     console.log("========== RECORD SUMMARY ==========\n");
 
