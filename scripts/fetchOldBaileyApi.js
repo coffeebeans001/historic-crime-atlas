@@ -16,17 +16,49 @@ import { createApiReviewRecords } from
 import { writeApiReviewReport } from
   "../src/import/writeApiReviewReport.js";  
 
+const DEFAULT_QUERY = "robbery";
+const DEFAULT_BATCH_SIZE = 10;
 
-const searchTerm = process.argv[2] || "Sheffield";
+const args = process.argv.slice(2);
 
-const API_URL =
-  `https://www.dhi.ac.uk/api/data/oldbailey_record?text=${encodeURIComponent(searchTerm)}`;
+function getArgumentValue(argumentName, fallbackValue) {
+  const argumentPrefix = `--${argumentName}=`;
+
+  const matchingArgument = args.find((argument) =>
+    argument.startsWith(argumentPrefix)
+  );
+
+  if (!matchingArgument) {
+    return fallbackValue;
+  }
+
+  const value = matchingArgument.slice(argumentPrefix.length).trim();
+
+  return value || fallbackValue;
+}
+
+const query = getArgumentValue("query", DEFAULT_QUERY);
+
+const requestedBatchSize = Number.parseInt(
+  getArgumentValue("size", String(DEFAULT_BATCH_SIZE)),
+  10
+);
+
+const batchSize =
+  Number.isInteger(requestedBatchSize) && requestedBatchSize > 0
+    ? requestedBatchSize
+    : DEFAULT_BATCH_SIZE;  
+
+const apiUrl =
+  `https://www.dhi.ac.uk/api/data/oldbailey_record` +
+  `?text=${encodeURIComponent(query)}`;
 
 async function fetchOldBaileyRecords() {
   try {
-    console.log(`\nSearching Old Bailey API for "${searchTerm}"...\n`);
+    console.log(`\nSearching Old Bailey API for "${query}"...\n`);
 
-    const response = await fetch(API_URL);
+    
+    const response = await fetch(apiUrl);
 
     if (!response.ok) {
       throw new Error(
@@ -35,12 +67,19 @@ async function fetchOldBaileyRecords() {
     }
 
     const data = await response.json();
+    console.log("Hits metadata:", {
+      total: data.hits?.total,
+      maxScore: data.hits?.max_score,
+      returned: data.hits?.hits?.length,
+    });
 
     const totalResults = data?.hits?.total ?? 0;
-    const records = data?.hits?.hits ?? [];
+    const apiRecords = data.hits?.hits ?? [];
+    const records = apiRecords.slice(0, batchSize);
 
     console.log(`Total matching records: ${totalResults}`);
-    console.log(`Records returned: ${records.length}\n`);
+    console.log(`Records returned by API: ${apiRecords.length}`);
+    console.log(`Records selected for processing: ${records.length}\n`);
 
     if (records.length === 0) {
       console.log("No records found.");
@@ -242,7 +281,7 @@ console.log(`Missing trial date: ${qualitySummary.missingTrialDate}`);
 console.log("\n====================================");
 
 const reportPath = await writeApiReviewReport({
-  query: searchTerm,
+  query: query,
   records,
   transformedRecords,
   qualitySummary,
