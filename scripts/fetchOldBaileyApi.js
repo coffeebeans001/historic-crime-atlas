@@ -109,11 +109,67 @@ async function fetchOldBaileyRecords() {
       Object.keys(singleRecord?._source ?? {})
     );
 
-    console.log("========================================\n");
+    const singleSource = singleRecord?._source ?? {};
+
+    console.log("\n========== METADATA INSPECTION ==========");
+
+    console.log("Metadata type:", typeof singleSource.metadata);
+
+    console.log(
+      "Metadata keys:",
+      singleSource.metadata &&
+      typeof singleSource.metadata === "object"
+        ? Object.keys(singleSource.metadata)
+        : []
+    );
+
+    console.dir(singleSource.metadata, {
+      depth: 4,
+      maxArrayLength: 20,
+    });
+
+    console.log("\n========== XML INSPECTION ==========");
+
+    const xml = singleSource.xml ?? "";
+
+    console.log("XML type:", typeof xml);
+    console.log("XML length:", xml.length);
+
+    console.log("\nXML preview:");
+    console.log(xml.slice(0, 2000));
 
     console.log(`Total matching records: ${totalResults}`);
     console.log(`Records returned by API: ${apiRecords.length}`);
     console.log(`Records selected for processing: ${records.length}\n`);
+
+    console.log("\n========== TARGETED XML INSPECTION ==========");
+
+    const defendantMatches = xml.match(
+      /<persName[^>]*id="[^"]*defend[^"]*"[^>]*>[\s\S]*?<\/persName>/g
+    ) ?? [];
+
+    const verdictMatches = xml.match(
+      /<rs[^>]*id="[^"]*verdict[^"]*"[^>]*>[\s\S]*?<\/rs>/g
+    ) ?? [];
+
+    const punishmentMatches = xml.match(
+      /<rs[^>]*id="[^"]*(?:punish|sentence)[^"]*"[^>]*>[\s\S]*?<\/rs>/g
+    ) ?? [];
+
+    console.log("\nDefendant nodes:");
+    console.log(defendantMatches.length > 0 ? defendantMatches : "None found");
+
+    console.log("\nVerdict nodes:");
+    console.log(verdictMatches.length > 0 ? verdictMatches : "None found");
+
+    console.log("\nPunishment / sentence nodes:");
+    console.log(
+      punishmentMatches.length > 0
+        ? punishmentMatches
+        : "None found"
+    );
+
+    console.log("============================================\n");
 
     console.log("========== RECORD SUMMARY ==========\n");
 
