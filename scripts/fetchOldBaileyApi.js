@@ -171,6 +171,107 @@ async function fetchOldBaileyRecords() {
 
     console.log("============================================\n");
 
+    console.log("\n========== XML PARSER ==========");
+
+    const defendantNode = defendantMatches[0] ?? null;
+
+    let defendantNameFromXml = null;
+
+    if (defendantNode) {
+      defendantNameFromXml = defendantNode
+        .replace(/<interp[\s\S]*?\/>/g, "")
+        .replace(/<[^>]+>/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    console.log("Defendant name from XML:", defendantNameFromXml);
+
+    let defendantGenderFromXml = null;
+
+    if (defendantNode) {
+      const genderMatch = defendantNode.match(
+        /<interp[^>]*type="gender"[^>]*value="([^"]+)"/
+      );
+
+      defendantGenderFromXml = genderMatch?.[1] ?? null;
+    }
+
+    console.log("Defendant gender from XML:", defendantGenderFromXml);
+
+    const verdictNode = verdictMatches[0] ?? null;
+
+    let verdictCategoryFromXml = null;
+    let verdictSubcategoryFromXml = null;
+    let pleaFromXml = null;
+
+    if (verdictNode) {
+      const verdictCategoryMatch = verdictNode.match(
+        /<interp[^>]*type="verdictCategory"[^>]*value="([^"]+)"/
+      );
+
+      const verdictSubcategoryMatch = verdictNode.match(
+        /<interp[^>]*type="verdictSubcategory"[^>]*value="([^"]+)"/
+      );
+
+      const pleaMatch = verdictNode.match(
+        /<interp[^>]*type="plea"[^>]*value="([^"]+)"/
+      );
+
+      verdictCategoryFromXml = verdictCategoryMatch?.[1] ?? null;
+      verdictSubcategoryFromXml = verdictSubcategoryMatch?.[1] ?? null;
+      pleaFromXml = pleaMatch?.[1] ?? null;
+    }
+
+    console.log("Verdict category from XML:", verdictCategoryFromXml);
+    console.log("Verdict subcategory from XML:", verdictSubcategoryFromXml);
+    console.log("Plea from XML:", pleaFromXml);
+
+    let verdictTextFromXml = null;
+
+    if (verdictNode) {
+      verdictTextFromXml = verdictNode
+        .replace(/<interp[\s\S]*?\/>/g, "")
+        .replace(/<[^>]+>/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+console.log("Verdict text from XML:", verdictTextFromXml);
+
+    const punishmentNode = punishmentMatches[0] ?? null;
+
+    let punishmentTextFromXml = null;
+
+    if (punishmentNode) {
+      punishmentTextFromXml = punishmentNode
+        .replace(/<interp[\s\S]*?\/>/g, "")
+        .replace(/<[^>]+>/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    console.log("Punishment / sentence from XML:", punishmentTextFromXml);
+
+    const parsedXmlData = {
+      defendantName: defendantNameFromXml,
+      defendantGender: defendantGenderFromXml,
+      verdictCategory: verdictCategoryFromXml,
+      verdictSubcategory: verdictSubcategoryFromXml,
+      plea: pleaFromXml,
+      verdictText: verdictTextFromXml,
+      punishment: punishmentTextFromXml
+    };
+
+    console.log("\nParsed XML data:");
+    console.log(parsedXmlData);
+
+    
+
+    
+
+
+
     console.log("========== RECORD SUMMARY ==========\n");
 
     records.forEach((record, index) => {
