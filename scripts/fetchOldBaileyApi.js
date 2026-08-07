@@ -1,3 +1,5 @@
+import { parseOldBaileyXml } from "../src/import/parseOldBaileyXml.js";
+
 import { transformOldBaileyRecord } from
   "../src/import/transformOldBaileyRecord.js";
 
@@ -132,6 +134,23 @@ async function fetchOldBaileyRecords() {
 
     const xml = singleSource.xml ?? "";
 
+    const {
+  defendantMatches,
+  verdictMatches,
+  punishmentMatches,
+  defendantName,
+  defendantGender,
+  verdictCategory,
+  verdictSubcategory,
+  plea,
+  verdictText,
+  punishment
+} = parseOldBaileyXml(xml);
+
+    console.log("\nDefendant parser module test:");
+    console.log("Defendant name:", defendantName);
+    console.log("Defendant gender:", defendantGender);
+
     console.log("XML type:", typeof xml);
     console.log("XML length:", xml.length);
 
@@ -143,18 +162,6 @@ async function fetchOldBaileyRecords() {
     console.log(`Records selected for processing: ${records.length}\n`);
 
     console.log("\n========== TARGETED XML INSPECTION ==========");
-
-    const defendantMatches = xml.match(
-      /<persName[^>]*id="[^"]*defend[^"]*"[^>]*>[\s\S]*?<\/persName>/g
-    ) ?? [];
-
-    const verdictMatches = xml.match(
-      /<rs[^>]*id="[^"]*verdict[^"]*"[^>]*>[\s\S]*?<\/rs>/g
-    ) ?? [];
-
-    const punishmentMatches = xml.match(
-      /<rs[^>]*id="[^"]*(?:punish|sentence)[^"]*"[^>]*>[\s\S]*?<\/rs>/g
-    ) ?? [];
 
     console.log("\nDefendant nodes:");
     console.log(defendantMatches.length > 0 ? defendantMatches : "None found");
@@ -172,105 +179,27 @@ async function fetchOldBaileyRecords() {
     console.log("============================================\n");
 
     console.log("\n========== XML PARSER ==========");
-
-    const defendantNode = defendantMatches[0] ?? null;
-
-    let defendantNameFromXml = null;
-
-    if (defendantNode) {
-      defendantNameFromXml = defendantNode
-        .replace(/<interp[\s\S]*?\/>/g, "")
-        .replace(/<[^>]+>/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    console.log("Defendant name from XML:", defendantNameFromXml);
-
-    let defendantGenderFromXml = null;
-
-    if (defendantNode) {
-      const genderMatch = defendantNode.match(
-        /<interp[^>]*type="gender"[^>]*value="([^"]+)"/
-      );
-
-      defendantGenderFromXml = genderMatch?.[1] ?? null;
-    }
-
-    console.log("Defendant gender from XML:", defendantGenderFromXml);
-
-    const verdictNode = verdictMatches[0] ?? null;
-
-    let verdictCategoryFromXml = null;
-    let verdictSubcategoryFromXml = null;
-    let pleaFromXml = null;
-
-    if (verdictNode) {
-      const verdictCategoryMatch = verdictNode.match(
-        /<interp[^>]*type="verdictCategory"[^>]*value="([^"]+)"/
-      );
-
-      const verdictSubcategoryMatch = verdictNode.match(
-        /<interp[^>]*type="verdictSubcategory"[^>]*value="([^"]+)"/
-      );
-
-      const pleaMatch = verdictNode.match(
-        /<interp[^>]*type="plea"[^>]*value="([^"]+)"/
-      );
-
-      verdictCategoryFromXml = verdictCategoryMatch?.[1] ?? null;
-      verdictSubcategoryFromXml = verdictSubcategoryMatch?.[1] ?? null;
-      pleaFromXml = pleaMatch?.[1] ?? null;
-    }
-
-    console.log("Verdict category from XML:", verdictCategoryFromXml);
-    console.log("Verdict subcategory from XML:", verdictSubcategoryFromXml);
-    console.log("Plea from XML:", pleaFromXml);
-
-    let verdictTextFromXml = null;
-
-    if (verdictNode) {
-      verdictTextFromXml = verdictNode
-        .replace(/<interp[\s\S]*?\/>/g, "")
-        .replace(/<[^>]+>/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-console.log("Verdict text from XML:", verdictTextFromXml);
-
-    const punishmentNode = punishmentMatches[0] ?? null;
-
-    let punishmentTextFromXml = null;
-
-    if (punishmentNode) {
-      punishmentTextFromXml = punishmentNode
-        .replace(/<interp[\s\S]*?\/>/g, "")
-        .replace(/<[^>]+>/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    console.log("Punishment / sentence from XML:", punishmentTextFromXml);
+    
+    console.log("Defendant name from XML:", defendantName);
+    console.log("Defendant gender from XML:", defendantGender);
+    console.log("Verdict category from XML:", verdictCategory);
+    console.log("Verdict subcategory from XML:", verdictSubcategory);
+    console.log("Plea from XML:", plea);
+    console.log("Verdict text from XML:", verdictText);
+    console.log("Punishment / sentence from XML:", punishment);
 
     const parsedXmlData = {
-      defendantName: defendantNameFromXml,
-      defendantGender: defendantGenderFromXml,
-      verdictCategory: verdictCategoryFromXml,
-      verdictSubcategory: verdictSubcategoryFromXml,
-      plea: pleaFromXml,
-      verdictText: verdictTextFromXml,
-      punishment: punishmentTextFromXml
+      defendantName,
+      defendantGender,
+      verdictCategory,
+      verdictSubcategory,
+      plea,
+      verdictText,
+      punishment
     };
 
     console.log("\nParsed XML data:");
     console.log(parsedXmlData);
-
-    
-
-    
-
-
 
     console.log("========== RECORD SUMMARY ==========\n");
 
@@ -293,33 +222,33 @@ console.log("Verdict text from XML:", verdictTextFromXml);
 
     console.log("===================================");
 
-const transformedRecords = records.map((record) =>
-  transformOldBaileyRecord(record)
-);
+  const transformedRecords = records.map((record) =>
+    transformOldBaileyRecord(record)
+  );
 
-const qualitySummary =
-  summariseTransformation(transformedRecords);
+  const qualitySummary =
+    summariseTransformation(transformedRecords);
 
-const validationResults = transformedRecords.map(
-  (record) => validateOldBaileyApiRecord(record)
-);
+  const validationResults = transformedRecords.map(
+    (record) => validateOldBaileyApiRecord(record)
+  );
 
-const validationSummary =
-  summariseValidation(validationResults);
+  const validationSummary =
+    summariseValidation(validationResults);
 
-const reviewedRecords = createApiReviewRecords({
-  records,
-  transformedRecords,
-  validationResults,
-});  
+  const reviewedRecords = createApiReviewRecords({
+    records,
+    transformedRecords,
+    validationResults,
+  });  
 
-const readyForImport = reviewedRecords.filter(
-  (record) => record.status === "READY"
-).length;
+  const readyForImport = reviewedRecords.filter(
+    (record) => record.status === "READY"
+  ).length;
 
-const reviewRequired = reviewedRecords.filter(
-  (record) => record.status === "REVIEW_REQUIRED"
-).length;
+  const reviewRequired = reviewedRecords.filter(
+    (record) => record.status === "REVIEW_REQUIRED"
+  ).length;
 
 console.log("\n========== TRANSFORMED RECORDS ==========\n");
 
