@@ -106,8 +106,8 @@ function detectVerdict(text) {
   return null;
 }
 
-export function transformOldBaileyRecord(apiRecord) {
-  const source = apiRecord?._source;
+export function transformOldBaileyRecord(record, parsedXmlData) {
+  const source = record?._source;
 
   if (!source) {
     throw new Error(
@@ -122,14 +122,33 @@ export function transformOldBaileyRecord(apiRecord) {
   } = extractTitleParts(source.title);
 
   return {
-    source_case_id: source.idkey || null,
-    defendant_name: defendantName,
-    offence: offenceDescription,
-    verdict: detectVerdict(source.text),
-    trial_date: trialDate,
-    source_url: source.images?.[0] || null,
-    case_summary: source.text || null,
-    source_title: source.title || null,
-    source_type: "Old Bailey API",
-  };
+  source_case_id: source.idkey || null,
+
+  defendant_name:
+    parsedXmlData?.defendantName ??
+    defendantName,
+
+  offence:
+    parsedXmlData?.offenceText ??
+    offenceDescription,
+
+  offence_category:
+    parsedXmlData?.offenceCategory ?? null,
+
+  offence_subcategory:
+    parsedXmlData?.offenceSubcategory ?? null,
+
+  verdict:
+    parsedXmlData?.verdictCategory === "guilty"
+      ? "Guilty"
+      : parsedXmlData?.verdictCategory === "notGuilty"
+        ? "Not Guilty"
+        : detectVerdict(source.text),
+
+  trial_date: trialDate,
+  source_url: source.images?.[0] || null,
+  case_summary: source.text || null,
+  source_title: source.title || null,
+  source_type: "Old Bailey API",
+};
 }

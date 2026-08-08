@@ -1,3 +1,5 @@
+import { enrichOldBaileyRecord } from "../src/import/enrichOldBaileyRecord.js";
+
 import { parseOldBaileyXml } from "../src/import/parseOldBaileyXml.js";
 
 import { transformOldBaileyRecord } from
@@ -86,8 +88,8 @@ async function fetchOldBaileyRecords() {
       console.log("No records selected for processing.");
       return;
     }
-
-    const firstRecordId = records[0]?._source?.idkey;
+    const firstRecordId = "t16740429-1"; 
+    //const firstRecordId = records[0]?._source?.idkey;
 
       if (!firstRecordId) {
       throw new Error("The first selected record does not contain an idkey.");
@@ -105,6 +107,34 @@ async function fetchOldBaileyRecords() {
       `Records returned: ${singleRecordResult.records.length}`
     );
     const singleRecord = singleRecordResult.records[0];
+
+    console.log("\n========== ENRICHMENT TEST ==========");
+
+    const enrichedRecord = await enrichOldBaileyRecord(
+      singleRecord,
+      fetchOldBaileyRecordById,
+      parseOldBaileyXml
+    );
+
+    console.log(
+      "Original ID:",
+      enrichedRecord.originalRecord?._source?.idkey ?? null
+    );
+
+    console.log(
+      "Detailed record found:",
+      enrichedRecord.detailedRecord ? "Yes" : "No"
+    );
+
+    console.log(
+      "Parsed defendant:",
+      enrichedRecord.parsedXmlData?.defendantName ?? null
+    );
+
+    console.log(
+      "Parsed verdict:",
+      enrichedRecord.parsedXmlData?.verdictCategory ?? null
+    );
 
     console.log(
       "Single-record source keys:",
@@ -138,13 +168,17 @@ async function fetchOldBaileyRecords() {
   defendantMatches,
   verdictMatches,
   punishmentMatches,
+  offenceMatches,
   defendantName,
   defendantGender,
   verdictCategory,
   verdictSubcategory,
   plea,
   verdictText,
-  punishment
+  punishment,
+  offenceCategory,
+  offenceSubcategory,
+  offenceText
 } = parseOldBaileyXml(xml);
 
     console.log("\nDefendant parser module test:");
@@ -176,6 +210,32 @@ async function fetchOldBaileyRecords() {
         : "None found"
     );
 
+    console.log("\nOffence nodes:");
+    if (offenceMatches.length > 0) {
+  console.log(offenceMatches);
+} else {
+  console.log("None found");
+
+  console.log("\nSearching XML for offence...");
+
+  const offencePreview = xml.match(
+    /.{0,200}offence.{0,200}/gi
+  );
+
+  console.log("\n========== OFFENCE XML SEARCH ==========");
+
+const offenceSearch =
+  xml.match(/.{0,250}(?:offence|offense).{0,250}/gi) ?? [];
+
+console.log(
+  offenceSearch.length > 0
+    ? offenceSearch
+    : "No offence/offense references found."
+);
+
+  console.log(offencePreview ?? "No 'offence' text found.");
+}
+
     console.log("============================================\n");
 
     console.log("\n========== XML PARSER ==========");
@@ -187,15 +247,22 @@ async function fetchOldBaileyRecords() {
     console.log("Plea from XML:", plea);
     console.log("Verdict text from XML:", verdictText);
     console.log("Punishment / sentence from XML:", punishment);
+    console.log("Offence category from XML:", offenceCategory);
+    console.log("Offence subcategory from XML:", offenceSubcategory);
+    console.log("Offence text from XML:", offenceText);
 
     const parsedXmlData = {
       defendantName,
       defendantGender,
+
       verdictCategory,
       verdictSubcategory,
       plea,
       verdictText,
-      punishment
+      punishment,
+      offenceCategory,
+      offenceSubcategory,
+      offenceText
     };
 
     console.log("\nParsed XML data:");
@@ -220,11 +287,38 @@ async function fetchOldBaileyRecords() {
       console.log("");
     });
 
+    console.log("\n========== SMALL BATCH ENRICHMENT ==========");
+
+const enrichedRecords = [];
+
+for (const record of records) {
+  const enrichedRecord = await enrichOldBaileyRecord(
+    record,
+    fetchOldBaileyRecordById,
+    parseOldBaileyXml
+  );
+
+  enrichedRecords.push(enrichedRecord);
+
+  console.log(
+    record?._source?.idkey ?? "Unknown ID",
+    "→",
+    enrichedRecord.parsedXmlData?.verdictCategory ?? null
+  );
+}
+
     console.log("===================================");
 
-  const transformedRecords = records.map((record) =>
-    transformOldBaileyRecord(record)
-  );
+    const transformedRecords = enrichedRecords.map((enrichedRecord) => {
+    const recordForTransform =
+      enrichedRecord.detailedRecord ??
+      enrichedRecord.originalRecord;
+
+    return transformOldBaileyRecord(
+      recordForTransform,
+      enrichedRecord.parsedXmlData
+    );
+  });
 
   const qualitySummary =
     summariseTransformation(transformedRecords);
@@ -261,6 +355,13 @@ transformedRecords.forEach((record, index) => {
   console.log(`Verdict: ${record.verdict ?? "Missing"}`);
   console.log(`Trial date: ${record.trial_date ?? "Missing"}`);
   console.log("");
+  console.log(
+  `Offence category: ${record.offence_category ?? "Missing"}`
+);
+
+console.log(
+  `Offence subcategory: ${record.offence_subcategory ?? "Missing"}`
+);
 });
 
 console.log("\n========== OLD BAILEY API IMPORT REVIEW ==========\n");

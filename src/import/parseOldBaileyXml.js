@@ -14,6 +14,11 @@ export function parseOldBaileyXml(xml = "") {
       /<rs[^>]*id="[^"]*(?:punish|sentence)[^"]*"[^>]*>[\s\S]*?<\/rs>/g
     ) ?? [];
 
+ const offenceMatches =
+  xml.match(
+    /<rs[^>]*type="offenceDescription"[^>]*>[\s\S]*?<\/rs>/g
+  ) ?? [];
+
   const defendantNode = defendantMatches[0] ?? null;
 
     let defendantName = null;
@@ -76,17 +81,46 @@ if (punishmentNode) {
     .trim();
 }
 
+const offenceNode = offenceMatches[0] ?? null;
+
+let offenceCategory = null;
+let offenceSubcategory = null;
+let offenceText = null;
+
+if (offenceNode) {
+  const offenceCategoryMatch = offenceNode.match(
+    /<interp[^>]*type="offenceCategory"[^>]*value="([^"]+)"/
+  );
+
+  const offenceSubcategoryMatch = offenceNode.match(
+    /<interp[^>]*type="offenceSubcategory"[^>]*value="([^"]+)"/
+  );
+
+  offenceCategory = offenceCategoryMatch?.[1] ?? null;
+  offenceSubcategory = offenceSubcategoryMatch?.[1] ?? null;
+
+  offenceText = offenceNode
+    .replace(/<interp[\s\S]*?\/>/g, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
   return {
   defendantMatches,
   verdictMatches,
   punishmentMatches,
+  offenceMatches,
   defendantName,
   defendantGender,
   verdictCategory,
   verdictSubcategory,
   plea,
   verdictText,
-  punishment
+  punishment,
+  offenceCategory,
+  offenceSubcategory,
+  offenceText
 };
 
 
