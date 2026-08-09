@@ -141,7 +141,46 @@ async function fetchOldBaileyRecords() {
       Object.keys(singleRecord?._source ?? {})
     );
 
+    const searchSource = records[0]?._source ?? {};
+
     const singleSource = singleRecord?._source ?? {};
+
+    console.log("\n========== TRANSCRIPT COMPARISON ==========");
+
+    console.log(
+      "Search transcript length:",
+      searchSource.text?.length ?? 0
+    );
+
+    console.log(
+      "Detailed transcript length:",
+      singleSource.text?.length ?? 0
+    );
+
+    console.log(
+      "Detailed transcript ending:"
+    );
+
+    console.log(
+      singleSource.text?.slice(-500) ?? "No detailed transcript available."
+    );
+
+    console.log("\n========== TRANSCRIPT CHECK ==========");
+
+    console.log(
+      "Text length:",
+      singleSource.text?.length ?? 0
+    );
+
+    console.log(
+      "HTML length:",
+      singleSource.html?.length ?? 0
+    );
+
+    console.log(
+      "XML length:",
+      singleSource.xml?.length ?? 0
+    );
 
     console.log("\n========== METADATA INSPECTION ==========");
 
@@ -355,14 +394,60 @@ transformedRecords.forEach((record, index) => {
   console.log(`Verdict: ${record.verdict ?? "Missing"}`);
   console.log(`Trial date: ${record.trial_date ?? "Missing"}`);
   console.log("");
-  console.log(
-  `Offence category: ${record.offence_category ?? "Missing"}`
-);
-
-console.log(
-  `Offence subcategory: ${record.offence_subcategory ?? "Missing"}`
-);
+  console.log(`Offence category: ${record.offence_category ?? "Missing"}`);
+  console.log(`Offence subcategory: ${record.offence_subcategory ?? "Missing"}`);
+  console.log(`Transformed transcript length: ${record.transcript_text?.length ?? 0}`);
 });
+
+console.log("\n========== TRANSCRIPT QUALITY CHECK ==========");
+
+transformedRecords.forEach((record, index) => {
+  const transcriptLength =
+    record.transcript_text?.length ?? 0;
+
+  const stillAtSearchLimit =
+    transcriptLength === 500;
+
+  console.log(`Record ${index + 1}`);
+  console.log(`Source ID: ${record.source_case_id}`);
+  console.log(`Transcript length: ${transcriptLength}`);
+  console.log(
+    `Still at 500-character limit: ${
+      stillAtSearchLimit ? "Yes" : "No"
+    }`
+  );
+  console.log("");
+});
+
+const transcriptsAt500 =
+  transformedRecords.filter(
+    (record) => (record.transcript_text?.length ?? 0) === 500
+  ).length;
+
+const transcriptsOver500 =
+  transformedRecords.filter(
+    (record) => (record.transcript_text?.length ?? 0) > 500
+  ).length;
+
+const transcriptsUnder500 =
+  transformedRecords.filter(
+    (record) => {
+      const length = record.transcript_text?.length ?? 0;
+      return length > 0 && length < 500;
+    }
+  ).length;
+
+const missingTranscripts =
+  transformedRecords.filter(
+    (record) => !record.transcript_text
+  ).length;
+
+console.log("========== TRANSCRIPT SUMMARY ==========");
+console.log(`Records checked: ${transformedRecords.length}`);
+console.log(`Over 500 chars: ${transcriptsOver500}`);
+console.log(`Exactly 500 chars: ${transcriptsAt500}`);
+console.log(`Under 500 chars: ${transcriptsUnder500}`);
+console.log(`Missing transcripts: ${missingTranscripts}`);
 
 console.log("\n========== OLD BAILEY API IMPORT REVIEW ==========\n");
 

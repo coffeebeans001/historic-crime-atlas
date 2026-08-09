@@ -147,7 +147,8 @@ export function transformOldBaileyRecord(record, parsedXmlData) {
 
   trial_date: trialDate,
   source_url: source.images?.[0] || null,
-  case_summary: source.text || null,
+  transcript_text: source.text || null,
+  case_summary: null,
   source_title: source.title || null,
   source_type: "Old Bailey API",
 };
