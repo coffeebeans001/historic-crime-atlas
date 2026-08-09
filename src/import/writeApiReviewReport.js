@@ -21,6 +21,8 @@ export async function writeApiReviewReport({
   qualitySummary,
   validationSummary,
   reviewedRecords,
+  xmlInspection,
+
 }) {
   const generatedAt = new Date().toISOString();
 
@@ -43,9 +45,10 @@ export async function writeApiReviewReport({
 
   const report = {
     reportType: "Old Bailey API Import Review",
-    reportVersion: "1.2",
+    reportVersion: "1.4",
     generatedAt,
     query,
+    xmlInspection,
     summary: {
       recordsReturned: records.length,
       recordsTransformed: transformedRecords.length,

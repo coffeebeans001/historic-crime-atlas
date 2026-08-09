@@ -56,40 +56,65 @@ const batchSize =
     ? requestedBatchSize
     : DEFAULT_BATCH_SIZE;  
 
-const apiUrl =
-  `https://www.dhi.ac.uk/api/data/oldbailey_record` +
-  `?text=${encodeURIComponent(query)}`;
+const pageSize = 10;
 
 async function fetchOldBaileyRecords() {
   try {
     console.log(`\nSearching Old Bailey API for "${query}"...\n`);
 
-    
-    const response = await fetch(apiUrl);
+    const allRecords = [];
+    let totalResults = 0;
 
-    if (!response.ok) {
-      throw new Error(
-        `Request failed: ${response.status} ${response.statusText}`
+    for (let from = 0; from < batchSize; from += pageSize) {
+      const pageUrl =
+        `https://www.dhi.ac.uk/api/data/oldbailey_record` +
+        `?text=${encodeURIComponent(query)}` +
+        `&from=${from}`;
+
+      const response = await fetch(pageUrl);
+
+      if (!response.ok) {
+        throw new Error(
+          `Request failed: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const pageData = await response.json();
+      console.log(`Requested batch size: ${batchSize}`);
+
+      if (from === 0) {
+        totalResults = pageData.hits?.total ?? 0;
+
+        console.log("Hits metadata:", {
+          total: totalResults,
+          maxScore: pageData.hits?.max_score,
+          returned: pageData.hits?.hits?.length ?? 0,
+        });
+      }
+
+      const pageRecords = pageData.hits?.hits ?? [];
+
+      console.log(
+        `Fetched page starting at ${from}: ${pageRecords.length} records`
       );
+
+      allRecords.push(...pageRecords);
     }
 
-    const data = await response.json();
-    console.log("Hits metadata:", {
-      total: data.hits?.total,
-      maxScore: data.hits?.max_score,
-      returned: data.hits?.hits?.length,
-    });
+    const records = allRecords.slice(0, batchSize);
 
-    const totalResults = data?.hits?.total ?? 0;
-    const apiRecords = data.hits?.hits ?? [];
-    const records = apiRecords.slice(0, batchSize);
-    
-      if (records.length === 0) {
+    console.log(
+      `Records selected for processing: ${records.length}`
+    );
+
+    if (records.length === 0) {
       console.log("No records selected for processing.");
       return;
     }
-    const firstRecordId = "t16740429-1"; 
-    //const firstRecordId = records[0]?._source?.idkey;
+
+    // const firstRecordId = "t16740429-1";
+     
+    const firstRecordId = records[0]?._source?.idkey;
 
       if (!firstRecordId) {
       throw new Error("The first selected record does not contain an idkey.");
@@ -231,7 +256,7 @@ async function fetchOldBaileyRecords() {
     console.log(xml.slice(0, 2000));
 
     console.log(`Total matching records: ${totalResults}`);
-    console.log(`Records returned by API: ${apiRecords.length}`);
+    console.log(`Records fetched from API: ${allRecords.length}`);
     console.log(`Records selected for processing: ${records.length}\n`);
 
     console.log("\n========== TARGETED XML INSPECTION ==========");
@@ -307,24 +332,24 @@ console.log(
     console.log("\nParsed XML data:");
     console.log(parsedXmlData);
 
-    console.log("========== RECORD SUMMARY ==========\n");
+    //console.log("========== RECORD SUMMARY ==========\n");
 
-    records.forEach((record, index) => {
+    //records.forEach((record, index) => {
 
-      const source = record._source || {};
+      //const source = record._source || {};
 
-      console.log(`Record ${index + 1}`);
-      console.log("-----------------------------");
-      console.log(`ID: ${source.idkey}`);
-      console.log(`Title: ${source.title}`);
-      console.log(`Image Count: ${source.images?.length ?? 0}`);
+      //console.log(`Record ${index + 1}`);
+      //console.log("-----------------------------");
+      //console.log(`ID: ${source.idkey}`);
+      //console.log(`Title: ${source.title}`);
+      //console.log(`Image Count: ${source.images?.length ?? 0}`);
 
-      const preview =
-        source.text?.substring(0, 150).replace(/\s+/g, " ") + "...";
+      //const preview =
+        //source.text?.substring(0, 150).replace(/\s+/g, " ") + "...";
 
-      console.log(`Preview: ${preview}`);
+      //console.log(`Preview: ${preview}`);
       console.log("");
-    });
+    //});
 
     console.log("\n========== SMALL BATCH ENRICHMENT ==========");
 
@@ -347,6 +372,7 @@ for (const record of records) {
 }
 
     console.log("===================================");
+
 
     const transformedRecords = enrichedRecords.map((enrichedRecord) => {
     const recordForTransform =
@@ -398,6 +424,182 @@ transformedRecords.forEach((record, index) => {
   console.log(`Offence subcategory: ${record.offence_subcategory ?? "Missing"}`);
   console.log(`Transformed transcript length: ${record.transcript_text?.length ?? 0}`);
 });
+
+function formatCoverage(present, total) {
+  const percentage =
+    total === 0
+      ? 0
+      : ((present / total) * 100).toFixed(1);
+
+  return `${present} / ${total} (${percentage}%)`;
+}
+
+console.log("\n========== XML INSPECTION SUMMARY ==========\n");
+
+const xmlInspectionSummary = transformedRecords.reduce(
+  (summary, record) => {
+    summary.recordsInspected += 1;
+
+    if (record.defendant_name) {
+      summary.defendantNamePresent += 1;
+    }
+
+    if (record.defendant_gender) {
+      summary.defendantGenderPresent += 1;
+    }
+
+    if (record.offence_category) {
+      summary.offenceCategoryPresent += 1;
+    }
+
+    if (record.offence_subcategory) {
+      summary.offenceSubcategoryPresent += 1;
+    }
+
+    if (record.verdict_category) {
+      summary.verdictCategoryPresent += 1;
+    }
+
+    if (record.verdict_subcategory) {
+      summary.verdictSubcategoryPresent += 1;
+    }
+
+    if (record.plea) {
+      summary.pleaPresent += 1;
+    }
+
+    if (record.punishment) {
+      summary.punishmentPresent += 1;
+    }
+
+    return summary;
+  },
+  {
+    recordsInspected: 0,
+    defendantNamePresent: 0,
+    defendantGenderPresent: 0,
+    offenceCategoryPresent: 0,
+    offenceSubcategoryPresent: 0,
+    verdictCategoryPresent: 0,
+    verdictSubcategoryPresent: 0,
+    pleaPresent: 0,
+    punishmentPresent: 0,
+  }
+);
+
+console.log(`Records inspected: ${xmlInspectionSummary.recordsInspected}`);
+console.log(
+  `Defendant name: ${formatCoverage(
+    xmlInspectionSummary.defendantNamePresent,
+    xmlInspectionSummary.recordsInspected
+  )}`
+);
+console.log(
+  `Defendant gender: ${formatCoverage(
+    xmlInspectionSummary.defendantGenderPresent,
+    xmlInspectionSummary.recordsInspected
+  )}`
+);
+
+console.log(
+  `Offence category: ${formatCoverage(
+    xmlInspectionSummary.offenceCategoryPresent,
+    xmlInspectionSummary.recordsInspected
+  )}`
+);
+
+console.log(
+  `Offence subcategory: ${formatCoverage(
+    xmlInspectionSummary.offenceSubcategoryPresent,
+    xmlInspectionSummary.recordsInspected
+  )}`
+);
+
+console.log(
+  `Verdict category: ${formatCoverage(
+    xmlInspectionSummary.verdictCategoryPresent,
+    xmlInspectionSummary.recordsInspected
+  )}`
+);
+
+console.log(
+  `Verdict subcategory: ${formatCoverage(
+    xmlInspectionSummary.verdictSubcategoryPresent,
+    xmlInspectionSummary.recordsInspected
+  )}`
+);
+
+console.log(
+  `Plea: ${formatCoverage(
+    xmlInspectionSummary.pleaPresent,
+    xmlInspectionSummary.recordsInspected
+  )}`
+);
+
+console.log(
+  `Punishment: ${formatCoverage(
+    xmlInspectionSummary.punishmentPresent,
+    xmlInspectionSummary.recordsInspected
+  )}`
+);
+  console.log("\n============================================\n");
+  
+function createCoverageEntry(present, total) {
+  return {
+    present,
+    total,
+    coveragePercent:
+      total === 0
+        ? 0
+        : Number(((present / total) * 100).toFixed(1)),
+  };
+}
+  const xmlInspectionReport = {
+  recordsInspected: xmlInspectionSummary.recordsInspected,
+
+  defendantName: createCoverageEntry(
+    xmlInspectionSummary.defendantNamePresent,
+    xmlInspectionSummary.recordsInspected
+  ),
+
+  defendantGender: createCoverageEntry(
+    xmlInspectionSummary.defendantGenderPresent,
+    xmlInspectionSummary.recordsInspected
+  ),
+
+  offenceCategory: createCoverageEntry(
+    xmlInspectionSummary.offenceCategoryPresent,
+    xmlInspectionSummary.recordsInspected
+  ),
+
+  offenceSubcategory: createCoverageEntry(
+    xmlInspectionSummary.offenceSubcategoryPresent,
+    xmlInspectionSummary.recordsInspected
+  ),
+
+  verdictCategory: createCoverageEntry(
+    xmlInspectionSummary.verdictCategoryPresent,
+    xmlInspectionSummary.recordsInspected
+  ),
+
+  verdictSubcategory: createCoverageEntry(
+    xmlInspectionSummary.verdictSubcategoryPresent,
+    xmlInspectionSummary.recordsInspected
+  ),
+
+  plea: createCoverageEntry(
+    xmlInspectionSummary.pleaPresent,
+    xmlInspectionSummary.recordsInspected
+  ),
+
+  punishment: createCoverageEntry(
+    xmlInspectionSummary.punishmentPresent,
+    xmlInspectionSummary.recordsInspected
+  ),
+};
+
+
+console.log("\n============================================\n");
 
 console.log("\n========== TRANSCRIPT QUALITY CHECK ==========");
 
@@ -588,6 +790,7 @@ const reportPath = await writeApiReviewReport({
   qualitySummary,
   validationSummary,
   reviewedRecords,
+  xmlInspection: xmlInspectionReport,
 });
 
 console.log("\nAPI review report created:");

@@ -10,18 +10,11 @@ async function testRecordLookup(parameterName) {
   console.log(`\nTesting parameter: ${parameterName}`);
   console.log(`Request: ${url}`);
 
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    console.log(
-      `Request failed: ${response.status} ${response.statusText}`
-    );
-
-    return;
-  }
-
-  const data = await response.json();
   const records = data?.hits?.hits ?? [];
+  console.log(
+  "Returned IDs:",
+  records.map((record) => record._source?.idkey)
+);
 
   console.log(`Records returned: ${records.length}`);
 

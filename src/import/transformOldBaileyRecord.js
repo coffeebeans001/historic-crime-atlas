@@ -145,6 +145,24 @@ export function transformOldBaileyRecord(record, parsedXmlData) {
         ? "Not Guilty"
         : detectVerdict(source.text),
 
+  defendant_gender:
+    parsedXmlData?.defendantGender ?? null,
+
+  verdict_category:
+    parsedXmlData?.verdictCategory ?? null,
+
+  verdict_subcategory:
+    parsedXmlData?.verdictSubcategory ?? null,
+
+  plea:
+    parsedXmlData?.plea ?? null,
+
+  verdict_text:
+    parsedXmlData?.verdictText ?? null,
+
+  punishment:
+    parsedXmlData?.punishment ?? null,
+
   trial_date: trialDate,
   source_url: source.images?.[0] || null,
   transcript_text: source.text || null,
