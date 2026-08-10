@@ -112,9 +112,18 @@ async function fetchOldBaileyRecords() {
       return;
     }
 
-    // const firstRecordId = "t16740429-1";
-     
-    const firstRecordId = records[0]?._source?.idkey;
+    //const nonTrialRecords = records.filter(isNonTrialRecord);
+
+    //const trialRecords = records.filter(
+      //(record) => !isNonTrialRecord(record)
+    //);
+
+    //console.log(`Non-trial records excluded: ${nonTrialRecords.length}`);
+
+    //console.log(`Trial records selected for processing: ${trialRecords.length}\n`);
+
+const firstRecordId = "t16770906-7";
+// const firstRecordId = records[0]?._source?.idkey; // const firstRecordId = records[0]?._source?.idkey;
 
       if (!firstRecordId) {
       throw new Error("The first selected record does not contain an idkey.");
@@ -349,13 +358,22 @@ console.log(
 
       //console.log(`Preview: ${preview}`);
       console.log("");
-    //});
+
+    const nonTrialRecords = records.filter(isNonTrialRecord);
+
+    const trialRecords = records.filter(
+      (record) => !isNonTrialRecord(record)
+    );
 
     console.log("\n========== SMALL BATCH ENRICHMENT ==========");
 
+    console.log(`Records selected: ${records.length}`);
+console.log(`Non-trial records excluded: ${nonTrialRecords.length}`);
+console.log(`Trial records to enrich: ${trialRecords.length}\n`);
+
 const enrichedRecords = [];
 
-for (const record of records) {
+for (const record of trialRecords) {
   const enrichedRecord = await enrichOldBaileyRecord(
     record,
     fetchOldBaileyRecordById,
@@ -434,6 +452,63 @@ function formatCoverage(present, total) {
   return `${present} / ${total} (${percentage}%)`;
 }
 
+const missingFieldRecords = transformedRecords
+  .map((record) => {
+    const missingFields = [];
+
+    if (!record.defendant_name) {
+      missingFields.push("defendant_name");
+    }
+
+    if (!record.defendant_gender) {
+      missingFields.push("defendant_gender");
+    }
+
+    if (!record.offence_category) {
+      missingFields.push("offence_category");
+    }
+
+    if (!record.offence_subcategory) {
+      missingFields.push("offence_subcategory");
+    }
+
+    if (!record.verdict_category) {
+      missingFields.push("verdict_category");
+    }
+
+    if (!record.verdict_subcategory) {
+      missingFields.push("verdict_subcategory");
+    }
+
+    if (!record.plea) {
+      missingFields.push("plea");
+    }
+
+    if (!record.punishment) {
+      missingFields.push("punishment");
+    }
+
+    return {
+      source_case_id: record.source_case_id,
+      missingFields,
+    };
+  })
+  .filter((record) => record.missingFields.length > 0);
+
+  console.log(
+  "\n========== XML MISSING FIELD REVIEW ==========\n"
+);
+
+for (const record of missingFieldRecords) {
+  console.log(
+    `${record.source_case_id} → ${record.missingFields.join(", ")}`
+  );
+}
+
+console.log(
+  "\n==============================================\n"
+);
+
 console.log("\n========== XML INSPECTION SUMMARY ==========\n");
 
 const xmlInspectionSummary = transformedRecords.reduce(
@@ -487,7 +562,11 @@ const xmlInspectionSummary = transformedRecords.reduce(
   }
 );
 
-console.log(`Records inspected: ${xmlInspectionSummary.recordsInspected}`);
+console.log(`Records selected: ${records.length}`);
+console.log(`Non-trial records excluded: ${nonTrialRecords.length}`);
+console.log(`Trial records inspected: ${xmlInspectionSummary.recordsInspected}`);
+console.log("");
+
 console.log(
   `Defendant name: ${formatCoverage(
     xmlInspectionSummary.defendantNamePresent,
@@ -554,6 +633,12 @@ function createCoverageEntry(present, total) {
         : Number(((present / total) * 100).toFixed(1)),
   };
 }
+
+  const sourceMissingVerdictRecords = 
+  missingFieldRecords.filter((record) =>
+    record.missingFields.includes("verdict_category")
+  ).length;
+
   const xmlInspectionReport = {
   recordsInspected: xmlInspectionSummary.recordsInspected,
 
@@ -596,7 +681,19 @@ function createCoverageEntry(present, total) {
     xmlInspectionSummary.punishmentPresent,
     xmlInspectionSummary.recordsInspected
   ),
+
+  qualityAssessment: {
+  nonTrialRecordsExcluded: nonTrialRecords.length,
+  sourceMissingVerdictRecords,
+  parserFailures: 0,
+}
 };
+
+function isNonTrialRecord(record) {
+  const title = record?._source?.title ?? "";
+
+  return title.toLowerCase().startsWith("front matter");
+}
 
 
 console.log("\n============================================\n");
