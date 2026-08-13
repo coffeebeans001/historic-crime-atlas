@@ -23,11 +23,25 @@ import { writeApiReviewReport } from
 import { fetchOldBaileyRecordById } from
   "../src/import/fetchOldBaileyRecordById.js";  
 
+import { detectDuplicates } from "../src/import/duplicateChecker.js";
+import { detectDatabaseDuplicates } from "../src/import/databaseDuplicateChecker.js";  
+
 const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 10;
 
+const MULTI_OFFENCE_MODE = true;
+
+const MULTI_OFFENCE_QUERIES = [
+  "robbery",
+  "murder",
+  "burglary",
+  "poisoning",
+];
+
+const MULTI_OFFENCE_SIZE = 25;
+
 const args = process.argv.slice(2);
-const DEBUG_INSPECTION = false;
+const DEBUG_INSPECTION = false; // Set to true to enable detailed inspection logs
 
 function getArgumentValue(argumentName, fallbackValue) {
   const argumentPrefix = `--${argumentName}=`;
@@ -61,48 +75,87 @@ const pageSize = 10;
 
 async function fetchOldBaileyRecords() {
   try {
-    console.log(`\nSearching Old Bailey API for "${query}"...\n`);
-
     const allRecords = [];
     let totalResults = 0;
 
-    for (let from = 0; from < batchSize; from += pageSize) {
-      const pageUrl =
-        `https://www.dhi.ac.uk/api/data/oldbailey_record` +
-        `?text=${encodeURIComponent(query)}` +
-        `&from=${from}`;
+    const queriesToFetch = MULTI_OFFENCE_MODE
+      ? MULTI_OFFENCE_QUERIES
+      : [query];
 
-      const response = await fetch(pageUrl);
+    const recordsPerQuery = MULTI_OFFENCE_MODE
+      ? MULTI_OFFENCE_SIZE
+      : batchSize;
 
-      if (!response.ok) {
-        throw new Error(
-          `Request failed: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const pageData = await response.json();
-      console.log(`Requested batch size: ${batchSize}`);
-
-      if (from === 0) {
-        totalResults = pageData.hits?.total ?? 0;
-
-        console.log("Hits metadata:", {
-          total: totalResults,
-          maxScore: pageData.hits?.max_score,
-          returned: pageData.hits?.hits?.length ?? 0,
-        });
-      }
-
-      const pageRecords = pageData.hits?.hits ?? [];
-
+    for (const currentQuery of queriesToFetch) {
       console.log(
-        `Fetched page starting at ${from}: ${pageRecords.length} records`
+        `\nSearching Old Bailey API for "${currentQuery}"...\n`
       );
 
-      allRecords.push(...pageRecords);
+      const queryRecords = [];
+
+      for (
+        let from = 0;
+        from < recordsPerQuery;
+        from += pageSize
+      ) {
+        const pageUrl =
+          `https://www.dhi.ac.uk/api/data/oldbailey_record` +
+          `?text=${encodeURIComponent(currentQuery)}` +
+          `&from=${from}`;
+
+        const response = await fetch(pageUrl);
+
+        if (!response.ok) {
+          throw new Error(
+            `Request failed: ${response.status} ${response.statusText}`
+          );
+        }
+
+        const pageData = await response.json();
+
+        if (from === 0) {
+          const queryTotal =
+            pageData.hits?.total ?? 0;
+
+          totalResults += queryTotal;
+
+          console.log("Hits metadata:", {
+            query: currentQuery,
+            total: queryTotal,
+            maxScore: pageData.hits?.max_score,
+            returned:
+              pageData.hits?.hits?.length ?? 0,
+          });
+        }
+
+        const pageRecords =
+          pageData.hits?.hits ?? [];
+
+        console.log(
+          `Fetched page starting at ${from}: ${pageRecords.length} records`
+        );
+
+        queryRecords.push(...pageRecords);
+      }
+
+      const selectedQueryRecords =
+        queryRecords.slice(0, recordsPerQuery);
+
+      console.log(
+        `Selected for "${currentQuery}": ${selectedQueryRecords.length}`
+      );
+
+      allRecords.push(...selectedQueryRecords);
     }
 
-    const records = allRecords.slice(0, batchSize);
+    const requestedRecordCount =
+  MULTI_OFFENCE_MODE
+    ? MULTI_OFFENCE_QUERIES.length *
+      MULTI_OFFENCE_SIZE
+    : batchSize;
+
+const records =
+  allRecords.slice(0, requestedRecordCount);
 
     console.log(
       `Records selected for processing: ${records.length}`
@@ -133,7 +186,7 @@ for (const record of nonTrialRecords) {
   );
 }
    const firstRecordId = records[0]?._source?.idkey;
-
+   //const firstRecordId = "t18440819-1920";
 
 
       if (!firstRecordId) {
@@ -243,6 +296,7 @@ const singleSource = singleRecord?._source ?? {};
     "XML length:",
     singleSource.xml?.length ?? 0
   );
+
 }
 
     if (DEBUG_INSPECTION) {
@@ -445,6 +499,26 @@ const reviewedRecords = createApiReviewRecords({
   transformedRecords,
   validationResults,
 });
+
+const apiReadyRecords = reviewedRecords
+  .filter(
+    (reviewRecord) =>
+      reviewRecord.status === "READY" &&
+      reviewRecord.validation.isValid
+  )
+  .map((reviewRecord) => ({
+    isValid: true,
+    rowNumber: reviewRecord.recordNumber,
+    record: reviewRecord.transformedRecord,
+  }));
+
+const duplicateCheck =
+  detectDuplicates(apiReadyRecords);
+
+const databaseDuplicateCheck =
+  await detectDatabaseDuplicates(
+    duplicateCheck.uniqueRecords
+  );  
 
 const readyForImport = reviewedRecords.filter(
   (record) => record.status === "READY"
@@ -837,6 +911,44 @@ console.log(`Missing verdict: ${qualitySummary.missingVerdict}`);
 console.log(`Missing trial date: ${qualitySummary.missingTrialDate}`);
 
 console.log("\n====================================");
+
+if (duplicateCheck.duplicateRecords.length > 0) {
+  console.log("\n========== BATCH DUPLICATES ==========\n");
+
+  for (const item of duplicateCheck.duplicateRecords) {
+    console.log(`Source ID: ${item.record.source_case_id}`);
+    console.log(`Duplicate of row: ${item.duplicateOfRow}`);
+    console.log("");
+  }
+
+  console.log("======================================\n");
+}
+
+console.log("\n========== DATABASE READINESS SUMMARY ==========\n");
+
+console.log(
+  `API-ready records: ${apiReadyRecords.length}`
+);
+
+console.log(
+  `Batch duplicates: ${duplicateCheck.duplicateRecords.length}`
+);
+
+console.log(
+  `Database duplicates: ${
+    databaseDuplicateCheck.databaseDuplicates.length
+  }`
+);
+
+console.log(
+  `Ready for insertion: ${
+    databaseDuplicateCheck.readyRecords.length
+  }`
+);
+
+console.log("\nDatabase changes: 0");
+
+console.log("\n================================================\n");
 
 const reportPath = await writeApiReviewReport({
   query: query,
