@@ -138,11 +138,13 @@ export function transformOldBaileyRecord(record, parsedXmlData) {
   offence_subcategory:
     parsedXmlData?.offenceSubcategory ?? null,
 
-  verdict:
-    parsedXmlData?.verdictCategory === "guilty"
-      ? "Guilty"
-      : parsedXmlData?.verdictCategory === "notGuilty"
-        ? "Not Guilty"
+ verdict:
+  parsedXmlData?.verdictCategory === "guilty"
+    ? "Guilty"
+    : parsedXmlData?.verdictCategory === "notGuilty"
+      ? "Not Guilty"
+      : parsedXmlData?.verdictCategory === "specialVerdict"
+        ? "Special Verdict"
         : detectVerdict(source.text),
 
   defendant_gender:

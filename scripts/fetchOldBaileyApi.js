@@ -27,6 +27,7 @@ const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 10;
 
 const args = process.argv.slice(2);
+const DEBUG_INSPECTION = false;
 
 function getArgumentValue(argumentName, fallbackValue) {
   const argumentPrefix = `--${argumentName}=`;
@@ -112,126 +113,159 @@ async function fetchOldBaileyRecords() {
       return;
     }
 
-    //const nonTrialRecords = records.filter(isNonTrialRecord);
+    const nonTrialRecords = records.filter(isNonTrialRecord);
 
-    //const trialRecords = records.filter(
-      //(record) => !isNonTrialRecord(record)
-    //);
+    const trialRecords = records.filter(
+      (record) => !isNonTrialRecord(record)
+    );
 
-    //console.log(`Non-trial records excluded: ${nonTrialRecords.length}`);
+    console.log(`Non-trial records excluded: ${nonTrialRecords.length}`);
 
-    //console.log(`Trial records selected for processing: ${trialRecords.length}\n`);
+    console.log(`Trial records selected for processing: ${trialRecords.length}\n`);
 
-const firstRecordId = "t16770906-7";
-// const firstRecordId = records[0]?._source?.idkey; // const firstRecordId = records[0]?._source?.idkey;
+    console.log("\n========== NON-TRIAL RECORDS ==========\n");
+
+for (const record of nonTrialRecords) {
+  console.log(
+    record?._source?.idkey,
+    "→",
+    record?._source?.title
+  );
+}
+   const firstRecordId = records[0]?._source?.idkey;
+
+
 
       if (!firstRecordId) {
       throw new Error("The first selected record does not contain an idkey.");
     }
 
-    console.log("========== SINGLE RECORD TEST ==========");
-    console.log(`Requesting record: ${firstRecordId}`);
+    if (DEBUG_INSPECTION) {
+  console.log("========== SINGLE RECORD TEST ==========");
+  console.log(`Requesting record: ${firstRecordId}`);
+}
 
-    const singleRecordResult =
-      await fetchOldBaileyRecordById(firstRecordId);
+const singleRecordResult =
+  await fetchOldBaileyRecordById(firstRecordId);
 
-    console.log(`Requested ID: ${singleRecordResult.requestedId}`);
-    console.log(`Matching records: ${singleRecordResult.totalResults}`);
-    console.log(
-      `Records returned: ${singleRecordResult.records.length}`
-    );
-    const singleRecord = singleRecordResult.records[0];
+if (DEBUG_INSPECTION) {
+  console.log(`Requested ID: ${singleRecordResult.requestedId}`);
+  console.log(`Matching records: ${singleRecordResult.totalResults}`);
+  console.log(
+    `Records returned: ${singleRecordResult.records.length}`
+  );
+}
 
-    console.log("\n========== ENRICHMENT TEST ==========");
+const singleRecord = singleRecordResult.records[0];
 
-    const enrichedRecord = await enrichOldBaileyRecord(
-      singleRecord,
-      fetchOldBaileyRecordById,
-      parseOldBaileyXml
-    );
+    
 
-    console.log(
-      "Original ID:",
-      enrichedRecord.originalRecord?._source?.idkey ?? null
-    );
+    if (DEBUG_INSPECTION) {
+  console.log("\n========== ENRICHMENT TEST ==========");
+}
 
-    console.log(
-      "Detailed record found:",
-      enrichedRecord.detailedRecord ? "Yes" : "No"
-    );
+const enrichedRecord = await enrichOldBaileyRecord(
+  singleRecord,
+  fetchOldBaileyRecordById,
+  parseOldBaileyXml
+);
 
-    console.log(
-      "Parsed defendant:",
-      enrichedRecord.parsedXmlData?.defendantName ?? null
-    );
+if (DEBUG_INSPECTION) {
+  console.log(
+    "Original ID:",
+    enrichedRecord.originalRecord?._source?.idkey ?? null
+  );
 
-    console.log(
-      "Parsed verdict:",
-      enrichedRecord.parsedXmlData?.verdictCategory ?? null
-    );
+  console.log(
+    "Detailed record found:",
+    enrichedRecord.detailedRecord ? "Yes" : "No"
+  );
 
-    console.log(
-      "Single-record source keys:",
-      Object.keys(singleRecord?._source ?? {})
-    );
+  console.log(
+    "Parsed defendant:",
+    enrichedRecord.parsedXmlData?.defendantName ?? null
+  );
 
-    const searchSource = records[0]?._source ?? {};
+  console.log(
+    "Parsed verdict:",
+    enrichedRecord.parsedXmlData?.verdictCategory ?? null
+  );
 
-    const singleSource = singleRecord?._source ?? {};
+  console.log(
+    "Single-record source keys:",
+    Object.keys(singleRecord?._source ?? {})
+  );
 
-    console.log("\n========== TRANSCRIPT COMPARISON ==========");
+  console.log("\n======================================\n");
+}
 
-    console.log(
-      "Search transcript length:",
-      searchSource.text?.length ?? 0
-    );
+const searchSource = records[0]?._source ?? {};
 
-    console.log(
-      "Detailed transcript length:",
-      singleSource.text?.length ?? 0
-    );
+const singleSource = singleRecord?._source ?? {};
 
-    console.log(
-      "Detailed transcript ending:"
-    );
+    if (DEBUG_INSPECTION) {
+  console.log("\n========== TRANSCRIPT COMPARISON ==========");
 
-    console.log(
-      singleSource.text?.slice(-500) ?? "No detailed transcript available."
-    );
+  console.log(
+    "Search transcript length:",
+    searchSource.text?.length ?? 0
+  );
 
-    console.log("\n========== TRANSCRIPT CHECK ==========");
+  console.log(
+    "Detailed transcript length:",
+    singleSource.text?.length ?? 0
+  );
 
-    console.log(
-      "Text length:",
-      singleSource.text?.length ?? 0
-    );
+  console.log(
+    "Detailed transcript ending:"
+  );
 
-    console.log(
-      "HTML length:",
-      singleSource.html?.length ?? 0
-    );
+  console.log(
+    singleSource.text?.slice(-500) ??
+      "No detailed transcript available."
+  );
+}
 
-    console.log(
-      "XML length:",
-      singleSource.xml?.length ?? 0
-    );
+    if (DEBUG_INSPECTION) {
+  console.log("\n========== TRANSCRIPT CHECK ==========");
 
-    console.log("\n========== METADATA INSPECTION ==========");
+  console.log(
+    "Text length:",
+    singleSource.text?.length ?? 0
+  );
 
-    console.log("Metadata type:", typeof singleSource.metadata);
+  console.log(
+    "HTML length:",
+    singleSource.html?.length ?? 0
+  );
 
-    console.log(
-      "Metadata keys:",
-      singleSource.metadata &&
-      typeof singleSource.metadata === "object"
-        ? Object.keys(singleSource.metadata)
-        : []
-    );
+  console.log(
+    "XML length:",
+    singleSource.xml?.length ?? 0
+  );
+}
 
-    console.dir(singleSource.metadata, {
-      depth: 4,
-      maxArrayLength: 20,
-    });
+    if (DEBUG_INSPECTION) {
+  console.log("\n========== METADATA INSPECTION ==========");
+
+  console.log(
+    "Metadata type:",
+    typeof singleSource.metadata
+  );
+
+  console.log(
+    "Metadata keys:",
+    singleSource.metadata &&
+    typeof singleSource.metadata === "object"
+      ? Object.keys(singleSource.metadata)
+      : []
+  );
+
+  console.dir(singleSource.metadata, {
+    depth: 4,
+    maxArrayLength: 20,
+  });
+}
 
     console.log("\n========== XML INSPECTION ==========");
 
@@ -254,122 +288,120 @@ const firstRecordId = "t16770906-7";
   offenceText
 } = parseOldBaileyXml(xml);
 
-    console.log("\nDefendant parser module test:");
-    console.log("Defendant name:", defendantName);
-    console.log("Defendant gender:", defendantGender);
+    if (DEBUG_INSPECTION) {
+  console.log("\n========== XML INSPECTION ==========");
 
-    console.log("XML type:", typeof xml);
-    console.log("XML length:", xml.length);
+  console.log("\nDefendant parser module test:");
+  console.log("Defendant name:", defendantName);
+  console.log("Defendant gender:", defendantGender);
 
-    console.log("\nXML preview:");
-    console.log(xml.slice(0, 2000));
+  console.log("XML type:", typeof xml);
+  console.log("XML length:", xml.length);
 
-    console.log(`Total matching records: ${totalResults}`);
-    console.log(`Records fetched from API: ${allRecords.length}`);
-    console.log(`Records selected for processing: ${records.length}\n`);
+  // console.log("\nXML preview:");
+  // console.log(xml.slice(0, 2000));
 
-    console.log("\n========== TARGETED XML INSPECTION ==========");
-
-    console.log("\nDefendant nodes:");
-    console.log(defendantMatches.length > 0 ? defendantMatches : "None found");
-
-    console.log("\nVerdict nodes:");
-    console.log(verdictMatches.length > 0 ? verdictMatches : "None found");
-
-    console.log("\nPunishment / sentence nodes:");
-    console.log(
-      punishmentMatches.length > 0
-        ? punishmentMatches
-        : "None found"
-    );
-
-    console.log("\nOffence nodes:");
-    if (offenceMatches.length > 0) {
-  console.log(offenceMatches);
-} else {
-  console.log("None found");
-
-  console.log("\nSearching XML for offence...");
-
-  const offencePreview = xml.match(
-    /.{0,200}offence.{0,200}/gi
-  );
-
-  console.log("\n========== OFFENCE XML SEARCH ==========");
-
-const offenceSearch =
-  xml.match(/.{0,250}(?:offence|offense).{0,250}/gi) ?? [];
-
-console.log(
-  offenceSearch.length > 0
-    ? offenceSearch
-    : "No offence/offense references found."
-);
-
-  console.log(offencePreview ?? "No 'offence' text found.");
+  console.log(`Total matching records: ${totalResults}`);
+  console.log(`Records fetched from API: ${allRecords.length}`);
+  console.log(`Records selected for processing: ${records.length}\n`);
 }
 
-    console.log("============================================\n");
+    if (DEBUG_INSPECTION) {
+  console.log("\n========== TARGETED XML INSPECTION ==========");
 
-    console.log("\n========== XML PARSER ==========");
-    
-    console.log("Defendant name from XML:", defendantName);
-    console.log("Defendant gender from XML:", defendantGender);
-    console.log("Verdict category from XML:", verdictCategory);
-    console.log("Verdict subcategory from XML:", verdictSubcategory);
-    console.log("Plea from XML:", plea);
-    console.log("Verdict text from XML:", verdictText);
-    console.log("Punishment / sentence from XML:", punishment);
-    console.log("Offence category from XML:", offenceCategory);
-    console.log("Offence subcategory from XML:", offenceSubcategory);
-    console.log("Offence text from XML:", offenceText);
+  console.log("\nDefendant nodes:");
+  console.log(
+    defendantMatches.length > 0
+      ? defendantMatches
+      : "None found"
+  );
 
-    const parsedXmlData = {
-      defendantName,
-      defendantGender,
+  console.log("\nVerdict nodes:");
+  console.log(
+    verdictMatches.length > 0
+      ? verdictMatches
+      : "None found"
+  );
 
-      verdictCategory,
-      verdictSubcategory,
-      plea,
-      verdictText,
-      punishment,
-      offenceCategory,
-      offenceSubcategory,
-      offenceText
-    };
+  console.log("\nPunishment / sentence nodes:");
+  console.log(
+    punishmentMatches.length > 0
+      ? punishmentMatches
+      : "None found"
+  );
 
-    console.log("\nParsed XML data:");
-    console.log(parsedXmlData);
+  console.log("\nOffence nodes:");
 
-    //console.log("========== RECORD SUMMARY ==========\n");
+  if (offenceMatches.length > 0) {
+    console.log(offenceMatches);
+  } else {
+    console.log("None found");
 
-    //records.forEach((record, index) => {
+    console.log("\nSearching XML for offence...");
 
-      //const source = record._source || {};
-
-      //console.log(`Record ${index + 1}`);
-      //console.log("-----------------------------");
-      //console.log(`ID: ${source.idkey}`);
-      //console.log(`Title: ${source.title}`);
-      //console.log(`Image Count: ${source.images?.length ?? 0}`);
-
-      //const preview =
-        //source.text?.substring(0, 150).replace(/\s+/g, " ") + "...";
-
-      //console.log(`Preview: ${preview}`);
-      console.log("");
-
-    const nonTrialRecords = records.filter(isNonTrialRecord);
-
-    const trialRecords = records.filter(
-      (record) => !isNonTrialRecord(record)
+    const offencePreview = xml.match(
+      /.{0,200}offence.{0,200}/gi
     );
 
-    console.log("\n========== SMALL BATCH ENRICHMENT ==========");
+    console.log("\n========== OFFENCE XML SEARCH ==========");
 
-    console.log(`Records selected: ${records.length}`);
-console.log(`Non-trial records excluded: ${nonTrialRecords.length}`);
-console.log(`Trial records to enrich: ${trialRecords.length}\n`);
+    const offenceSearch =
+      xml.match(/.{0,250}(?:offence|offense).{0,250}/gi) ?? [];
+
+    console.log(
+      offenceSearch.length > 0
+        ? offenceSearch
+        : "No offence/offense references found."
+    );
+
+    console.log(
+      offencePreview ?? "No 'offence' text found."
+    );
+  }
+
+  console.log("============================================\n");
+}
+
+   if (DEBUG_INSPECTION) {
+  console.log("\n========== XML PARSER ==========");
+
+  console.log("Defendant name from XML:", defendantName);
+  console.log("Defendant gender from XML:", defendantGender);
+  console.log("Verdict category from XML:", verdictCategory);
+  console.log("Verdict subcategory from XML:", verdictSubcategory);
+  console.log("Plea from XML:", plea);
+  console.log("Verdict text from XML:", verdictText);
+  console.log("Punishment / sentence from XML:", punishment);
+  console.log("Offence category from XML:", offenceCategory);
+  console.log("Offence subcategory from XML:", offenceSubcategory);
+  console.log("Offence text from XML:", offenceText);
+}
+
+const parsedXmlData = {
+  defendantName,
+  defendantGender,
+  verdictCategory,
+  verdictSubcategory,
+  plea,
+  verdictText,
+  punishment,
+  offenceCategory,
+  offenceSubcategory,
+  offenceText
+};
+
+if (DEBUG_INSPECTION) {
+  console.log("\nParsed XML data:");
+  console.log(parsedXmlData);
+}
+
+    if (DEBUG_INSPECTION) {
+  console.log("\n========== SMALL BATCH ENRICHMENT ==========");
+
+  console.log(`Records selected: ${records.length}`);
+  console.log(`Non-trial records excluded: ${nonTrialRecords.length}`);
+  console.log(`Trial records to enrich: ${trialRecords.length}\n`);
+}
 
 const enrichedRecords = [];
 
@@ -381,67 +413,72 @@ for (const record of trialRecords) {
   );
 
   enrichedRecords.push(enrichedRecord);
-
-  console.log(
-    record?._source?.idkey ?? "Unknown ID",
-    "→",
-    enrichedRecord.parsedXmlData?.verdictCategory ?? null
-  );
 }
 
-    console.log("===================================");
+if (DEBUG_INSPECTION) {
+  console.log("===================================");
+}
 
+const transformedRecords = enrichedRecords.map((enrichedRecord) => {
+  const recordForTransform =
+    enrichedRecord.detailedRecord ??
+    enrichedRecord.originalRecord;
 
-    const transformedRecords = enrichedRecords.map((enrichedRecord) => {
-    const recordForTransform =
-      enrichedRecord.detailedRecord ??
-      enrichedRecord.originalRecord;
+  return transformOldBaileyRecord(
+    recordForTransform,
+    enrichedRecord.parsedXmlData
+  );
+});
 
-    return transformOldBaileyRecord(
-      recordForTransform,
-      enrichedRecord.parsedXmlData
+const qualitySummary =
+  summariseTransformation(transformedRecords);
+
+const validationResults = transformedRecords.map(
+  (record) => validateOldBaileyApiRecord(record)
+);
+
+const validationSummary =
+  summariseValidation(validationResults);
+
+const reviewedRecords = createApiReviewRecords({
+  records: trialRecords,
+  transformedRecords,
+  validationResults,
+});
+
+const readyForImport = reviewedRecords.filter(
+  (record) => record.status === "READY"
+).length;
+
+const reviewRequired = reviewedRecords.filter(
+  (record) => record.status === "REVIEW_REQUIRED"
+).length;
+
+if (DEBUG_INSPECTION) {
+  console.log("\n========== TRANSFORMED RECORDS ==========\n");
+
+  transformedRecords.forEach((record, index) => {
+    console.log(`Record ${index + 1}`);
+    console.log("----------------------------------------");
+    console.log(`Source ID: ${record.source_case_id}`);
+    console.log(`Defendant: ${record.defendant_name}`);
+    console.log(`Offence: ${record.offence}`);
+    console.log(`Verdict: ${record.verdict ?? "Missing"}`);
+    console.log(`Trial date: ${record.trial_date ?? "Missing"}`);
+    console.log("");
+    console.log(
+      `Offence category: ${record.offence_category ?? "Missing"}`
+    );
+    console.log(
+      `Offence subcategory: ${record.offence_subcategory ?? "Missing"}`
+    );
+    console.log(
+      `Transformed transcript length: ${
+        record.transcript_text?.length ?? 0
+      }`
     );
   });
-
-  const qualitySummary =
-    summariseTransformation(transformedRecords);
-
-  const validationResults = transformedRecords.map(
-    (record) => validateOldBaileyApiRecord(record)
-  );
-
-  const validationSummary =
-    summariseValidation(validationResults);
-
-  const reviewedRecords = createApiReviewRecords({
-    records,
-    transformedRecords,
-    validationResults,
-  });  
-
-  const readyForImport = reviewedRecords.filter(
-    (record) => record.status === "READY"
-  ).length;
-
-  const reviewRequired = reviewedRecords.filter(
-    (record) => record.status === "REVIEW_REQUIRED"
-  ).length;
-
-console.log("\n========== TRANSFORMED RECORDS ==========\n");
-
-transformedRecords.forEach((record, index) => {
-  console.log(`Record ${index + 1}`);
-  console.log("----------------------------------------");
-  console.log(`Source ID: ${record.source_case_id}`);
-  console.log(`Defendant: ${record.defendant_name}`);
-  console.log(`Offence: ${record.offence}`);
-  console.log(`Verdict: ${record.verdict ?? "Missing"}`);
-  console.log(`Trial date: ${record.trial_date ?? "Missing"}`);
-  console.log("");
-  console.log(`Offence category: ${record.offence_category ?? "Missing"}`);
-  console.log(`Offence subcategory: ${record.offence_subcategory ?? "Missing"}`);
-  console.log(`Transformed transcript length: ${record.transcript_text?.length ?? 0}`);
-});
+}
 
 function formatCoverage(present, total) {
   const percentage =
@@ -495,19 +532,13 @@ const missingFieldRecords = transformedRecords
   })
   .filter((record) => record.missingFields.length > 0);
 
-  console.log(
-  "\n========== XML MISSING FIELD REVIEW ==========\n"
-);
+  console.log("\n========== XML MISSING FIELD REVIEW ==========\n");
 
 for (const record of missingFieldRecords) {
   console.log(
     `${record.source_case_id} → ${record.missingFields.join(", ")}`
   );
 }
-
-console.log(
-  "\n==============================================\n"
-);
 
 console.log("\n========== XML INSPECTION SUMMARY ==========\n");
 
@@ -690,33 +721,18 @@ function createCoverageEntry(present, total) {
 };
 
 function isNonTrialRecord(record) {
-  const title = record?._source?.title ?? "";
+  const title =
+    record?._source?.title?.toLowerCase() ?? "";
 
-  return title.toLowerCase().startsWith("front matter");
+return (
+  title.startsWith("front matter") ||
+  title.startsWith("punishment summary") ||
+  title.startsWith("supplementary material") ||
+  title.startsWith("advertisements")
+);
 }
 
-
 console.log("\n============================================\n");
-
-console.log("\n========== TRANSCRIPT QUALITY CHECK ==========");
-
-transformedRecords.forEach((record, index) => {
-  const transcriptLength =
-    record.transcript_text?.length ?? 0;
-
-  const stillAtSearchLimit =
-    transcriptLength === 500;
-
-  console.log(`Record ${index + 1}`);
-  console.log(`Source ID: ${record.source_case_id}`);
-  console.log(`Transcript length: ${transcriptLength}`);
-  console.log(
-    `Still at 500-character limit: ${
-      stillAtSearchLimit ? "Yes" : "No"
-    }`
-  );
-  console.log("");
-});
 
 const transcriptsAt500 =
   transformedRecords.filter(
@@ -748,123 +764,65 @@ console.log(`Exactly 500 chars: ${transcriptsAt500}`);
 console.log(`Under 500 chars: ${transcriptsUnder500}`);
 console.log(`Missing transcripts: ${missingTranscripts}`);
 
-console.log("\n========== OLD BAILEY API IMPORT REVIEW ==========\n");
+console.log("\n========== REVIEW REQUIRED RECORDS ==========\n");
 
-transformedRecords.forEach((record, index) => {
-
-    const source = records[index]._source;
-
-    const transcriptLength =
-        source.text?.length ?? 0;
-
-    const transcriptTruncated =
-        transcriptLength === 500;
+const recordsNeedingReview = transformedRecords
+  .map((record, index) => {
+    const source = trialRecords[index]?._source;
 
     const missing = [];
 
-    if (!record.defendant_name)
-        missing.push("Defendant");
+    if (!record.defendant_name) {
+      missing.push("Defendant");
+    }
 
-    if (!record.verdict)
-        missing.push("Verdict");
+    if (!record.verdict) {
+      missing.push("Verdict");
+    }
 
-    if (!record.trial_date)
-        missing.push("Trial Date");
+    if (!record.trial_date) {
+      missing.push("Trial Date");
+    }
 
-    const ready =
-        missing.length === 0;
+    return {
+      index,
+      record,
+      source,
+      missing,
+    };
+  })
+  .filter((item) => item.missing.length > 0);
+
+if (recordsNeedingReview.length === 0) {
+  console.log("None");
+} else {
+  for (const item of recordsNeedingReview) {
+    const {
+      index,
+      record,
+      source,
+      missing,
+    } = item;
 
     console.log("----------------------------------------");
-
     console.log(`Record ${index + 1}`);
-
-    console.log(`Status: ${
-        ready
-            ? "READY"
-            : "REVIEW REQUIRED"
-    }`);
-
-    console.log("");
-
+    console.log("Status: REVIEW REQUIRED");
     console.log(`Source ID: ${record.source_case_id}`);
-
-    console.log(`Title: ${source.title}`);
-
-    console.log(`Defendant: ${
-        record.defendant_name ?? "Missing"
-    }`);
-
-    console.log(`Offence: ${
-        record.offence ?? "Missing"
-    }`);
-
-    console.log(`Verdict: ${
-        record.verdict ?? "Missing"
-    }`);
-
-    console.log(`Trial date: ${
-        record.trial_date ?? "Missing"
-    }`);
-
-    console.log(`Transcript length: ${transcriptLength}`);
-
-    console.log(`Source URL: ${
-        record.source_url
-            ? "Present"
-            : "Missing"
-    }`);
-
-    console.log(`Transcript truncated: ${
-        transcriptTruncated
-            ? "Yes"
-            : "No"
-    }`);
-
+    console.log(`Title: ${source?.title ?? "Missing"}`);
+    console.log(
+      `Missing fields: ${missing.join(", ")}`
+    );
     console.log("");
-});
-
-console.log("==============================================");
-
-console.log("\n========== API VALIDATION ==========\n");
-
-validationResults.forEach((result, index) => {
-  const record = transformedRecords[index];
-
-  console.log(`Record ${index + 1}`);
-  console.log("----------------------------------------");
-  console.log(
-    `Source ID: ${record.source_case_id ?? "Missing"}`
-  );
-  console.log(`Status: ${result.status}`);
-
-  if (result.errors.length > 0) {
-    console.log("Errors:");
-
-    result.errors.forEach((error) => {
-      console.log(`  - ${error}`);
-    });
   }
+}
 
-  if (result.warnings.length > 0) {
-    console.log("Warnings:");
-
-    result.warnings.forEach((warning) => {
-      console.log(`  - ${warning}`);
-    });
-  }
-
-  console.log("");
-});
 
 console.log("========== VALIDATION SUMMARY ==========\n");
 console.log(`Valid: ${validationSummary.valid}`);
-console.log(
-  `Valid with warnings: ${validationSummary.validWithWarnings}`
-);
+console.log(`Valid with warnings: ${validationSummary.validWithWarnings}`);
 console.log(`Invalid: ${validationSummary.invalid}`);
 console.log(`Total errors: ${validationSummary.totalErrors}`);
 console.log(`Total warnings: ${validationSummary.totalWarnings}`);
-console.log("\n========================================");
 
 console.log("\n========== IMPORT SUMMARY ==========\n");
 
