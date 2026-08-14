@@ -84,11 +84,13 @@ for (
     databaseDuplicateCheck.readyRecords
 ) { 
   const relations = await resolveTrialRelations(
-    item.record,
-    {
-      createMissingDefendants,
-    }
-  );
+  item.record,
+  {
+    createMissingDefendants,
+    allowMissingJudge: true,
+    allowMissingOffence: true,
+  }
+);
 
   relationResults.push({
     rowNumber: item.rowNumber,

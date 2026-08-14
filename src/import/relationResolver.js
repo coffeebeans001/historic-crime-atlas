@@ -194,39 +194,53 @@ export async function resolveDefendant(
  */
 export async function resolveTrialRelations(
   record,
-  { createMissingDefendants = false } = {}
+  {
+  createMissingDefendants = false,
+  allowMissingDefendant = false,
+  allowMissingJudge = false,
+  allowMissingOffence = false,
+} = {}
 ) {
   const [
-    defendantResult,
-    judge,
-    offence,
-  ] = await Promise.all([
-    resolveDefendant(record, {
-      createIfMissing: createMissingDefendants,
-    }),
-    findJudgeByName(record.judge_name),
-    findOffenceByName(record.offence),
-  ]);
+  defendantResult,
+  judge,
+  offence,
+] = await Promise.all([
+  resolveDefendant(record, {
+    createIfMissing: createMissingDefendants,
+  }),
+
+  record.judge_name
+    ? findJudgeByName(record.judge_name)
+    : Promise.resolve(null),
+
+  record.offence
+    ? findOffenceByName(record.offence)
+    : Promise.resolve(null),
+]);
 
   const missingReferences = [];
 
-  if (!defendantResult.defendant) {
-    missingReferences.push(
-      `Defendant not found: ${record.defendant_name}`
-    );
-  }
+  if (
+  !defendantResult.defendant &&
+  !allowMissingDefendant
+) {
+  missingReferences.push(
+    `Defendant not found: ${record.defendant_name}`
+  );
+}
 
-  if (!judge) {
-    missingReferences.push(
-      `Judge not found: ${record.judge_name}`
-    );
-  }
+  if (!judge && !allowMissingJudge) {
+  missingReferences.push(
+    `Judge not found: ${record.judge_name}`
+  );
+}
 
-  if (!offence) {
-    missingReferences.push(
-      `Offence not found: ${record.offence}`
-    );
-  }
+if (!offence && !allowMissingOffence) {
+  missingReferences.push(
+    `Offence not found: ${record.offence}`
+  );
+}
 
   return {
     defendant: defendantResult.defendant,

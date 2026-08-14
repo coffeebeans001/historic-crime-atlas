@@ -26,10 +26,16 @@ import { fetchOldBaileyRecordById } from
 import { detectDuplicates } from "../src/import/duplicateChecker.js";
 import { detectDatabaseDuplicates } from "../src/import/databaseDuplicateChecker.js";  
 
-const DEFAULT_QUERY = "robbery";
-const DEFAULT_BATCH_SIZE = 10;
+import { resolveTrialRelations } from "../src/import/relationResolver.js";
 
-const MULTI_OFFENCE_MODE = true;
+import { importResolvedTrials } from "../src/import/trialImporter.js";
+
+
+
+const DEFAULT_QUERY = "robbery";
+const DEFAULT_BATCH_SIZE = 5;
+
+const MULTI_OFFENCE_MODE = false; // Set to true to enable multi-offence mode
 
 const MULTI_OFFENCE_QUERIES = [
   "robbery",
@@ -38,7 +44,7 @@ const MULTI_OFFENCE_QUERIES = [
   "poisoning",
 ];
 
-const MULTI_OFFENCE_SIZE = 25;
+const MULTI_OFFENCE_SIZE = 5;
 
 const args = process.argv.slice(2);
 const DEBUG_INSPECTION = false; // Set to true to enable detailed inspection logs
@@ -58,6 +64,9 @@ function getArgumentValue(argumentName, fallbackValue) {
 
   return value || fallbackValue;
 }
+
+const insertTrials =
+  process.argv.includes("--insert-trials");
 
 const query = getArgumentValue("query", DEFAULT_QUERY);
 
@@ -518,7 +527,68 @@ const duplicateCheck =
 const databaseDuplicateCheck =
   await detectDatabaseDuplicates(
     duplicateCheck.uniqueRecords
+  ); 
+  
+const relationshipResults = [];
+
+for (const item of databaseDuplicateCheck.readyRecords) {
+ const relations = await resolveTrialRelations(
+  item.record,
+  {
+    createMissingDefendants: false,
+    allowMissingDefendant: true,
+    allowMissingJudge: true,
+    allowMissingOffence: true,
+  }
+);
+
+  relationshipResults.push({
+    rowNumber: item.rowNumber,
+    record: item.record,
+    ...relations,
+  });
+}
+
+const resolvedRelationshipRecords =
+  relationshipResults.filter(
+    (result) =>
+      result.missingReferences.length === 0
+  );
+
+const unresolvedRelationshipRecords =
+  relationshipResults.filter(
+    (result) =>
+      result.missingReferences.length > 0
   );  
+
+let trialImportResults = [];
+
+if (insertTrials) {
+  trialImportResults = await importResolvedTrials(
+    relationshipResults,
+    {
+      allowMissingDefendant: true,
+      allowMissingJudge: true,
+      allowMissingOffence: true,
+    }
+  );
+}  
+
+const insertedTrials = trialImportResults.filter(
+  (result) => result.status === "INSERTED"
+);
+
+const insertionDuplicates = trialImportResults.filter(
+  (result) => result.status === "DATABASE_DUPLICATE"
+);
+
+const insertionUnresolved = trialImportResults.filter(
+  (result) => result.status === "UNRESOLVED"
+);
+
+const insertionFailures = trialImportResults.filter(
+  (result) => result.status === "FAILED"
+);
 
 const readyForImport = reviewedRecords.filter(
   (record) => record.status === "READY"
@@ -898,6 +968,40 @@ console.log(`Invalid: ${validationSummary.invalid}`);
 console.log(`Total errors: ${validationSummary.totalErrors}`);
 console.log(`Total warnings: ${validationSummary.totalWarnings}`);
 
+console.log(
+  "\n========== RELATIONSHIP READINESS SUMMARY ==========\n"
+);
+
+console.log(
+  `Records checked: ${relationshipResults.length}`
+);
+
+console.log(
+  `Resolved: ${resolvedRelationshipRecords.length}`
+);
+
+console.log(
+  `Unresolved: ${unresolvedRelationshipRecords.length}`
+);
+
+if (unresolvedRelationshipRecords.length > 0) {
+  console.log("\nUnresolved records:");
+
+  for (const result of unresolvedRelationshipRecords) {
+    console.log(
+      `\nSource ID: ${result.record.source_case_id}`
+    );
+
+    for (const message of result.missingReferences) {
+      console.log(`- ${message}`);
+    }
+  }
+}
+
+console.log(
+  "\n===================================================="
+);
+
 console.log("\n========== IMPORT SUMMARY ==========\n");
 
 console.log(`Records returned: ${records.length}`);
@@ -924,6 +1028,46 @@ if (duplicateCheck.duplicateRecords.length > 0) {
   console.log("======================================\n");
 }
 
+console.log(
+  "\n========== CONTROLLED INSERT SUMMARY ==========\n"
+);
+
+console.log(
+  `Insert enabled: ${insertTrials ? "Yes" : "No"}`
+);
+
+console.log(`Inserted: ${insertedTrials.length}`);
+
+console.log(
+  `Database duplicates: ${insertionDuplicates.length}`
+);
+
+console.log(
+  `Unresolved: ${insertionUnresolved.length}`
+);
+
+console.log(
+  `Failed: ${insertionFailures.length}`
+);
+
+if (insertionFailures.length > 0) {
+  console.log("\nFailed records:");
+
+  for (const result of insertionFailures) {
+    console.log(
+      `Source ID: ${result.record.source_case_id}`
+    );
+
+    for (const error of result.errors) {
+      console.log(`- ${error}`);
+    }
+
+    console.log("");
+  }
+}
+
+console.log("\n===============================================\n");
+
 console.log("\n========== DATABASE READINESS SUMMARY ==========\n");
 
 console.log(
@@ -946,7 +1090,7 @@ console.log(
   }`
 );
 
-console.log("\nDatabase changes: 0");
+console.log(`\nDatabase changes: ${insertedTrials.length}`);
 
 console.log("\n================================================\n");
 

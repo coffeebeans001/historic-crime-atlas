@@ -85,17 +85,17 @@ async function insertTrial(
       record.offence,
       record.verdict,
       record.source_url,
-      record.trial_location,
-      record.judge_name,
-      record.case_summary,
-      record.trial_type,
-      record.defendant_age,
-      record.witness_count,
-      record.sentence_duration,
-      record.appeal_outcome,
-      relations.defendant.defendant_id,
-      relations.judge.judge_id,
-      relations.offence.offence_id,
+      record.trial_location ?? null,
+      record.judge_name ?? null,
+      record.case_summary ?? null,
+      record.trial_type ?? null,
+      record.defendant_age ?? null,
+      record.witness_count ?? null,
+      record.sentence_duration ?? null,
+      record.appeal_outcome ?? null,
+      relations.defendant?.defendant_id ?? null,
+      relations.judge?.judge_id ?? null,
+      relations.offence?.offence_id ?? null,
       importId ?? null,
     ]
   );
@@ -132,21 +132,26 @@ async function insertTrial(
  */
 export async function importTrialWithTransaction(
   item,
-  { importId = null } = {}
+ {
+  importId = null,
+  allowMissingDefendant = false,
+  allowMissingJudge = false,
+  allowMissingOffence = false,
+} = {}
 ) {
-  if (
-    !item.defendant ||
-    !item.judge ||
-    !item.offence ||
-    item.missingReferences.length > 0
-  ) {
-    return {
-      rowNumber: item.rowNumber,
-      record: item.record,
-      status: "UNRESOLVED",
-      errors: item.missingReferences,
-    };
-  }
+ if (
+  (!item.defendant && !allowMissingDefendant) ||
+  (!item.judge && !allowMissingJudge) ||
+  (!item.offence && !allowMissingOffence) ||
+  item.missingReferences.length > 0
+) {
+  return {
+    rowNumber: item.rowNumber,
+    record: item.record,
+    status: "UNRESOLVED",
+    errors: item.missingReferences,
+  };
+}
 
   const connection =
     await pool.getConnection();
@@ -241,7 +246,12 @@ export async function importTrialWithTransaction(
  */
 export async function importResolvedTrials(
   relationResults,
-  { importId = null } = {}
+  {
+    importId = null,
+    allowMissingDefendant = false,
+    allowMissingJudge = false,
+    allowMissingOffence = false,
+  } = {}
 ) {
   const results = [];
 
@@ -249,7 +259,12 @@ export async function importResolvedTrials(
     const result =
   await importTrialWithTransaction(
     item,
-    { importId }
+    {
+      importId,
+      allowMissingDefendant,
+      allowMissingJudge,
+      allowMissingOffence,
+    }
   );
 
     results.push(result);
