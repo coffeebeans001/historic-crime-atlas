@@ -165,6 +165,15 @@ export function transformOldBaileyRecord(record, parsedXmlData) {
   punishment:
     parsedXmlData?.punishment ?? null,
 
+  crime_location:
+  parsedXmlData?.crimeLocation ?? null,
+
+location_text:
+  parsedXmlData?.locationText ?? null,
+  
+location_precision:
+  parsedXmlData?.locationPrecision ?? null,  
+
   trial_date: trialDate,
   source_url: source.images?.[0] || null,
   transcript_text: source.text || null,

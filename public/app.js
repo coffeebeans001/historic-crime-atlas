@@ -3014,6 +3014,12 @@ function updateGenderGapNote(seriesArr) {
 
   const gap = findLargestGenderGap(seriesArr);
 
+  if (!gap) {
+    el.textContent = "";
+    genderGapLine = "";
+    return;
+  }
+
   const lowSample =
     (gap.maleN ?? 0) < LOW_N_THRESHOLD || (gap.femaleN ?? 0) < LOW_N_THRESHOLD;
 
@@ -4459,7 +4465,15 @@ const offenceChipColour = [32, 76, 151];   // Blue
 const genderChipColour = [106, 76, 147];   // Purple
 const rangeChipColour = [40, 167, 69];     // Green  
 
-const points = chart?.data?.datasets?.[0]?.data || []; 
+const mainDataset =
+  chart?.data?.datasets?.find(
+    (dataset) => dataset.label === "All"
+  );
+
+const points =
+  mainDataset?.data || [];
+
+
 
 const historicalInsights = buildHistoricalInsights(points);  
 

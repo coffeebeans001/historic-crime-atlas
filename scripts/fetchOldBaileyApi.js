@@ -35,7 +35,7 @@ import { importResolvedTrials } from "../src/import/trialImporter.js";
 const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 5;
 
-const MULTI_OFFENCE_MODE = false; // Set to true to enable multi-offence mode
+const MULTI_OFFENCE_MODE = true; // Set to true to enable multi-offence mode
 
 const MULTI_OFFENCE_QUERIES = [
   "robbery",
@@ -47,7 +47,7 @@ const MULTI_OFFENCE_QUERIES = [
 const MULTI_OFFENCE_SIZE = 5;
 
 const args = process.argv.slice(2);
-const DEBUG_INSPECTION = false; // Set to true to enable detailed inspection logs
+const DEBUG_INSPECTION = true; // Set to true to enable detailed inspection logs
 
 function getArgumentValue(argumentName, fallbackValue) {
   const argumentPrefix = `--${argumentName}=`;
@@ -195,7 +195,7 @@ for (const record of nonTrialRecords) {
   );
 }
    const firstRecordId = records[0]?._source?.idkey;
-   //const firstRecordId = "t18440819-1920";
+   //const firstRecordId = "t16740909-6";
 
 
       if (!firstRecordId) {
@@ -335,9 +335,9 @@ const singleSource = singleRecord?._source ?? {};
     const xml = singleSource.xml ?? "";
 
     const {
-  defendantMatches,
+  defendantMatches, 
   verdictMatches,
-  punishmentMatches,
+  punishmentMatches,   
   offenceMatches,
   defendantName,
   defendantGender,
@@ -348,7 +348,10 @@ const singleSource = singleRecord?._source ?? {};
   punishment,
   offenceCategory,
   offenceSubcategory,
-  offenceText
+  offenceText,
+  crimeLocation,
+  locationText,
+  locationPrecision,
 } = parseOldBaileyXml(xml);
 
     if (DEBUG_INSPECTION) {
@@ -450,7 +453,10 @@ const parsedXmlData = {
   punishment,
   offenceCategory,
   offenceSubcategory,
-  offenceText
+  offenceText,
+  crimeLocation,
+  locationText,
+  locationPrecision,
 };
 
 if (DEBUG_INSPECTION) {
@@ -722,19 +728,28 @@ const xmlInspectionSummary = transformedRecords.reduce(
       summary.punishmentPresent += 1;
     }
 
+    if (record.crime_location) {
+      summary.crimeLocationPresent += 1;
+    }
+
+    if (record.location_text) {
+      summary.locationTextPresent += 1;
+    }
     return summary;
   },
   {
-    recordsInspected: 0,
-    defendantNamePresent: 0,
-    defendantGenderPresent: 0,
-    offenceCategoryPresent: 0,
-    offenceSubcategoryPresent: 0,
-    verdictCategoryPresent: 0,
-    verdictSubcategoryPresent: 0,
-    pleaPresent: 0,
-    punishmentPresent: 0,
-  }
+  recordsInspected: 0,
+  defendantNamePresent: 0,
+  defendantGenderPresent: 0,
+  offenceCategoryPresent: 0,
+  offenceSubcategoryPresent: 0,
+  verdictCategoryPresent: 0,
+  verdictSubcategoryPresent: 0,
+  pleaPresent: 0,
+  punishmentPresent: 0,
+  crimeLocationPresent: 0,
+  locationTextPresent: 0,
+}
 );
 
 console.log(`Records selected: ${records.length}`);
@@ -793,6 +808,20 @@ console.log(
 console.log(
   `Punishment: ${formatCoverage(
     xmlInspectionSummary.punishmentPresent,
+    xmlInspectionSummary.recordsInspected
+  )}`  
+);
+
+console.log(
+  `Crime location: ${formatCoverage(
+    xmlInspectionSummary.crimeLocationPresent,
+    xmlInspectionSummary.recordsInspected
+  )}`
+);
+
+console.log(
+  `Location text: ${formatCoverage(
+    xmlInspectionSummary.locationTextPresent,
     xmlInspectionSummary.recordsInspected
   )}`
 );
@@ -856,6 +885,7 @@ function createCoverageEntry(present, total) {
     xmlInspectionSummary.punishmentPresent,
     xmlInspectionSummary.recordsInspected
   ),
+  
 
   qualityAssessment: {
   nonTrialRecordsExcluded: nonTrialRecords.length,
@@ -1067,6 +1097,53 @@ if (insertionFailures.length > 0) {
 }
 
 console.log("\n===============================================\n");
+
+if (DEBUG_INSPECTION) {
+  console.log("\n========== LOCATION INSPECTION ==========");
+
+  console.log("Source ID:", singleSource.idkey ?? null);
+  console.log("Title:", singleSource.title ?? null);
+
+  console.log("\nMetadata:");
+  console.log(singleSource.metadata ?? null);
+
+  console.log("\nTranscript preview:");
+  console.log(
+    singleSource.text?.slice(0, 2000) ??
+      "No transcript available."
+  );
+
+  console.log("\nXML location search:");
+
+  const locationSearch =
+    singleSource.xml?.match(
+      /.{0,250}(?:placeName|location|street|road|lane|park|gate|square|parish).{0,250}/gi
+    ) ?? [];
+
+  console.log(
+    locationSearch.length > 0
+      ? locationSearch
+      : "No obvious location references found."
+  );
+
+  console.log("========================================\n");
+}
+
+console.log(
+  "\n========== READY FOR INSERTION RECORDS ==========\n"
+);
+
+for (const item of databaseDuplicateCheck.readyRecords) {
+  console.log(
+    `${item.record.source_case_id} → ` +
+    `${item.record.crime_location ?? "No location"} → ` +
+    `${item.record.location_precision ?? "No precision"}`
+  );
+}
+
+console.log(
+  "\n=================================================\n"
+);
 
 console.log("\n========== DATABASE READINESS SUMMARY ==========\n");
 

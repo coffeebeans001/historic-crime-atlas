@@ -224,7 +224,7 @@ app.get("/api/trials/series", async (req, res) => {
     let genderValues = [];
 
     if (!gender || gender === "all") {
-      genderValues = ["male", "female"];
+      genderValues = [null];
     } else {
       genderValues = [gender];
     }
@@ -267,7 +267,10 @@ app.get("/api/trials/series", async (req, res) => {
       const [rows] = await pool.query(sql, paramsLoop);
 
       results.push({
-        label: g.charAt(0).toUpperCase() + g.slice(1),
+        label:
+          g === null
+            ? "All"
+            : g.charAt(0).toUpperCase() + g.slice(1),
         data: rows.map((r) => {
           const total = Number(r.total) || 0;
           const guilty = Number(r.guilty) || 0;

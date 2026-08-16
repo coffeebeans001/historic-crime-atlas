@@ -54,29 +54,31 @@ async function insertTrial(
   const [result] = await connection.execute(
     `
       INSERT INTO trials (
-        source_case_id,
-        trial_date,
-        defendant_name,
-        offence,
-        verdict,
-        source_url,
-        trial_location,
-        judge_name,
-        case_summary,
-        trial_type,
-        defendant_age,
-        witness_count,
-        sentence_duration,
-        appeal_outcome,
-        defendant_id,
-        judge_id,
-        offence_id,
-        import_id
-      )
-            VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?, ?
-      )
+      source_case_id,
+      trial_date,
+      defendant_name,
+      offence,
+      verdict,
+      source_url,
+      trial_location,
+      crime_location,
+      location_precision,
+      judge_name,
+      case_summary,
+      trial_type,
+      defendant_age,
+      witness_count,
+      sentence_duration,
+      appeal_outcome,
+      defendant_id,
+      judge_id,
+      offence_id,
+      import_id
+    )
+                VALUES (
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    )
     `,
     [
       record.source_case_id,
@@ -86,6 +88,8 @@ async function insertTrial(
       record.verdict,
       record.source_url,
       record.trial_location ?? null,
+      record.crime_location ?? null,
+      record.location_precision ?? null,
       record.judge_name ?? null,
       record.case_summary ?? null,
       record.trial_type ?? null,

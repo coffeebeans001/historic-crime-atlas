@@ -1,3 +1,29 @@
+function classifyLocationPrecision(location) {
+  if (!location) {
+    return null;
+  }
+
+  const normalized = location
+    .toLowerCase()
+    .trim();
+
+  if (
+    normalized.includes("street") ||
+    normalized.includes("st.")
+  ) {
+    return "street";
+  }
+
+  if (
+    normalized.includes("road") ||
+    normalized.includes("lane")
+  ) {
+    return "street";
+  }
+
+  return "named_place";
+}
+
 export function parseOldBaileyXml(xml = "") {
   const defendantMatches =
     xml.match(
@@ -18,6 +44,31 @@ export function parseOldBaileyXml(xml = "") {
   xml.match(
     /<rs[^>]*type="offenceDescription"[^>]*>[\s\S]*?<\/rs>/g
   ) ?? [];
+
+ const locationMatches =
+  xml.match(
+    /<placeName\b[^>]*>[\s\S]*?<\/placeName>/gi
+  ) ?? []; 
+
+ const crimeLocationMatch = xml.match(
+  /<interp\b[^>]*type="crimeLocation"[^>]*value="([^"]+)"/i
+);
+
+const locationName =
+  crimeLocationMatch?.[1]?.trim() ?? null; 
+
+const locationTextMatch = xml.match(
+  /<placeName\b[^>]*>\s*([^<]+?)\s*</i
+);
+
+const locationText =
+  locationTextMatch?.[1]?.trim() ?? null;
+
+const crimeLocation =
+  locationName ?? locationText ?? null; 
+
+const locationPrecision =
+  classifyLocationPrecision(crimeLocation);  
 
   const defendantNode = defendantMatches[0] ?? null;
 
@@ -107,22 +158,26 @@ if (offenceNode) {
 }
 
   return {
-  defendantMatches,
-  verdictMatches,
-  punishmentMatches,
-  offenceMatches,
-  defendantName,
-  defendantGender,
-  verdictCategory,
-  verdictSubcategory,
-  plea,
-  verdictText,
-  punishment,
-  offenceCategory,
-  offenceSubcategory,
-  offenceText
-};
+    defendantMatches,
+    verdictMatches,
+    punishmentMatches,
+    offenceMatches,
+    locationMatches,
 
+    defendantName,
+    defendantGender,
+    verdictCategory,
+    verdictSubcategory,
+    plea,
+    verdictText,
+    punishment,
+    offenceCategory,
+    offenceSubcategory,
+    offenceText,
 
+    crimeLocation,
+    locationText,
+    locationPrecision,
+  };
 }
   
