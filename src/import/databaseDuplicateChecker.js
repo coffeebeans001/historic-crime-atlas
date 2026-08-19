@@ -48,6 +48,41 @@ export async function findTrialBySourceCaseId(
  *   }>
  * }>}
  */
+
+export async function updateTrialGeocodeBySourceCaseId(
+  sourceCaseId,
+  {
+    latitude,
+    longitude,
+    geocodeSource,
+    geocodeConfidence,
+  }
+) {
+  const [result] = await pool.execute(
+    `
+      UPDATE trials
+      SET
+        latitude = ?,
+        longitude = ?,
+        geocode_source = ?,
+        geocode_confidence = ?
+      WHERE source_case_id = ?
+    `,
+    [
+      latitude ?? null,
+      longitude ?? null,
+      geocodeSource ?? null,
+      geocodeConfidence ?? null,
+      sourceCaseId,
+    ]
+  );
+
+  return {
+    affectedRows: result.affectedRows,
+    changedRows: result.changedRows,
+  };
+}
+
 export async function detectDatabaseDuplicates(
   uniqueRecords
 ) {

@@ -24,12 +24,15 @@ import { fetchOldBaileyRecordById } from
   "../src/import/fetchOldBaileyRecordById.js";  
 
 import { detectDuplicates } from "../src/import/duplicateChecker.js";
-import { detectDatabaseDuplicates } from "../src/import/databaseDuplicateChecker.js";  
+
+import {
+  detectDatabaseDuplicates,
+  updateTrialGeocodeBySourceCaseId,
+} from "../src/import/databaseDuplicateChecker.js";
 
 import { resolveTrialRelations } from "../src/import/relationResolver.js";
 
 import { importResolvedTrials } from "../src/import/trialImporter.js";
-
 
 
 const DEFAULT_QUERY = "robbery";
@@ -67,6 +70,9 @@ function getArgumentValue(argumentName, fallbackValue) {
 
 const insertTrials =
   process.argv.includes("--insert-trials");
+
+const geocodeExistingTrials =
+  process.argv.includes("--geocode-existing");  
 
 const query = getArgumentValue("query", DEFAULT_QUERY);
 
@@ -195,7 +201,7 @@ for (const record of nonTrialRecords) {
   );
 }
    const firstRecordId = records[0]?._source?.idkey;
-   //const firstRecordId = "t16740909-6";
+   //const firstRecordId = "t17380113-10";
 
 
       if (!firstRecordId) {
@@ -1058,9 +1064,7 @@ if (duplicateCheck.duplicateRecords.length > 0) {
   console.log("======================================\n");
 }
 
-console.log(
-  "\n========== CONTROLLED INSERT SUMMARY ==========\n"
-);
+console.log("\n========== CONTROLLED INSERT SUMMARY ==========\n");
 
 console.log(
   `Insert enabled: ${insertTrials ? "Yes" : "No"}`
@@ -1129,9 +1133,7 @@ if (DEBUG_INSPECTION) {
   console.log("========================================\n");
 }
 
-console.log(
-  "\n========== READY FOR INSERTION RECORDS ==========\n"
-);
+console.log("\n========== READY FOR INSERTION RECORDS ==========\n");
 
 for (const item of databaseDuplicateCheck.readyRecords) {
   console.log(
@@ -1141,33 +1143,94 @@ for (const item of databaseDuplicateCheck.readyRecords) {
   );
 }
 
-console.log(
-  "\n=================================================\n"
-);
+console.log("\n=================================================\n");
+
 
 console.log("\n========== DATABASE READINESS SUMMARY ==========\n");
 
-console.log(
-  `API-ready records: ${apiReadyRecords.length}`
-);
+console.log(`API-ready records: ${apiReadyRecords.length}`);
 
-console.log(
-  `Batch duplicates: ${duplicateCheck.duplicateRecords.length}`
-);
+console.log(`Batch duplicates: ${duplicateCheck.duplicateRecords.length}`);
 
-console.log(
-  `Database duplicates: ${
-    databaseDuplicateCheck.databaseDuplicates.length
-  }`
-);
+console.log(`Database duplicates: ${databaseDuplicateCheck.databaseDuplicates.length}`);
 
-console.log(
-  `Ready for insertion: ${
-    databaseDuplicateCheck.readyRecords.length
-  }`
-);
+console.log(`Ready for insertion: ${databaseDuplicateCheck.readyRecords.length}`);
 
 console.log(`\nDatabase changes: ${insertedTrials.length}`);
+
+console.log("\n================================================\n");
+
+const existingSourceCaseIds = new Set(
+  databaseDuplicateCheck.databaseDuplicates.map(
+    (item) => item.record.source_case_id
+  )
+);
+
+// Controlled geocoding candidates
+const geocodeCandidates =
+  transformedRecords.filter(
+    (record) =>
+      record.source_case_id &&
+      existingSourceCaseIds.has(record.source_case_id) &&
+      record.crime_location &&
+      record.latitude !== null &&
+      record.longitude !== null &&
+      record.geocode_source &&
+      record.geocode_confidence
+  );
+
+const controlledGeocodeCandidates =
+  geocodeCandidates.slice(0, 5); 
+  
+const geocodeUpdateResults = [];
+
+if (geocodeExistingTrials) {
+  for (const record of controlledGeocodeCandidates) {
+    const result =
+      await updateTrialGeocodeBySourceCaseId(
+        record.source_case_id,
+        {
+          latitude: record.latitude,
+          longitude: record.longitude,
+          geocodeSource: record.geocode_source,
+          geocodeConfidence:
+            record.geocode_confidence,
+        }
+      );
+
+    geocodeUpdateResults.push({
+      sourceCaseId: record.source_case_id,
+      crimeLocation: record.crime_location,
+      ...result,
+    });
+  }
+}   
+
+console.log("\n========== GEOCODE ENRICHMENT SUMMARY ==========\n");
+
+console.log(
+  `Geocode update enabled: ${
+    geocodeExistingTrials ? "Yes" : "No"
+  }`
+);
+
+console.log(
+  `Geocodable records found: ${geocodeCandidates.length}`
+);
+
+console.log(
+  `Controlled candidates: ${
+    controlledGeocodeCandidates.length
+  }`
+);
+
+console.log(
+  `Rows changed: ${
+    geocodeUpdateResults.filter(
+      (result) => result.changedRows > 0
+    ).length
+  }`
+);
 
 console.log("\n================================================\n");
 

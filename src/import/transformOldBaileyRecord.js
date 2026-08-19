@@ -1,3 +1,5 @@
+import { geocodeHistoricalLocation } from "./geocodeHistoricalLocation.js";
+
 function convertOldBaileyDate(dateText) {
   if (!dateText) {
     return null;
@@ -121,6 +123,14 @@ export function transformOldBaileyRecord(record, parsedXmlData) {
     trialDate,
   } = extractTitleParts(source.title);
 
+  const geocodeResult = geocodeHistoricalLocation({
+  crimeLocation:
+    parsedXmlData?.crimeLocation ?? null,
+
+  locationPrecision:
+    parsedXmlData?.locationPrecision ?? null,
+});
+
   return {
   source_case_id: source.idkey || null,
 
@@ -172,7 +182,19 @@ location_text:
   parsedXmlData?.locationText ?? null,
   
 location_precision:
-  parsedXmlData?.locationPrecision ?? null,  
+  parsedXmlData?.locationPrecision ?? null,
+  
+latitude:
+    geocodeResult?.latitude ?? null,
+
+  longitude:
+    geocodeResult?.longitude ?? null,
+
+  geocode_source:
+    geocodeResult?.geocodeSource ?? null,
+
+  geocode_confidence:
+    geocodeResult?.geocodeConfidence ?? null,  
 
   trial_date: trialDate,
   source_url: source.images?.[0] || null,
