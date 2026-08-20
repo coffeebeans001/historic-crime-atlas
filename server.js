@@ -140,37 +140,46 @@ app.get("/api/trials/nearby", async (req, res) => {
 
     // Haversine distance in meters
     const sql = `
-      SELECT
-        t.id,
-        t.trial_date,
-        t.verdict,
-        t.trial_location,
-        o.offence_name,
-        o.offence_group,
-        d.defendant_name,
-        d.gender,
-        d.party_type,
-        t.latitude,
-        t.longitude,
-        (6371000 * 2 * ASIN(SQRT(
-          POW(SIN(RADIANS(t.latitude - ?) / 2), 2) +
-          COS(RADIANS(?)) * COS(RADIANS(t.latitude)) *
-          POW(SIN(RADIANS(t.longitude - ?) / 2), 2)
-        ))) AS distance_m
-      FROM trials t
-      JOIN defendants d ON d.defendant_id = t.defendant_id
-      JOIN offences o ON o.offence_id = t.offence_id
-      WHERE
-        t.latitude IS NOT NULL
-        AND t.longitude IS NOT NULL
-        AND t.trial_date BETWEEN ? AND ?
-        ${gender !== "all" ? "AND LOWER(d.gender) = LOWER(?)" : ""}
-        ${year ? "AND YEAR(t.trial_date) = ?" : ""}
-        ${group ? "AND o.offence_group = ?" : ""}
-      HAVING distance_m <= ?
-      ORDER BY distance_m ASC
-      LIMIT ?;
-    `;
+  SELECT
+    t.id,
+    t.trial_date,
+    t.verdict,
+    t.trial_location,
+    t.crime_location,
+    t.location_precision,
+    t.geocode_confidence,
+    t.offence AS offence,
+    o.offence_name,
+    o.offence_group,
+    COALESCE(
+      d.defendant_name,
+      t.defendant_name
+    ) AS defendant_name,
+    d.gender,
+    d.party_type,
+    t.latitude,
+    t.longitude,
+    (6371000 * 2 * ASIN(SQRT(
+      POW(SIN(RADIANS(t.latitude - ?) / 2), 2) +
+      COS(RADIANS(?)) * COS(RADIANS(t.latitude)) *
+      POW(SIN(RADIANS(t.longitude - ?) / 2), 2)
+    ))) AS distance_m
+  FROM trials t
+  LEFT JOIN defendants d
+    ON d.defendant_id = t.defendant_id
+  LEFT JOIN offences o
+    ON o.offence_id = t.offence_id
+  WHERE
+    t.latitude IS NOT NULL
+    AND t.longitude IS NOT NULL
+    AND t.trial_date BETWEEN ? AND ?
+    ${gender !== "all" ? "AND LOWER(d.gender) = LOWER(?)" : ""}
+    ${year ? "AND YEAR(t.trial_date) = ?" : ""}
+    ${group ? "AND o.offence_group = ?" : ""}
+  HAVING distance_m <= ?
+  ORDER BY distance_m ASC
+  LIMIT ?;
+`;
 
     const params = [
       lat,

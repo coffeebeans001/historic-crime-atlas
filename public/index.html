@@ -263,6 +263,24 @@
           filter 0.15s ease,
           transform 0.15s ease;
       }
+
+      .crime-popup {
+  pointer-events: auto;
+}
+
+.crime-popup .leaflet-popup-content-wrapper,
+.crime-popup .leaflet-popup-content,
+.crime-popup .popup-offence-toggle {
+  pointer-events: auto;
+}
+
+.popup-offence-toggle {
+  position: relative;
+  z-index: 1000;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
     </style>
 
     <script

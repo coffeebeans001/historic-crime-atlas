@@ -5756,6 +5756,15 @@ function slugifyFilenamePart(value, separator = "-") {
     .replace(new RegExp(`^\\${separator}+|\\${separator}+$`, "g"), "");
 }
 
+function escapeHtmlAttribute(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function formatFilenameDate(value) {
   if (!value) return "";
 
@@ -6125,9 +6134,27 @@ let currentCenter = { lat: 51.509865, lng: -0.118092 };
 let mapClickBound = false;
 
 function onMapClick(e) {
+  const originalTarget = e.originalEvent?.target;
+
+  if (
+    originalTarget?.closest?.(
+      ".leaflet-popup"
+    )
+  ) {
+    return;
+  }
+
   resetMarkerHighlight();
-  currentCenter = { lat: e.latlng.lat, lng: e.latlng.lng };
-  centerMarker.setLatLng(e.latlng).openPopup();
+
+  currentCenter = {
+    lat: e.latlng.lat,
+    lng: e.latlng.lng,
+  };
+
+  centerMarker
+    .setLatLng(e.latlng)
+    .openPopup();
+
   updateRadiusCircle();
 
   // Clear list/marker active state
@@ -6181,6 +6208,49 @@ function ensureMap() {
   if (!map) {
     map = L.map("map").setView([currentCenter.lat, currentCenter.lng], 13);
   }
+
+  map.getContainer().addEventListener("click", (event) => {
+  const toggle = event.target.closest(
+    ".popup-offence-toggle"
+  );
+
+  if (!toggle) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const popup = toggle.closest(
+    ".leaflet-popup"
+  );
+
+  const offenceText = popup?.querySelector(
+    ".popup-offence-text"
+  );
+
+  if (!offenceText) return;
+
+  const fullOffence =
+    toggle.dataset.fullOffence ?? "";
+
+  const preview =
+    toggle.dataset.preview ?? "";
+
+  const expanded =
+    toggle.dataset.expanded === "true";
+
+  offenceText.textContent =
+    expanded ? preview : fullOffence;
+
+  toggle.textContent =
+    expanded
+      ? "Show full offence"
+      : "Show less";
+
+  toggle.dataset.expanded =
+    expanded ? "false" : "true";
+  },
+  true
+);
 
   if (!baseTiles) {
   baseTiles = L.tileLayer(
@@ -6394,7 +6464,8 @@ function renderNearbyList(rows, markerById) {
   const items = rows
     .map((r) => {
       const id = r.id != null ? String(r.id) : "";
-      const offence = r.offence_name || "(unknown offence)";
+      const offence = r.offence_name || r.offence || "(unknown offence)";
+      const offencePreview = offence.length > 180 ? `${offence.slice(0, 180)}…`: offence;
       const who = r.defendant_name || "(unknown defendant)";
       const verdict = r.verdict || "(unknown verdict)";
       const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "";
@@ -6408,7 +6479,7 @@ function renderNearbyList(rows, markerById) {
           class="nearby-item"
           data-id="${id}"
         >
-          <strong>${offence}</strong> — ${who} (${verdict})<br/>
+          <strong>${offencePreview}</strong> — ${who} (${verdict})<br/>
           <span style="opacity:.8;">${date} • ${where} • ${d}</span>
         </button>
       </li>
@@ -6431,7 +6502,7 @@ function renderNearbyList(rows, markerById) {
       pinMarker(marker);
 
       markersLayer.zoomToShowLayer(marker, () => {
-        //map.panTo(marker.getLatLng(), { animate: true });
+        
         marker.openPopup();
       });
 
@@ -6525,20 +6596,89 @@ async function fetchNearby() {
       const date = r.trial_date
         ? String(r.trial_date).slice(0, 10)
         : "Unknown date";
-      const offence = r.offence_name || r.offence_group || "Offence";
+      const offence =
+        r.offence_name ||
+        r.offence ||
+        r.offence_group ||
+        "Offence";
       const who = r.defendant_name || "Unknown defendant";
       const verdict = r.verdict || "Unknown verdict";
       const dist =
         r.distance_m != null ? `${Math.round(Number(r.distance_m))} m` : "—";
 
+      const historicalLocation =
+        r.crime_location || null;
+
+      const locationConfidence =
+        r.geocode_confidence || null;
+
+      const offencePreview =
+        offence.length > 220
+          ? `${offence.slice(0, 220)}…`
+          : offence;
+
+      const hasLongOffence =
+        offence.length > 220;  
+
+      const safeFullOffence =
+  escapeHtmlAttribute(offence);
+
+const safeOffencePreview =
+  escapeHtmlAttribute(offencePreview);  
+
       const popupHTML = `
-        <div style="min-width:220px;">
-          <div style="font-weight:700; margin-bottom:6px;">${offence}</div>
-          <div><b>Date:</b> ${date}</div>
-          <div><b>Defendant:</b> ${who} (${verdict})</div>
-          <div><b>Distance:</b> ${dist}</div>
-        </div>
-      `;
+  <div style="
+    min-width:220px;
+    max-width:300px;
+  ">
+    <div
+      class="popup-offence-text"
+      style="
+        font-weight:700;
+        margin-bottom:8px;
+        line-height:1.35;
+      "
+    >
+      ${offencePreview}
+    </div>
+
+    ${
+  hasLongOffence
+    ? `
+      <button
+        type="button"
+        class="popup-offence-toggle"
+        data-full-offence="${safeFullOffence}"
+        data-preview="${safeOffencePreview}"
+        data-expanded="false"
+      >
+        Show full offence
+      </button>
+    `
+    : ""
+}
+
+    <div><b>Date:</b> ${date}</div>
+    <div><b>Defendant:</b> ${who} (${verdict})</div>
+
+    ${
+      historicalLocation
+        ? `<div><b>Historical location:</b> ${historicalLocation}</div>`
+        : ""
+    }
+
+    ${
+      locationConfidence
+        ? `<div><b>Map position:</b> ${
+            locationConfidence.charAt(0).toUpperCase() +
+            locationConfidence.slice(1)
+          }</div>`
+        : ""
+    }
+
+    <div><b>Distance:</b> ${dist}</div>
+  </div>
+`;
 
       // Create marker
       const marker = L.marker([lat, lng]);
@@ -6551,6 +6691,7 @@ async function fetchNearby() {
         className: "crime-popup",
         autoPan: false,
         offset: L.point(-8, -4),
+        maxWidth: 320,
       });
 
       // Tooltip for hover preview (lightweight, non-blocking)
@@ -6577,8 +6718,6 @@ async function fetchNearby() {
       /* ---------------------------
   Click = PIN popup
 ---------------------------- */
-
-      marker.bindPopup(popupHTML);
 
       if (r.id != null) {
         const id = String(r.id);
