@@ -200,8 +200,8 @@ for (const record of nonTrialRecords) {
     record?._source?.title
   );
 }
-   const firstRecordId = records[0]?._source?.idkey;
-   //const firstRecordId = "t17380113-10";
+   //const firstRecordId = records[0]?._source?.idkey;
+   const firstRecordId = "t17870711-89";
 
 
       if (!firstRecordId) {
@@ -339,6 +339,44 @@ const singleSource = singleRecord?._source ?? {};
     console.log("\n========== XML INSPECTION ==========");
 
     const xml = singleSource.xml ?? "";
+
+    console.log(
+  "\n========== LOCATION EXTRACTION INSPECTION ==========\n"
+);
+
+console.log("Source ID:", singleSource.idkey);
+
+console.log("\n--- TRANSCRIPT ---\n");
+console.log(singleSource.text);
+
+console.log("\n--- XML LOCATION MATCHES ---\n");
+
+const locationExtractionMatches =
+  xml.match(
+    /<[^>]+>[^<]*(?:street|lane|road|alley|court|house|inn|parish|church|gate|fields|park|market|bridge)[^<]*<\/[^>]+>/gi
+  ) ?? [];
+
+console.log(locationExtractionMatches);
+
+/*const whiteIndex =
+  xml.toLowerCase().indexOf("white");
+
+if (whiteIndex !== -1) {
+  console.log(
+    "\n--- WHITE XML CONTEXT ---\n"
+  );
+
+  console.log(
+    xml.slice(
+      Math.max(0, whiteIndex - 500),
+      whiteIndex + 1000
+    )
+  );
+} else {
+  console.log(
+    "\nNo 'white' reference found in XML."
+  );
+}*/
 
     const {
   defendantMatches, 
@@ -1180,7 +1218,7 @@ const geocodeCandidates =
   );
 
 const controlledGeocodeCandidates =
-  geocodeCandidates.slice(0, 5); 
+  geocodeCandidates.slice(0, 7);
   
 const geocodeUpdateResults = [];
 
@@ -1188,15 +1226,30 @@ if (geocodeExistingTrials) {
   for (const record of controlledGeocodeCandidates) {
     const result =
       await updateTrialGeocodeBySourceCaseId(
-        record.source_case_id,
-        {
-          latitude: record.latitude,
-          longitude: record.longitude,
-          geocodeSource: record.geocode_source,
-          geocodeConfidence:
-            record.geocode_confidence,
-        }
-      );
+  record.source_case_id,
+  {
+    crimeLocation:
+      record.crime_location,
+
+    locationSource: 
+      record.location_source,  
+
+    locationPrecision:
+      record.location_precision,
+
+    latitude:
+      record.latitude,
+
+    longitude:
+      record.longitude,
+
+    geocodeSource:
+      record.geocode_source,
+
+    geocodeConfidence:
+      record.geocode_confidence,
+  }
+);
 
     geocodeUpdateResults.push({
       sourceCaseId: record.source_case_id,
@@ -1204,7 +1257,21 @@ if (geocodeExistingTrials) {
       ...result,
     });
   }
-}   
+}  
+
+console.log(
+  "\n========== GEOCODE UPDATE RESULTS ==========\n"
+);
+
+geocodeUpdateResults.forEach((result) => {
+  console.log(
+    `${result.sourceCaseId} → ${result.crimeLocation}`
+  );
+  console.log(
+    `Affected: ${result.affectedRows}, Changed: ${result.changedRows}`
+  );
+  console.log("");
+});
 
 console.log("\n========== GEOCODE ENRICHMENT SUMMARY ==========\n");
 

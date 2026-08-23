@@ -1,5 +1,7 @@
 import { geocodeHistoricalLocation } from "./geocodeHistoricalLocation.js";
 
+import { getReviewedHistoricalLocation, } from "./reviewedHistoricalLocations.js";
+
 function convertOldBaileyDate(dateText) {
   if (!dateText) {
     return null;
@@ -123,13 +125,32 @@ export function transformOldBaileyRecord(record, parsedXmlData) {
     trialDate,
   } = extractTitleParts(source.title);
 
-  const geocodeResult = geocodeHistoricalLocation({
-  crimeLocation:
-    parsedXmlData?.crimeLocation ?? null,
+ const reviewedLocation =
+  getReviewedHistoricalLocation(
+    source.idkey
+  );
 
-  locationPrecision:
-    parsedXmlData?.locationPrecision ?? null,
-});
+const crimeLocation =
+  parsedXmlData?.crimeLocation ??
+  reviewedLocation?.crimeLocation ??
+  null;
+
+const locationSource =
+  parsedXmlData?.crimeLocation
+    ? "structured_xml"
+    : reviewedLocation?.locationSource ??
+      null;
+
+const locationPrecision =
+  parsedXmlData?.locationPrecision ??
+  reviewedLocation?.locationPrecision ??
+  null;
+
+const geocodeResult =
+  geocodeHistoricalLocation({
+    crimeLocation,
+    locationPrecision,
+  });
 
   return {
   source_case_id: source.idkey || null,
@@ -176,16 +197,19 @@ export function transformOldBaileyRecord(record, parsedXmlData) {
     parsedXmlData?.punishment ?? null,
 
   crime_location:
-  parsedXmlData?.crimeLocation ?? null,
+  crimeLocation,
 
-location_text:
-  parsedXmlData?.locationText ?? null,
-  
-location_precision:
-  parsedXmlData?.locationPrecision ?? null,
-  
-latitude:
-    geocodeResult?.latitude ?? null,
+  location_source:
+    locationSource,
+
+  location_text:
+    parsedXmlData?.locationText ?? null,
+
+  location_precision:
+    locationPrecision,
+    
+  latitude:
+      geocodeResult?.latitude ?? null,
 
   longitude:
     geocodeResult?.longitude ?? null,

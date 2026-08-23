@@ -62,6 +62,7 @@ async function insertTrial(
       source_url,
       trial_location,
       crime_location,
+      location_source,
       location_precision,
       latitude,
       longitude,
@@ -80,9 +81,10 @@ async function insertTrial(
       import_id
     )
                 VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-    )
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+  ?, ?, ?, ?, ?
+)
     `,
     [
       record.source_case_id,
@@ -93,6 +95,7 @@ async function insertTrial(
       record.source_url,
       record.trial_location ?? null,
       record.crime_location ?? null,
+      record.location_source ?? null,
       record.location_precision ?? null,
       record.latitude ?? null,
       record.longitude ?? null,

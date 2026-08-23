@@ -52,6 +52,9 @@ export async function findTrialBySourceCaseId(
 export async function updateTrialGeocodeBySourceCaseId(
   sourceCaseId,
   {
+    crimeLocation,
+    locationSource,
+    locationPrecision,
     latitude,
     longitude,
     geocodeSource,
@@ -59,23 +62,29 @@ export async function updateTrialGeocodeBySourceCaseId(
   }
 ) {
   const [result] = await pool.execute(
-    `
-      UPDATE trials
-      SET
-        latitude = ?,
-        longitude = ?,
-        geocode_source = ?,
-        geocode_confidence = ?
-      WHERE source_case_id = ?
-    `,
-    [
-      latitude ?? null,
-      longitude ?? null,
-      geocodeSource ?? null,
-      geocodeConfidence ?? null,
-      sourceCaseId,
-    ]
-  );
+  `
+    UPDATE trials
+    SET
+      crime_location = ?,
+      location_source = ?,
+      location_precision = ?,
+      latitude = ?,
+      longitude = ?,
+      geocode_source = ?,
+      geocode_confidence = ?
+    WHERE source_case_id = ?
+  `,
+  [
+    crimeLocation ?? null,
+    locationSource ?? null,
+    locationPrecision ?? null,
+    latitude ?? null,
+    longitude ?? null,
+    geocodeSource ?? null,
+    geocodeConfidence ?? null,
+    sourceCaseId,
+  ]
+);
 
   return {
     affectedRows: result.affectedRows,
