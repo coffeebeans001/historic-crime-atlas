@@ -48,7 +48,7 @@ const MULTI_OFFENCE_QUERIES = [
 const MULTI_OFFENCE_SIZE = 5;
 
 const args = process.argv.slice(2);
-const DEBUG_INSPECTION = true; // Set to true to enable detailed inspection logs
+const DEBUG_INSPECTION = false; // Set to true to enable detailed inspection logs
 
 function getArgumentValue(argumentName, fallbackValue) {
   const argumentPrefix = `--${argumentName}=`;
@@ -334,28 +334,8 @@ const singleSource = singleRecord?._source ?? {};
   });
 }
 
-    console.log("\n========== XML INSPECTION ==========");
-
     const xml = singleSource.xml ?? "";
-
-    console.log(
-  "\n========== LOCATION EXTRACTION INSPECTION ==========\n"
-);
-
-console.log("Source ID:", singleSource.idkey);
-
-console.log("\n--- TRANSCRIPT ---\n");
-console.log(singleSource.text);
-
-console.log("\n--- XML LOCATION MATCHES ---\n");
-
-const locationExtractionMatches =
-  xml.match(
-    /<[^>]+>[^<]*(?:street|lane|road|alley|court|house|inn|parish|church|gate|fields|park|market|bridge)[^<]*<\/[^>]+>/gi
-  ) ?? [];
-
-console.log(locationExtractionMatches);
-
+ 
     const {
   defendantMatches, 
   verdictMatches,
@@ -385,9 +365,6 @@ console.log(locationExtractionMatches);
 
   console.log("XML type:", typeof xml);
   console.log("XML length:", xml.length);
-
-  // console.log("\nXML preview:");
-  // console.log(xml.slice(0, 2000));
 
   console.log(`Total matching records: ${totalResults}`);
   console.log(`Records fetched from API: ${allRecords.length}`);
@@ -745,7 +722,10 @@ const xmlInspectionSummary = transformedRecords.reduce(
       summary.punishmentPresent += 1;
     }
 
-    if (record.crime_location) {
+    if (
+      record.crime_location &&
+      record.location_source === "structured_xml"
+    ) {
       summary.crimeLocationPresent += 1;
     }
 
@@ -900,6 +880,16 @@ function createCoverageEntry(present, total) {
 
   punishment: createCoverageEntry(
     xmlInspectionSummary.punishmentPresent,
+    xmlInspectionSummary.recordsInspected
+  ),
+
+  crimeLocation: createCoverageEntry(
+    xmlInspectionSummary.crimeLocationPresent,
+    xmlInspectionSummary.recordsInspected
+  ),
+
+  locationText: createCoverageEntry(
+    xmlInspectionSummary.locationTextPresent,
     xmlInspectionSummary.recordsInspected
   ),
   
