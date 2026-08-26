@@ -25,15 +25,13 @@ import { fetchOldBaileyRecordById } from
 
 import { detectDuplicates } from "../src/import/duplicateChecker.js";
 
-import {
-  detectDatabaseDuplicates,
-  updateTrialGeocodeBySourceCaseId,
-} from "../src/import/databaseDuplicateChecker.js";
+import { detectDatabaseDuplicates, updateTrialGeocodeBySourceCaseId, } from "../src/import/databaseDuplicateChecker.js";
 
 import { resolveTrialRelations } from "../src/import/relationResolver.js";
 
 import { importResolvedTrials } from "../src/import/trialImporter.js";
 
+import { summariseLocationEnrichment, } from "../src/import/summariseLocationEnrichment.js";
 
 const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 5;
@@ -358,26 +356,6 @@ const locationExtractionMatches =
 
 console.log(locationExtractionMatches);
 
-/*const whiteIndex =
-  xml.toLowerCase().indexOf("white");
-
-if (whiteIndex !== -1) {
-  console.log(
-    "\n--- WHITE XML CONTEXT ---\n"
-  );
-
-  console.log(
-    xml.slice(
-      Math.max(0, whiteIndex - 500),
-      whiteIndex + 1000
-    )
-  );
-} else {
-  console.log(
-    "\nNo 'white' reference found in XML."
-  );
-}*/
-
     const {
   defendantMatches, 
   verdictMatches,
@@ -528,9 +506,7 @@ for (const record of trialRecords) {
   enrichedRecords.push(enrichedRecord);
 }
 
-if (DEBUG_INSPECTION) {
-  console.log("===================================");
-}
+if (DEBUG_INSPECTION) {console.log("===================================");}
 
 const transformedRecords = enrichedRecords.map((enrichedRecord) => {
   const recordForTransform =
@@ -542,6 +518,11 @@ const transformedRecords = enrichedRecords.map((enrichedRecord) => {
     enrichedRecord.parsedXmlData
   );
 });
+
+const locationEnrichmentSummary =
+  summariseLocationEnrichment(
+    transformedRecords
+  );
 
 const qualitySummary =
   summariseTransformation(transformedRecords);
@@ -660,17 +641,9 @@ if (DEBUG_INSPECTION) {
     console.log(`Verdict: ${record.verdict ?? "Missing"}`);
     console.log(`Trial date: ${record.trial_date ?? "Missing"}`);
     console.log("");
-    console.log(
-      `Offence category: ${record.offence_category ?? "Missing"}`
-    );
-    console.log(
-      `Offence subcategory: ${record.offence_subcategory ?? "Missing"}`
-    );
-    console.log(
-      `Transformed transcript length: ${
-        record.transcript_text?.length ?? 0
-      }`
-    );
+    console.log(`Offence category: ${record.offence_category ?? "Missing"}`);
+    console.log(`Offence subcategory: ${record.offence_subcategory ?? "Missing"}`);
+    console.log(`Transformed transcript length: ${record.transcript_text?.length ?? 0}`);
   });
 }
 
@@ -1259,9 +1232,7 @@ if (geocodeExistingTrials) {
   }
 }  
 
-console.log(
-  "\n========== GEOCODE UPDATE RESULTS ==========\n"
-);
+console.log("\n========== GEOCODE UPDATE RESULTS ==========\n");
 
 geocodeUpdateResults.forEach((result) => {
   console.log(
@@ -1272,6 +1243,44 @@ geocodeUpdateResults.forEach((result) => {
   );
   console.log("");
 });
+
+console.log("\n========== LOCATION ENRICHMENT SUMMARY ==========\n");
+
+console.log(
+  `Genuine trial records: ${locationEnrichmentSummary.totalRecords}`
+);
+
+console.log(
+  `Mapped trial records: ${locationEnrichmentSummary.mappedRecords}`
+);
+
+console.log(
+  `Unmapped trial records: ${locationEnrichmentSummary.unmappedRecords}`
+);
+
+console.log(
+  `Location coverage: ${locationEnrichmentSummary.coveragePercentage}%`
+);
+
+console.log(
+  `Structured XML locations: ${
+    locationEnrichmentSummary.structuredXmlRecords
+  }`
+);
+
+console.log(
+  `Narrative reviewed locations: ${
+    locationEnrichmentSummary.narrativeReviewedRecords
+  }`
+);
+
+console.log(
+  `Approximate geocodes: ${
+    locationEnrichmentSummary.approximateGeocodes
+  }`
+);
+
+console.log("\n=================================================\n");
 
 console.log("\n========== GEOCODE ENRICHMENT SUMMARY ==========\n");
 
@@ -1309,6 +1318,7 @@ const reportPath = await writeApiReviewReport({
   validationSummary,
   reviewedRecords,
   xmlInspection: xmlInspectionReport,
+  locationEnrichment: locationEnrichmentSummary,
 });
 
 console.log("\nAPI review report created:");
