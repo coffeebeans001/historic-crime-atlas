@@ -36,7 +36,7 @@ import { summariseLocationEnrichment, } from "../src/import/summariseLocationEnr
 const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 5;
 
-const MULTI_OFFENCE_MODE = true; // Set to true to enable multi-offence mode
+const MULTI_OFFENCE_MODE = false; // Set to true to enable multi-offence mode
 
 const MULTI_OFFENCE_QUERIES = [
   "robbery",
@@ -198,8 +198,8 @@ for (const record of nonTrialRecords) {
     record?._source?.title
   );
 }
-   //const firstRecordId = records[0]?._source?.idkey;
-   const firstRecordId = "t17870711-89";
+   const firstRecordId = records[0]?._source?.idkey;
+   //const firstRecordId = "t17870711-89";
 
 
       if (!firstRecordId) {
@@ -945,57 +945,43 @@ console.log(`Exactly 500 chars: ${transcriptsAt500}`);
 console.log(`Under 500 chars: ${transcriptsUnder500}`);
 console.log(`Missing transcripts: ${missingTranscripts}`);
 
-console.log("\n========== REVIEW REQUIRED RECORDS ==========\n");
+console.log("\n========== VALIDATION ISSUE REVIEW ==========\n");
 
-const recordsNeedingReview = transformedRecords
-  .map((record, index) => {
-    const source = trialRecords[index]?._source;
+validationResults.forEach((result, index) => {
+  const hasErrors = result.errors?.length > 0;
+  const hasWarnings = result.warnings?.length > 0;
 
-    const missing = [];
-
-    if (!record.defendant_name) {
-      missing.push("Defendant");
-    }
-
-    if (!record.verdict) {
-      missing.push("Verdict");
-    }
-
-    if (!record.trial_date) {
-      missing.push("Trial Date");
-    }
-
-    return {
-      index,
-      record,
-      source,
-      missing,
-    };
-  })
-  .filter((item) => item.missing.length > 0);
-
-if (recordsNeedingReview.length === 0) {
-  console.log("None");
-} else {
-  for (const item of recordsNeedingReview) {
-    const {
-      index,
-      record,
-      source,
-      missing,
-    } = item;
-
-    console.log("----------------------------------------");
-    console.log(`Record ${index + 1}`);
-    console.log("Status: REVIEW REQUIRED");
-    console.log(`Source ID: ${record.source_case_id}`);
-    console.log(`Title: ${source?.title ?? "Missing"}`);
-    console.log(
-      `Missing fields: ${missing.join(", ")}`
-    );
-    console.log("");
+  if (!hasErrors && !hasWarnings) {
+    return;
   }
-}
+
+  const record = transformedRecords[index];
+
+  console.log("----------------------------------------");
+  console.log(
+    `Source ID: ${record?.source_case_id ?? "Unknown"}`
+  );
+
+  if (hasErrors) {
+    console.log("Status: INVALID");
+
+    for (const error of result.errors) {
+      console.log(`Error: ${error}`);
+    }
+  } else {
+    console.log("Status: VALID WITH WARNINGS");
+  }
+
+  if (hasWarnings) {
+    for (const warning of result.warnings) {
+      console.log(`Warning: ${warning}`);
+    }
+  }
+
+  console.log("");
+});
+
+console.log("=============================================");
 
 
 console.log("========== VALIDATION SUMMARY ==========\n");
@@ -1005,9 +991,11 @@ console.log(`Invalid: ${validationSummary.invalid}`);
 console.log(`Total errors: ${validationSummary.totalErrors}`);
 console.log(`Total warnings: ${validationSummary.totalWarnings}`);
 
-console.log(
-  "\n========== RELATIONSHIP READINESS SUMMARY ==========\n"
+const targetRecord = trialRecords.find(
+  (record) => record?._source?.idkey === "t16781211e-14"
 );
+
+console.log("\n========== RELATIONSHIP READINESS SUMMARY ==========\n");
 
 console.log(
   `Records checked: ${relationshipResults.length}`
@@ -1035,9 +1023,7 @@ if (unresolvedRelationshipRecords.length > 0) {
   }
 }
 
-console.log(
-  "\n===================================================="
-);
+console.log("\n====================================================");
 
 console.log("\n========== IMPORT SUMMARY ==========\n");
 
@@ -1271,6 +1257,50 @@ console.log(
 );
 
 console.log("\n=================================================\n");
+
+console.log("\n========== CRIME LOCATION DISTRIBUTION ==========\n");
+
+const recordsWithCrimeLocation = transformedRecords.filter(
+  (record) => record.crime_location
+);
+
+const locationFrequency = new Map();
+
+for (const record of recordsWithCrimeLocation) {
+  const location = record.crime_location;
+
+  locationFrequency.set(
+    location,
+    (locationFrequency.get(location) ?? 0) + 1
+  );
+}
+
+const sortedLocations = [...locationFrequency.entries()]
+  .sort((a, b) => b[1] - a[1]);
+
+console.log(
+  `Trial records with crime location: ${recordsWithCrimeLocation.length}`
+);
+
+console.log(
+  `Unique crime locations: ${sortedLocations.length}`
+);
+
+console.log("\n---------- LOCATION FREQUENCY ----------\n");
+
+for (const [location, count] of sortedLocations) {
+  console.log(`${location} → ${count} trial${count === 1 ? "" : "s"}`);
+}
+
+console.log("\n---------- LOCATION RECORD REVIEW ----------\n");
+
+for (const record of recordsWithCrimeLocation) {
+  console.log(
+    `${record.source_case_id} → ${record.crime_location}`
+  );
+}
+
+console.log("\n==============================================");
 
 console.log("\n========== GEOCODE ENRICHMENT SUMMARY ==========\n");
 
