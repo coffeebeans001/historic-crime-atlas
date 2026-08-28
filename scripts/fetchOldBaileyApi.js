@@ -676,6 +676,7 @@ const missingFieldRecords = transformedRecords
   })
   .filter((record) => record.missingFields.length > 0);
 
+
   console.log("\n========== XML MISSING FIELD REVIEW ==========\n");
 
 for (const record of missingFieldRecords) {

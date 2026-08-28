@@ -46,7 +46,7 @@ export async function writeApiReviewReport({
 
   const report = {
     reportType: "Old Bailey API Import Review",
-    reportVersion: "1.4",
+    reportVersion: "1.5",
     generatedAt,
     query,
     xmlInspection,
