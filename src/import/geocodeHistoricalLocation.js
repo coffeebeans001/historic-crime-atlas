@@ -178,6 +178,105 @@ const HISTORICAL_LOCATION_COORDINATES = {
     geocodeSource: "Map of Early Modern London / Drury Lane",
     geocodeConfidence: "approximate",
   },
+
+  "st. giles's": {
+    latitude: 51.515532,
+    longitude: -0.128385,
+    geocodeSource: "Gazetteer of British Place Names - St Giles, Middlesex",
+    geocodeConfidence: "approximate",
+  },
+
+  "st. pauls shadwell": {
+    latitude: 51.509590,
+    longitude: -0.052265,
+    geocodeSource: "Gazetteer of British Place Names - Shadwell, Middlesex",
+    geocodeConfidence: "approximate",
+  },
+
+  "st. clement danes": {
+    latitude: 51.511028,
+    longitude: -0.119885,
+    geocodeSource: "Gazetteer of British Place Names - St Clement Danes / Strand",
+    geocodeConfidence: "approximate",
+  },
+
+  holborn: {
+    aliases: ["holbourn"],
+    latitude: 51.518247,
+    longitude: -0.111248,
+    geocodeSource: "Gazetteer of British Place Names - Holborn, Middlesex",
+    geocodeConfidence: "approximate",
+  },
+
+  strand: {
+    latitude: 51.511028,
+    longitude: -0.119885,
+    geocodeSource: "Gazetteer of British Place Names - The Strand, Middlesex",
+    geocodeConfidence: "approximate",
+  },
+
+    "st. sepulchres parish": {
+    latitude: 51.5167,
+    longitude: -0.1022,
+    geocodeSource: "Historic England - St Sepulchre without Newgate",
+    geocodeConfidence: "approximate",
+  },
+
+  "bartholomew-close": {
+    latitude: 51.51857,
+    longitude: -0.09814,
+    geocodeSource: "Bartholomew Close historical location reference",
+    geocodeConfidence: "approximate",
+  },
+
+  "temple-bar": {
+    latitude: 51.51438,
+    longitude: -0.11192,
+    geocodeSource: "Historic Temple Bar site - Fleet Street / Strand boundary",
+    geocodeConfidence: "approximate",
+  },
+
+  "st. martins in the fields": {
+    latitude: 51.508823,
+    longitude: -0.126697,
+    geocodeSource: "Gazetteer of British Place Names - St Martin-in-the-Fields",
+    geocodeConfidence: "approximate",
+  },
+
+  temple: {
+    latitude: 51.511944,
+    longitude: -0.111111,
+    geocodeSource: "Temple, London historical locality",
+    geocodeConfidence: "approximate",
+  },
+
+  "royal exchange": {
+    latitude: 51.513623,
+    longitude: -0.087226,
+    geocodeSource: "City of London / Royal Exchange",
+    geocodeConfidence: "approximate",
+  },
+
+  "st. michael cornhil": {
+    latitude: 51.5133,
+    longitude: -0.0857,
+    geocodeSource: "Historic England - Church of St Michael, Cornhill",
+    geocodeConfidence: "approximate",
+  },
+
+    "st. georges fields": {
+    latitude: 51.4975,
+    longitude: -0.1015,
+    geocodeSource: "Historical St George's Fields, Southwark",
+    geocodeConfidence: "approximate",
+  },
+
+    "wood-green in the parish of tatenham": {
+    latitude: 51.597365,
+    longitude: -0.116848,
+    geocodeSource: "London Borough of Haringey - Wood Green Common / historical Tottenham parish",
+    geocodeConfidence: "approximate",
+  },
 };
 
 export function geocodeHistoricalLocation({

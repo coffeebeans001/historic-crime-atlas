@@ -8,13 +8,19 @@ function classifyLocationPrecision(location) {
     .trim();
 
   if (
-    normalized.includes("street") ||
-    normalized.includes("st.")
+    normalized.includes("parish")
   ) {
-    return "street";
+    return "parish";
   }
 
   if (
+    normalized.includes("church")
+  ) {
+    return "church";
+  }
+
+  if (
+    normalized.includes("street") ||
     normalized.includes("road") ||
     normalized.includes("lane")
   ) {

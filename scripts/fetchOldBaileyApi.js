@@ -1259,6 +1259,7 @@ console.log(
 
 console.log("\n=================================================\n");
 
+
 console.log("\n========== CRIME LOCATION DISTRIBUTION ==========\n");
 
 const recordsWithCrimeLocation = transformedRecords.filter(
