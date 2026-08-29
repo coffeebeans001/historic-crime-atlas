@@ -199,7 +199,7 @@ for (const record of nonTrialRecords) {
   );
 }
    const firstRecordId = records[0]?._source?.idkey;
-   //const firstRecordId = "t16761213-12";
+   //const firstRecordId = "t16840227-28";
 
 
       if (!firstRecordId) {
@@ -697,6 +697,67 @@ for (const record of unmappedStructuredLocations) {
   );
 }
 
+// Narrative location recovery candidates
+
+const narrativeLocationCandidates =
+  transformedRecords.filter(
+    (record) =>
+      record.source_case_id &&
+      !record.crime_location
+  );
+
+const narrativeLocationReviewSummary = {
+  recordsWithoutStructuredLocation:
+    narrativeLocationCandidates.length,
+
+  recordsReviewed:
+    narrativeLocationCandidates.length,
+
+  pointLocationsRecovered: 0,
+
+  recordsRemainingPointUnmapped:
+    narrativeLocationCandidates.length,
+};
+
+console.log("\n========== NARRATIVE LOCATION REVIEW SUMMARY ==========\n");
+
+console.log(
+  `Records without structured location: ${
+    narrativeLocationReviewSummary.recordsWithoutStructuredLocation
+  }`
+);
+
+console.log(
+  `Records manually reviewed: ${
+    narrativeLocationReviewSummary.recordsReviewed
+  }`
+);
+
+console.log(
+  `Point locations recovered: ${
+    narrativeLocationReviewSummary.pointLocationsRecovered
+  }`
+);
+
+console.log(
+  `Records remaining point-unmapped: ${
+    narrativeLocationReviewSummary.recordsRemainingPointUnmapped
+  }`
+);
+
+console.log("\n=======================================================\n");  
+
+console.log("\n========== NARRATIVE LOCATION RECOVERY CANDIDATES ==========\n");
+
+console.log(
+  `Trials without structured crime location: ${narrativeLocationCandidates.length}`
+);
+
+for (const record of narrativeLocationCandidates) {
+  console.log(
+    `${record.source_case_id} → ${record.source_title ?? "Untitled"}`
+  );
+}
 console.log("\n=========================================================");
 
 
@@ -968,44 +1029,6 @@ console.log(`Over 500 chars: ${transcriptsOver500}`);
 console.log(`Exactly 500 chars: ${transcriptsAt500}`);
 console.log(`Under 500 chars: ${transcriptsUnder500}`);
 console.log(`Missing transcripts: ${missingTranscripts}`);
-
-console.log("\n========== VALIDATION ISSUE REVIEW ==========\n");
-
-validationResults.forEach((result, index) => {
-  const hasErrors = result.errors?.length > 0;
-  const hasWarnings = result.warnings?.length > 0;
-
-  if (!hasErrors && !hasWarnings) {
-    return;
-  }
-
-  const record = transformedRecords[index];
-
-  console.log("----------------------------------------");
-  console.log(
-    `Source ID: ${record?.source_case_id ?? "Unknown"}`
-  );
-
-  if (hasErrors) {
-    console.log("Status: INVALID");
-
-    for (const error of result.errors) {
-      console.log(`Error: ${error}`);
-    }
-  } else {
-    console.log("Status: VALID WITH WARNINGS");
-  }
-
-  if (hasWarnings) {
-    for (const warning of result.warnings) {
-      console.log(`Warning: ${warning}`);
-    }
-  }
-
-  console.log("");
-});
-
-console.log("=============================================");
 
 
 console.log("========== VALIDATION SUMMARY ==========\n");
@@ -1311,7 +1334,7 @@ console.log(
   `Unique crime locations: ${sortedLocations.length}`
 );
 
-console.log("\n---------- LOCATION FREQUENCY ----------\n");
+/*console.log("\n---------- LOCATION FREQUENCY ----------\n");
 
 for (const [location, count] of sortedLocations) {
   console.log(`${location} → ${count} trial${count === 1 ? "" : "s"}`);
@@ -1326,7 +1349,7 @@ for (const record of recordsWithCrimeLocation) {
   );
 }
 
-console.log("\n==============================================");
+console.log("\n==============================================");*/
 
 console.log("\n========== GEOCODE ENRICHMENT SUMMARY ==========\n");
 
@@ -1365,6 +1388,8 @@ const reportPath = await writeApiReviewReport({
   reviewedRecords,
   xmlInspection: xmlInspectionReport,
   locationEnrichment: locationEnrichmentSummary,
+  narrativeLocationReviewSummary,
+
 });
 
 console.log("\nAPI review report created:");
