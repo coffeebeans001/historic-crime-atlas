@@ -277,6 +277,185 @@ const HISTORICAL_LOCATION_COORDINATES = {
     geocodeSource: "London Borough of Haringey - Wood Green Common / historical Tottenham parish",
     geocodeConfidence: "approximate",
   },
+
+    rochester: {
+    latitude: 51.388559,
+    longitude: 0.505236,
+    geocodeSource: "Gazetteer of British Place Names - Rochester, Kent",
+    geocodeConfidence: "approximate",
+  },
+
+      bagshot: {
+    latitude: 51.358986,
+    longitude: -0.692555,
+    geocodeSource: "Gazetteer of British Place Names - Bagshot, Surrey",
+    geocodeConfidence: "approximate",
+  },
+
+      chelsea: {
+    aliases: ["chelsy"],
+    latitude: 51.487777,
+    longitude: -0.167877,
+    geocodeSource: "Gazetteer of British Place Names - Chelsea, Middlesex",
+    geocodeConfidence: "approximate",
+  },
+
+   marylebone: {
+    aliases: ["maribone"],
+    latitude: 51.522946,
+    longitude: -0.152573,
+    geocodeSource: "Gazetteer of British Place Names - Marylebone, Middlesex",
+    geocodeConfidence: "approximate",
+  },
+
+  "lombard street": {
+    aliases: ["lumbard street"],
+    latitude: 51.5127,
+    longitude: -0.0873,
+    geocodeSource: "Historical Lombard Street, City of London",
+    geocodeConfidence: "approximate",
+  },
+
+  "bunhill fields": {
+    aliases: ["bunhil fields"],
+    latitude: 51.5236,
+    longitude: -0.0878,
+    geocodeSource: "Historic England - Bunhill Fields Burial Ground",
+    geocodeConfidence: "approximate",
+  },
+
+    "hyde park corner": {
+    aliases: ["hide-park-corner"],
+    latitude: 51.503003,
+    longitude: -0.152258,
+    geocodeSource: "Gazetteer of British Place Names - Hyde Park Corner, Middlesex",
+    geocodeConfidence: "approximate",
+  },
+
+    "great queen street": {
+    aliases: ["great queen-street"],
+    latitude: 51.5153,
+    longitude: -0.1205,
+    geocodeSource: "Historic England / historical Great Queen Street",
+    geocodeConfidence: "approximate",
+  },
+
+    "duke's place": {
+    aliases: ["dukes-place"],
+    latitude: 51.51361,
+    longitude: -0.07778,
+    geocodeSource: "Historical St James Duke's Place / Aldgate",
+    geocodeConfidence: "approximate",
+  },
+
+    "bagshot heath": {
+    latitude: 51.348611,
+    longitude: -0.706667,
+    geocodeSource: "British Place Names - Bagshot Heath, Surrey",
+    geocodeConfidence: "approximate",
+  },
+
+    "clements inne": {
+    latitude: 51.513742,
+    longitude: -0.114669,
+    geocodeSource: "Map of Early Modern London / historical Clement's Inn",
+    geocodeConfidence: "approximate",
+  },
+
+    "the lord of holland's walk": {
+    latitude: 51.502419,
+    longitude: -0.200707,
+    geocodeSource: "Historical Lord Holland's Lane / Holland Walk, Kensington",
+    geocodeConfidence: "approximate",
+  },
+
+    "york buildings": {
+    aliases: ["york buildings, in the strand"],
+    latitude: 51.5086,
+    longitude: -0.12451,
+    geocodeSource: "Layers of London - York House redevelopment / York Buildings",
+    geocodeConfidence: "approximate",
+  },
+
+    "new inn": {
+    aliases: [
+      "new-inn, in the parish of st.clements-dean's",
+    ],
+    latitude: 51.5138,
+    longitude: -0.1155,
+    geocodeSource:
+      "London Lives / historical New Inn, St Clement Danes",
+    geocodeConfidence: "approximate",
+  },
+
+    "christ church parish, newgate street": {
+    aliases: [
+      "christ church in the ward of farrington within",
+    ],
+    latitude: 51.5159,
+    longitude: -0.1019,
+    geocodeSource:
+      "Historical Christ Church Newgate Street parish / Farringdon Within",
+    geocodeConfidence: "approximate",
+  },
+
+    "bull inn, bishopsgate street": {
+    aliases: [
+      "bull inn in bishopsgate-street",
+    ],
+    latitude: 51.5155,
+    longitude: -0.0816,
+    geocodeSource:
+      "Historical Bull Inn, Bishopsgate Street, City of London",
+    geocodeConfidence: "approximate",
+  },
+
+    "green dragon tavern, fleet street": {
+    aliases: [
+      "green-dragon-tavern",
+    ],
+    latitude: 51.5138,
+    longitude: -0.1089,
+    geocodeSource:
+      "Grub Street Project / historical Green Dragon Tavern, Fleet Street",
+    geocodeConfidence: "approximate",
+  },
+
+    "old brentford": {
+    aliases: ["old brantford"],
+    latitude: 51.487,
+    longitude: -0.295,
+    geocodeSource:
+      "A Vision of Britain / historical Old Brentford, Middlesex",
+    geocodeConfidence: "approximate",
+  },
+
+    ealing: {
+    aliases: ["etlin, near brandford"],
+    latitude: 51.513097,
+    longitude: -0.304897,
+    geocodeSource:
+      "Gazetteer of British Place Names / Ealing historical parish",
+    geocodeConfidence: "approximate",
+  },
+
+    "southall green": {
+    aliases: ["southtown"],
+    latitude: 51.503374,
+    longitude: -0.380386,
+    geocodeSource:
+      "Ealing historical records / Gazetteer of British Place Names - Old Southall",
+    geocodeConfidence: "approximate",
+  },
+
+    "old london bridge": {
+    aliases: ["the bridge"],
+    latitude: 51.50673,
+    longitude: -0.08721,
+    geocodeSource:
+      "Historical Old London Bridge / St Olave Southwark context",
+    geocodeConfidence: "approximate",
+  },
 };
 
 export function geocodeHistoricalLocation({

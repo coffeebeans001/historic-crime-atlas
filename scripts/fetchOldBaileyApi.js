@@ -199,7 +199,7 @@ for (const record of nonTrialRecords) {
   );
 }
    const firstRecordId = records[0]?._source?.idkey;
-   //const firstRecordId = "t17870711-89";
+   //const firstRecordId = "t16761213-12";
 
 
       if (!firstRecordId) {
@@ -675,6 +675,29 @@ const missingFieldRecords = transformedRecords
     };
   })
   .filter((record) => record.missingFields.length > 0);
+
+  console.log("\n========== UNMAPPED STRUCTURED LOCATION REVIEW ==========\n");
+
+const unmappedStructuredLocations = transformedRecords.filter(
+  (record) =>
+    record.crime_location &&
+    (record.latitude === null ||
+      record.longitude === null)
+);
+
+console.log(
+  `Unmapped structured-location records: ${unmappedStructuredLocations.length}`
+);
+
+console.log("");
+
+for (const record of unmappedStructuredLocations) {
+  console.log(
+    `${record.source_case_id} → ${record.crime_location}`
+  );
+}
+
+console.log("\n=========================================================");
 
 
   console.log("\n========== XML MISSING FIELD REVIEW ==========\n");
@@ -1293,6 +1316,7 @@ console.log("\n---------- LOCATION FREQUENCY ----------\n");
 for (const [location, count] of sortedLocations) {
   console.log(`${location} → ${count} trial${count === 1 ? "" : "s"}`);
 }
+
 
 console.log("\n---------- LOCATION RECORD REVIEW ----------\n");
 
