@@ -24,6 +24,8 @@ export async function writeApiReviewReport({
   xmlInspection,
   locationEnrichment,
   narrativeLocationReviewSummary,
+  provenanceCompleteness,
+  locationPrecisionSummary,
 
 }) {
   const generatedAt = new Date().toISOString();
@@ -52,7 +54,9 @@ export async function writeApiReviewReport({
     query,
     xmlInspection,
     locationEnrichment,
-      narrativeLocationReview: narrativeLocationReviewSummary,
+    narrativeLocationReview: narrativeLocationReviewSummary,
+    locationProvenance: provenanceCompleteness,
+    locationPrecision: locationPrecisionSummary,
 
     summary: {
       recordsReturned: records.length,

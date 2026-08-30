@@ -501,6 +501,96 @@ const locationEnrichmentSummary =
     transformedRecords
   );
 
+const mappedLocationRecords =
+  transformedRecords.filter(
+    (record) =>
+      record.latitude != null &&
+      record.longitude != null
+  );
+
+const countValues = (records, field) => {
+  const counts = {};
+
+  for (const record of records) {
+    const value =
+      record[field] ?? "missing";
+
+    counts[value] =
+      (counts[value] ?? 0) + 1;
+  }
+
+  return counts;
+};
+
+const geocodeSourceCounts =
+  countValues(
+    mappedLocationRecords,
+    "geocode_source"
+  );
+
+const geocodeConfidenceCounts =
+  countValues(
+    mappedLocationRecords,
+    "geocode_confidence"
+  );
+
+const locationPrecisionCounts =
+  countValues(
+    mappedLocationRecords,
+    "location_precision"
+  );  
+
+const locationPrecisionSummary = {
+  mappedRecords: mappedLocationRecords.length,
+  counts: locationPrecisionCounts,
+};  
+
+console.log("\n========== LOCATION PRECISION SUMMARY ==========\n");
+
+console.log(
+  `Mapped records: ${mappedLocationRecords.length}`
+);
+
+for (const [precision, count] of Object.entries(
+  locationPrecisionCounts
+)) {
+  const percentage =
+    mappedLocationRecords.length > 0
+      ? (
+          (count / mappedLocationRecords.length) *
+          100
+        ).toFixed(1)
+      : "0.0";
+
+  console.log(
+    `${precision}: ${count} / ${mappedLocationRecords.length} (${percentage}%)`
+  );
+}
+
+console.log("\n===============================================\n");  
+
+const provenanceCompleteness = {
+  mappedRecords: mappedLocationRecords.length,
+
+  withGeocodeSource:
+    mappedLocationRecords.filter(
+      (record) => record.geocode_source
+    ).length,
+
+  withGeocodeConfidence:
+    mappedLocationRecords.filter(
+      (record) => record.geocode_confidence
+    ).length,
+
+  withLocationPrecision:
+    mappedLocationRecords.filter(
+      (record) => record.location_precision
+    ).length,
+
+  distinctGeocodeSources:
+    Object.keys(geocodeSourceCounts).length,
+};  
+
 const qualitySummary =
   summariseTransformation(transformedRecords);
 
@@ -746,19 +836,6 @@ console.log(
 );
 
 console.log("\n=======================================================\n");  
-
-console.log("\n========== NARRATIVE LOCATION RECOVERY CANDIDATES ==========\n");
-
-console.log(
-  `Trials without structured crime location: ${narrativeLocationCandidates.length}`
-);
-
-for (const record of narrativeLocationCandidates) {
-  console.log(
-    `${record.source_case_id} → ${record.source_title ?? "Untitled"}`
-  );
-}
-console.log("\n=========================================================");
 
 
   console.log("\n========== XML MISSING FIELD REVIEW ==========\n");
@@ -1037,10 +1114,6 @@ console.log(`Valid with warnings: ${validationSummary.validWithWarnings}`);
 console.log(`Invalid: ${validationSummary.invalid}`);
 console.log(`Total errors: ${validationSummary.totalErrors}`);
 console.log(`Total warnings: ${validationSummary.totalWarnings}`);
-
-const targetRecord = trialRecords.find(
-  (record) => record?._source?.idkey === "t16781211e-14"
-);
 
 console.log("\n========== RELATIONSHIP READINESS SUMMARY ==========\n");
 
@@ -1389,6 +1462,9 @@ const reportPath = await writeApiReviewReport({
   xmlInspection: xmlInspectionReport,
   locationEnrichment: locationEnrichmentSummary,
   narrativeLocationReviewSummary,
+  provenanceCompleteness,
+  locationPrecisionSummary,
+
 
 });
 
