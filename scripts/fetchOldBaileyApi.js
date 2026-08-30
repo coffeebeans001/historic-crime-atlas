@@ -33,6 +33,10 @@ import { importResolvedTrials } from "../src/import/trialImporter.js";
 
 import { summariseLocationEnrichment, } from "../src/import/summariseLocationEnrichment.js";
 
+import { findTrialBySourceCaseId, } from "../src/import/databaseDuplicateChecker.js";
+
+import { backfillTrialTextFields, } from "../src/import/backfillTrialTextFields.js";
+
 const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 5;
 
@@ -68,6 +72,10 @@ function getArgumentValue(argumentName, fallbackValue) {
 
 const insertTrials =
   process.argv.includes("--insert-trials");
+
+const backfillTrialText =
+  process.argv.includes("--backfill-trial-text");  
+
 
 const geocodeExistingTrials =
   process.argv.includes("--geocode-existing");  
@@ -528,12 +536,6 @@ const geocodeSourceCounts =
     "geocode_source"
   );
 
-const geocodeConfidenceCounts =
-  countValues(
-    mappedLocationRecords,
-    "geocode_confidence"
-  );
-
 const locationPrecisionCounts =
   countValues(
     mappedLocationRecords,
@@ -598,6 +600,103 @@ const validationResults = transformedRecords.map(
   (record) => validateOldBaileyApiRecord(record)
 );
 
+const validationStatusCounts =
+  validationResults.reduce(
+    (counts, result) => {
+      const status = result.status ?? "UNKNOWN";
+
+      counts[status] =
+        (counts[status] ?? 0) + 1;
+
+      return counts;
+    },
+    {}
+  );
+
+const insertionReadyRecords =
+  validationResults
+    .map((result, index) => ({
+      validation: result,
+      record: transformedRecords[index],
+    }))
+    .filter(
+      ({ validation }) =>
+        validation.status === "VALID" ||
+        validation.status === "VALID_WITH_WARNINGS"
+    );
+
+const databaseDuplicateRecords = [];
+const databaseNewCandidates = [];
+
+for (const result of insertionReadyRecords) {
+  const sourceCaseId =
+    result.record?.source_case_id ??
+    result.source_case_id;
+
+  if (!sourceCaseId) {
+    continue;
+  }
+
+  const existingTrial =
+    await findTrialBySourceCaseId(
+      sourceCaseId
+    );
+
+  if (existingTrial) {
+    databaseDuplicateRecords.push({
+      sourceCaseId,
+      existingTrial,
+    });
+  } else {
+    databaseNewCandidates.push(result);
+  }
+} 
+
+console.log(
+  "\n========== DATABASE DUPLICATE READINESS ==========\n"
+);
+
+console.log(
+  `Validation-eligible records: ${insertionReadyRecords.length}`
+);
+
+console.log(
+  `Database duplicates: ${databaseDuplicateRecords.length}`
+);
+
+console.log(
+  `New database candidates: ${databaseNewCandidates.length}`
+);
+
+console.log("\n=================================================\n");
+
+console.log("\nValidation status breakdown:");
+
+console.log(validationStatusCounts);  
+
+console.log(
+  "\n========== INSERTION READINESS SUMMARY ==========\n"
+);
+
+console.log(
+  `Genuine trials checked: ${validationResults.length}`
+);
+
+console.log(
+  `Validation-eligible: ${insertionReadyRecords.length}`
+);
+
+console.log(
+  `Validation-excluded: ${
+    validationResults.length -
+    insertionReadyRecords.length
+  }`
+);
+
+console.log(
+  "\n=================================================\n"
+);
+
 const validationSummary =
   summariseValidation(validationResults);
 
@@ -657,13 +756,42 @@ const unresolvedRelationshipRecords =
   relationshipResults.filter(
     (result) =>
       result.missingReferences.length > 0
-  );  
+  );    
+
+  let backfillResults = {
+  checked: 0,
+  changedRows: 0,
+};
+
+if (backfillTrialText) {
+  backfillResults = await backfillTrialTextFields(
+    apiReadyRecords
+  );
+}
+
+console.log("\n========== TRIAL TEXT BACKFILL SUMMARY ==========\n");
+
+console.log(
+  `Backfill enabled: ${backfillTrialText ? "Yes" : "No"}`
+);
+
+console.log(
+  `Records checked: ${backfillResults.checked}`
+);
+
+console.log(
+  `Rows changed: ${backfillResults.changedRows}`
+);
+
+console.log(
+  "\n===============================================\n"
+);
 
 let trialImportResults = [];
 
 if (insertTrials) {
   trialImportResults = await importResolvedTrials(
-    relationshipResults,
+  resolvedRelationshipRecords,
     {
       allowMissingDefendant: true,
       allowMissingJudge: true,
@@ -765,6 +893,9 @@ const missingFieldRecords = transformedRecords
     };
   })
   .filter((record) => record.missingFields.length > 0);
+
+
+console.log("\n===================================================\n");  
 
   console.log("\n========== UNMAPPED STRUCTURED LOCATION REVIEW ==========\n");
 
@@ -1441,16 +1572,6 @@ console.log(
     controlledGeocodeCandidates.length
   }`
 );
-
-console.log(
-  `Rows changed: ${
-    geocodeUpdateResults.filter(
-      (result) => result.changedRows > 0
-    ).length
-  }`
-);
-
-console.log("\n================================================\n");
 
 const reportPath = await writeApiReviewReport({
   query: query,

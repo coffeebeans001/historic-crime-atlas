@@ -68,6 +68,8 @@ async function insertTrial(
       longitude,
       geocode_source,
       geocode_confidence,
+      location_text,
+      transcript_text,
       judge_name,
       case_summary,
       trial_type,
@@ -83,7 +85,7 @@ async function insertTrial(
                 VALUES (
   ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
   ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-  ?, ?, ?, ?, ?
+  ?, ?, ?, ?, ?, ?, ?
 )
     `,
     [
@@ -101,6 +103,8 @@ async function insertTrial(
       record.longitude ?? null,
       record.geocode_source ?? null,
       record.geocode_confidence ?? null,
+      record.location_text ?? null,
+      record.transcript_text ?? null,
       record.judge_name ?? null,
       record.case_summary ?? null,
       record.trial_type ?? null,
