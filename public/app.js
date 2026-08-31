@@ -6206,51 +6206,209 @@ function waitForVisibleMapTiles(tileLayer, timeout = 3000) {
 
 function ensureMap() {
   if (!map) {
-    map = L.map("map").setView([currentCenter.lat, currentCenter.lng], 13);
+    map = L.map("map").setView(
+      [currentCenter.lat, currentCenter.lng],
+      13
+    );
+
+    map.getContainer().addEventListener(
+      "click",
+      (event) => {
+        const offenceToggle = event.target.closest(
+          ".popup-offence-toggle"
+        );
+
+        const transcriptButton = event.target.closest(
+          ".popup-transcript-button"
+        );
+
+        if (!offenceToggle && !transcriptButton) {
+          return;
+        }
+
+        
+
+        // Show full offence / show less
+        if (offenceToggle) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          const popup = offenceToggle.closest(
+            ".leaflet-popup"
+          );
+
+          const offenceText = popup?.querySelector(
+            ".popup-offence-text"
+          );
+
+          if (!offenceText) return;
+
+          const fullOffence =
+            offenceToggle.dataset.fullOffence ?? "";
+
+          const preview =
+            offenceToggle.dataset.preview ?? "";
+
+          const expanded =
+            offenceToggle.dataset.expanded === "true";
+
+          offenceText.textContent =
+            expanded ? preview : fullOffence;
+
+          offenceToggle.textContent =
+            expanded
+              ? "Show full offence"
+              : "Show less";
+
+          offenceToggle.dataset.expanded =
+            expanded ? "false" : "true";
+
+          return;
+        }
+
+        // Full transcript
+        if (transcriptButton) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          const popup = transcriptButton.closest(
+            ".leaflet-popup"
+          );
+
+          const openMarker = Object.values(
+            map._layers
+          ).find(
+            (layer) =>
+              layer?.getPopup &&
+              layer.getPopup()?.getElement() === popup
+          );
+
+          const trial = openMarker?.caseData;
+
+         if (!trial?.transcript_text) {
+  return;
+}
+
+const transcriptModal = document.getElementById(
+  "transcript-modal"
+);
+
+const transcriptDate = document.getElementById(
+  "transcript-modal-date"
+);
+
+const transcriptDefendant = document.getElementById(
+  "transcript-modal-defendant"
+);
+
+const transcriptVerdict = document.getElementById(
+  "transcript-modal-verdict"
+);
+
+const transcriptOffence = document.getElementById(
+  "transcript-modal-offence"
+);
+
+const transcriptLocation = document.getElementById(
+  "transcript-modal-location"
+);
+
+const transcriptLocationRow = document.getElementById(
+  "transcript-modal-location-row"
+);
+
+const transcriptText = document.getElementById(
+  "transcript-modal-text"
+);
+
+if (!transcriptModal || !transcriptText) {
+  return;
+}
+
+transcriptDate.textContent =
+  trial.trial_date
+    ? String(trial.trial_date).slice(0, 10)
+    : "Unknown";
+
+transcriptDefendant.textContent =
+  trial.defendant_name || "Unknown";
+
+transcriptVerdict.textContent =
+  trial.verdict || "Unknown";
+
+transcriptOffence.textContent =
+  trial.offence || "Unknown";
+
+if (trial.crime_location) {
+  transcriptLocation.textContent =
+    trial.crime_location;
+
+  transcriptLocationRow.hidden = false;
+} else {
+  transcriptLocation.textContent = "";
+  transcriptLocationRow.hidden = true;
+}
+
+transcriptText.textContent =
+  trial.transcript_text;
+
+transcriptModal.classList.add("is-open");
+transcriptModal.setAttribute(
+  "aria-hidden",
+  "false"
+);
+
+const closeButton = transcriptModal.querySelector(
+  ".transcript-modal__close"
+);
+
+closeButton?.focus();
+        }
+      },
+      true
+    );
+  document.addEventListener("click", (event) => {
+  const closeTrigger = event.target.closest(
+    "[data-transcript-close]"
+  );
+
+  if (!closeTrigger) return;
+
+  const transcriptModal = document.getElementById(
+    "transcript-modal"
+  );
+
+  if (!transcriptModal) return;
+
+  transcriptModal.classList.remove("is-open");
+
+  transcriptModal.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+
+  const transcriptModal = document.getElementById(
+    "transcript-modal"
+  );
+
+  if (
+    !transcriptModal ||
+    !transcriptModal.classList.contains("is-open")
+  ) {
+    return;
   }
 
-  map.getContainer().addEventListener("click", (event) => {
-  const toggle = event.target.closest(
-    ".popup-offence-toggle"
+  transcriptModal.classList.remove("is-open");
+  transcriptModal.setAttribute(
+    "aria-hidden",
+    "true"
   );
-
-  if (!toggle) return;
-
-  event.preventDefault();
-  event.stopPropagation();
-
-  const popup = toggle.closest(
-    ".leaflet-popup"
-  );
-
-  const offenceText = popup?.querySelector(
-    ".popup-offence-text"
-  );
-
-  if (!offenceText) return;
-
-  const fullOffence =
-    toggle.dataset.fullOffence ?? "";
-
-  const preview =
-    toggle.dataset.preview ?? "";
-
-  const expanded =
-    toggle.dataset.expanded === "true";
-
-  offenceText.textContent =
-    expanded ? preview : fullOffence;
-
-  toggle.textContent =
-    expanded
-      ? "Show full offence"
-      : "Show less";
-
-  toggle.dataset.expanded =
-    expanded ? "false" : "true";
-  },
-  true
-);
+});
+  }
 
   if (!baseTiles) {
   baseTiles = L.tileLayer(
@@ -6677,6 +6835,19 @@ const safeOffencePreview =
     }
 
     <div><b>Distance:</b> ${dist}</div>
+    ${
+  r.transcript_text
+    ? `
+      <button
+        type="button"
+        class="popup-transcript-button"
+        data-case-id="${r.id}"
+      >
+        View full transcript
+      </button>
+    `
+    : ""
+}
   </div>
 `;
 

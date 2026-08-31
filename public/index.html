@@ -281,6 +281,79 @@
   cursor: pointer;
 }
 
+/* Full trial transcript modal */
+.transcript-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.transcript-modal.is-open {
+  display: flex;
+}
+
+.transcript-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.transcript-modal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(760px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+}
+
+.transcript-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  border: 0;
+  background: transparent;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#transcript-modal-title {
+  margin-top: 0;
+  margin-right: 40px;
+}
+
+.transcript-modal__meta {
+  margin-bottom: 22px;
+  line-height: 1.6;
+}
+
+.transcript-modal__body {
+  border-top: 1px solid #ddd;
+  padding-top: 20px;
+}
+
+#transcript-modal-text {
+  margin: 0;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.transcript-modal__panel {
+  scrollbar-gutter: stable;
+}
+
+.transcript-modal__body {
+  font-size: 1.02rem;
+}
+
     </style>
 
     <script
@@ -598,5 +671,67 @@
     ></div>
     <p id="map-quality-note" class="muted"></p>
     <div id="nearby-results" style="margin-top: 12px"></div>
+
+    <div
+  id="transcript-modal"
+  class="transcript-modal"
+  aria-hidden="true"
+>
+  <div
+    class="transcript-modal__backdrop"
+    data-transcript-close
+  ></div>
+
+  <section
+    class="transcript-modal__panel"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="transcript-modal-title"
+  >
+    <button
+      type="button"
+      class="transcript-modal__close"
+      data-transcript-close
+      aria-label="Close transcript"
+    >
+      ×
+    </button>
+
+    <h2 id="transcript-modal-title">
+      Full Trial Transcript
+    </h2>
+
+    <div class="transcript-modal__meta">
+      <div>
+        <strong>Date:</strong>
+        <span id="transcript-modal-date"></span>
+      </div>
+
+      <div>
+        <strong>Defendant:</strong>
+        <span id="transcript-modal-defendant"></span>
+      </div>
+
+      <div>
+        <strong>Verdict:</strong>
+        <span id="transcript-modal-verdict"></span>
+      </div>
+
+      <div>
+        <strong>Offence:</strong>
+        <span id="transcript-modal-offence"></span>
+      </div>
+
+      <div id="transcript-modal-location-row">
+        <strong>Historical location:</strong>
+        <span id="transcript-modal-location"></span>
+      </div>
+    </div>
+
+    <div class="transcript-modal__body">
+      <p id="transcript-modal-text"></p>
+    </div>
+  </section>
+</div>
   </body>
 </html>

@@ -148,6 +148,7 @@ app.get("/api/trials/nearby", async (req, res) => {
     t.crime_location,
     t.location_precision,
     t.geocode_confidence,
+    t.transcript_text,
     t.offence AS offence,
     o.offence_name,
     o.offence_group,
