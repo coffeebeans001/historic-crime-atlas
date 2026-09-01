@@ -472,6 +472,65 @@
   overflow: hidden;
 }
 
+/* Map location search */
+.map-search {
+  margin-top: 18px;
+  padding: 16px;
+  max-width: 600px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+.map-search label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.map-search__controls {
+  display: flex;
+  gap: 10px;
+}
+
+#map-location-search {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font: inherit;
+}
+
+#map-location-search-button {
+  padding: 10px 16px;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+
+#map-location-search-button:hover {
+  background: #f5f5f5;
+}
+
+.map-search__status {
+  min-height: 1.4em;
+  margin: 8px 0 0;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .map-search__controls {
+    flex-direction: column;
+  }
+
+  #map-location-search-button {
+    width: 100%;
+  }
+}
+
     </style>
 
     <script
@@ -777,6 +836,34 @@
         Find nearby
       </button>
     </div>
+
+    <div class="map-search">
+  <label for="map-location-search">
+    Search map location
+  </label>
+
+  <div class="map-search__controls">
+    <input
+      type="text"
+      id="map-location-search"
+      placeholder="e.g. Edmonton, Islington, West Ham"
+      autocomplete="off"
+    />
+
+    <button
+      type="button"
+      id="map-location-search-button"
+    >
+      Search
+    </button>
+  </div>
+
+  <p
+    id="map-location-search-status"
+    class="map-search__status"
+    aria-live="polite"
+  ></p>
+</div>
 
     <div
       id="map"

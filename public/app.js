@@ -6087,6 +6087,86 @@ function openTranscriptModal(trial) {
   closeButton?.focus();
 }
 
+async function searchMapLocation() {
+  const input = document.getElementById(
+    "map-location-search"
+  );
+
+  const status = document.getElementById(
+    "map-location-search-status"
+  );
+
+  if (!input || !status) {
+    return;
+  }
+
+  const place = input.value.trim();
+
+  if (!place) {
+    status.textContent =
+      "Enter a place name to search.";
+    return;
+  }
+
+  status.textContent = "Searching...";
+
+  try {
+    const res = await fetch(
+      `/api/geocode?place=${encodeURIComponent(place)}`
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+
+      throw new Error(
+        `Geocode request failed (${res.status}): ${text}`
+      );
+    }
+
+    const payload = await res.json();
+    const result = payload.data?.[0];
+
+    if (!result) {
+      status.textContent =
+        `No location found for "${place}".`;
+      return;
+    }
+
+    currentCenter = {
+      lat: result.latitude,
+      lng: result.longitude,
+    };
+
+    centerMarker?.setLatLng([
+      currentCenter.lat,
+      currentCenter.lng,
+    ]);
+
+    map?.setView(
+      [
+        currentCenter.lat,
+        currentCenter.lng,
+      ],
+      13
+    );
+
+    updateRadiusCircle();
+
+    await fetchNearby();
+    await render();
+
+    status.textContent =
+      `Showing results near ${result.display_name}`;
+  } catch (error) {
+    console.error(
+      "Failed to search map location:",
+      error
+    );
+
+    status.textContent =
+      "Unable to search for that location.";
+  }
+}
 
 async function render() {
   ensureChart();
@@ -7735,6 +7815,19 @@ downloadSnapshotBtn.textContent =
       }
     });
   }
+
+  document
+  .getElementById("map-location-search")
+  ?.addEventListener(
+    "keydown",
+    (event) => {
+      if (event.key !== "Enter") return;
+
+      event.preventDefault();
+
+      searchMapLocation().catch(console.error);
+    }
+  );
 
   const state = readUrlState();
   const { playbackEnabled } = applyStateToUI(state);

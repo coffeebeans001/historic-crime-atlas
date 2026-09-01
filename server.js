@@ -69,6 +69,67 @@ app.get("/api/trials/unmapped", async (req, res) => {
 
 
 /* -----------------------
+   GET /api/geocode
+------------------------ */
+app.get("/api/geocode", async (req, res) => {
+  const place = String(req.query.place || "").trim();
+
+  if (!place) {
+    return res.status(400).json({
+      error: "Place name is required",
+    });
+  }
+
+  try {
+    const params = new URLSearchParams({
+      q: place,
+      format: "json",
+      limit: "5",
+      countrycodes: "gb",
+    });
+
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+      {
+        headers: {
+          "User-Agent":
+            "HistoricCrimeAtlas/1.0",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Geocoder request failed (${response.status})`
+      );
+    }
+
+    const results = await response.json();
+
+    res.json({
+      query: place,
+      count: results.length,
+      data: results.map((item) => ({
+        display_name: item.display_name,
+        latitude: Number(item.lat),
+        longitude: Number(item.lon),
+        type: item.type,
+      })),
+    });
+  } catch (error) {
+    console.error(
+      "Failed to geocode place:",
+      error
+    );
+
+    res.status(500).json({
+      error: "Failed to geocode place",
+    });
+  }
+});
+
+
+/* -----------------------
    GET /api/trials
    Query-based filtering
 ------------------------ */
