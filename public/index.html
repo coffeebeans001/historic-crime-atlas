@@ -354,6 +354,124 @@
   font-size: 1.02rem;
 }
 
+/* Trials without map markers */
+.unmapped-trials-section {
+  margin-top: 28px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+}
+
+.unmapped-trials-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.unmapped-trials-section__header h2 {
+  margin: 0 0 6px;
+}
+
+.unmapped-trials-section__header p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.unmapped-trials-count {
+  flex-shrink: 0;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.unmapped-trials-list {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.unmapped-trial-card {
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.unmapped-trial-card__offence {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.unmapped-trial-card__details {
+  flex-grow: 1;
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+
+.unmapped-trial-card__details div {
+  margin-bottom: 3px;
+}
+
+.unmapped-trial-card__transcript {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.unmapped-trial-transcript-button {
+  cursor: pointer;
+}
+
+.unmapped-trials-loading,
+.unmapped-trials-empty,
+.unmapped-trials-error {
+  margin: 0;
+  padding: 16px 0;
+}
+
+@media (max-width: 640px) {
+  .unmapped-trials-section {
+    padding: 18px;
+  }
+
+  .unmapped-trials-section__header {
+    flex-direction: column;
+  }
+
+  .unmapped-trials-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.unmapped-trials-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.unmapped-trials-more {
+  padding: 9px 16px;
+  cursor: pointer;
+}
+
+.unmapped-trial-card__offence {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
     </style>
 
     <script
@@ -671,6 +789,58 @@
     ></div>
     <p id="map-quality-note" class="muted"></p>
     <div id="nearby-results" style="margin-top: 12px"></div>
+
+    <section
+  id="unmapped-trials-section"
+  class="unmapped-trials-section"
+>
+  <div class="unmapped-trials-section__header">
+    <div>
+      <h2>Trials without map markers</h2>
+      <p>
+        These trials are part of the dataset but do not currently
+        have usable map coordinates.
+      </p>
+    </div>
+
+    <div
+      id="unmapped-trials-count"
+      class="unmapped-trials-count"
+    >
+      0 trials
+    </div>
+  </div>
+
+  <div
+    id="unmapped-trials-list"
+    class="unmapped-trials-list"
+  >
+    <p class="unmapped-trials-loading">
+      Loading unmapped trials...
+    </p>
+  </div>
+
+  <div class="unmapped-trials-actions">
+  <button
+    type="button"
+    id="unmapped-trials-less"
+    class="unmapped-trials-less"
+    hidden
+  >
+    Show fewer
+  </button>
+
+  <button
+    type="button"
+    id="unmapped-trials-more"
+    class="unmapped-trials-more"
+    hidden
+  >
+    Show 8 more
+  </button>
+</div>
+
+</section>
 
     <div
   id="transcript-modal"

@@ -23,6 +23,51 @@ function wilsonInterval(guilty, n, z = 1.96) {
 ------------------------ */
 app.get("/health", (req, res) => res.json({ ok: true }));
 
+
+/* -----------------------
+
+   GET /api/trials/unmapped
+
+------------------------ */
+
+app.get("/api/trials/unmapped", async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT
+        id,
+        source_case_id,
+        trial_date,
+        defendant_name,
+        offence,
+        verdict,
+        crime_location,
+        location_text,
+        transcript_text,
+        latitude,
+        longitude
+      FROM trials
+      WHERE latitude IS NULL
+         OR longitude IS NULL
+      ORDER BY trial_date DESC
+    `);
+
+    res.json({
+      count: rows.length,
+      data: rows,
+    });
+  } catch (error) {
+    console.error(
+      "Failed to fetch unmapped trials:",
+      error
+    );
+
+    res.status(500).json({
+      error: "Failed to fetch unmapped trials",
+    });
+  }
+});
+
+
 /* -----------------------
    GET /api/trials
    Query-based filtering
