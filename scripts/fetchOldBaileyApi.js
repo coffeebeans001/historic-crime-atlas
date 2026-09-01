@@ -37,6 +37,8 @@ import { findTrialBySourceCaseId, } from "../src/import/databaseDuplicateChecker
 
 import { backfillTrialTextFields, } from "../src/import/backfillTrialTextFields.js";
 
+import { backfillTrialOffenceFields, } from "../src/import/backfillTrialOffenceFields.js";
+
 const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 5;
 
@@ -74,7 +76,12 @@ const insertTrials =
   process.argv.includes("--insert-trials");
 
 const backfillTrialText =
-  process.argv.includes("--backfill-trial-text");  
+  process.argv.includes("--backfill-trial-text"); 
+  
+const backfillTrialOffences =
+  process.argv.includes(
+    "--backfill-trial-offences"
+  );  
 
 
 const geocodeExistingTrials =
@@ -769,6 +776,8 @@ if (backfillTrialText) {
   );
 }
 
+
+
 console.log("\n========== TRIAL TEXT BACKFILL SUMMARY ==========\n");
 
 console.log(
@@ -786,6 +795,41 @@ console.log(
 console.log(
   "\n===============================================\n"
 );
+
+let offenceBackfillResults = {
+  checked: 0,
+  changedRows: 0,
+};
+
+if (backfillTrialOffences) {
+  offenceBackfillResults =
+    await backfillTrialOffenceFields(
+      apiReadyRecords
+    );
+}
+
+console.log(
+  "\n========== TRIAL OFFENCE BACKFILL SUMMARY ==========\n"
+);
+
+console.log(
+  `Backfill enabled: ${
+    backfillTrialOffences ? "Yes" : "No"
+  }`
+);
+
+console.log(
+  `Records checked: ${
+    offenceBackfillResults.checked
+  }`
+);
+
+console.log(
+  `Rows changed: ${
+    offenceBackfillResults.changedRows
+  }`
+);
+
 
 let trialImportResults = [];
 

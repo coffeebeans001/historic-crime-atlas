@@ -282,7 +282,7 @@ app.get("/api/trials/nearby", async (req, res) => {
     AND t.trial_date BETWEEN ? AND ?
     ${gender !== "all" ? "AND LOWER(d.gender) = LOWER(?)" : ""}
     ${year ? "AND YEAR(t.trial_date) = ?" : ""}
-    ${group ? "AND o.offence_group = ?" : ""}
+    ${group ? "AND t.offence_subcategory = ?" : ""}
   HAVING distance_m <= ?
   ORDER BY distance_m ASC
   LIMIT ?;
@@ -345,13 +345,10 @@ app.get("/api/trials/series", async (req, res) => {
       genderValues = [gender];
     }
 
-    if (group) {
-      joins += `
-        LEFT JOIN offences o ON o.offence_id = t.offence_id
-      `;
-      where.push("o.offence_group = ?");
-      params.push(group);
-    }
+   if (group) {
+  where.push("t.offence_subcategory = ?");
+  params.push(group);
+}
 
     const results = [];
 
@@ -751,9 +748,9 @@ app.get("/api/stats/gender", async (req, res) => {
     }
 
     if (group) {
-      where.push("o.offence_group = ?");
-      params.push(group);
-    }
+  where.push("t.offence_subcategory = ?");
+  params.push(group);
+}
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
 
@@ -801,9 +798,9 @@ app.get("/api/stats/party-type", async (req, res) => {
     }
 
     if (group) {
-      where.push("o.offence_group = ?");
-      params.push(group);
-    }
+  where.push("t.offence_subcategory = ?");
+  params.push(group);
+}
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
 
@@ -902,9 +899,9 @@ app.get("/api/stats/gender-party", async (req, res) => {
       params.push(from, to);
     }
     if (group) {
-      where.push("o.offence_group = ?");
-      params.push(group);
-    }
+  where.push("t.offence_subcategory = ?");
+  params.push(group);
+}
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
 
@@ -1055,7 +1052,7 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
     }
 
     if (group) {
-      where.push("o.offence_group = ?");
+      where.push("t.offence_subcategory = ?");
       params.push(group);
     }
 
@@ -1160,9 +1157,9 @@ app.get("/api/stats/party-type/over-time", async (req, res) => {
     const params = [cleanFrom, cleanTo];
 
     if (group) {
-      where.push("o.offence_group = ?");
-      params.push(group);
-    }
+  where.push("t.offence_subcategory = ?");
+  params.push(group);
+}
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
 
@@ -1228,21 +1225,28 @@ app.get("/api/stats/party-type/over-time", async (req, res) => {
   }
 });
 
+/* -----------------------
+   api/offence-groups
+------------------------ */
 app.get("/api/offence-groups", async (_req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT DISTINCT o.offence_group
-      FROM offences o
-      JOIN trials t ON t.offence_id = o.offence_id
-      WHERE o.offence_group IS NOT NULL
-        AND o.offence_group <> ''
-      ORDER BY o.offence_group ASC
+      SELECT DISTINCT offence_subcategory
+      FROM trials
+      WHERE offence_subcategory IS NOT NULL
+        AND offence_subcategory <> ''
+      ORDER BY offence_subcategory ASC
     `);
 
-    res.json(rows.map((r) => r.offence_group));
+    res.json(
+      rows.map((r) => r.offence_subcategory)
+    );
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to load offence groups" });
+
+    res.status(500).json({
+      error: "Failed to load offence groups",
+    });
   }
 });
 

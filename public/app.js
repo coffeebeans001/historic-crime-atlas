@@ -85,11 +85,17 @@ function getValidatedGroup() {
 
   if (raw === "") return null;
 
-  const validGroups = groupList
-    ? Array.from(groupList.options).map((o) => o.value)
+  const options = groupList
+    ? Array.from(groupList.options)
     : [];
 
-  return validGroups.includes(raw) ? raw : "__INVALID__";
+  const match = options.find(
+    (option) => option.value === raw
+  );
+
+  return match
+    ? match.dataset.value || match.value
+    : "__INVALID__";
 }
 
 function getBestMatchingGroup(query) {
@@ -113,15 +119,30 @@ function getBestMatchingGroup(query) {
   return includes || "";
 }
 
+function formatOffenceLabel(value) {
+  return String(value)
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
 function populateGroupOptions(groups) {
-  const list = document.getElementById("groupOptions");
+  const list = document.getElementById(
+    "groupOptions"
+  );
+
   if (!list) return;
 
   list.innerHTML = "";
 
-  groups.forEach((g) => {
-    const opt = document.createElement("option");
-    opt.value = g;
+  groups.forEach((group) => {
+    const opt = document.createElement(
+      "option"
+    );
+
+    opt.value = formatOffenceLabel(group);
+
+    opt.dataset.value = group;
+
     list.appendChild(opt);
   });
 }
@@ -6811,9 +6832,16 @@ function buildNearbyUrl() {
   const from = document.getElementById("from").value;
   const to = document.getElementById("to").value;
 
-  const radius = Number(document.getElementById("radius").value || 2000);
-  const limit = Number(document.getElementById("nearby-limit").value || 5);
-  const gender = document.getElementById("gender")?.value || "all";
+  const radius = Number(
+    document.getElementById("radius").value || 2000
+  );
+
+  const limit = Number(
+    document.getElementById("nearby-limit").value || 5
+  );
+
+  const gender =
+    document.getElementById("gender")?.value || "all";
 
   const params = new URLSearchParams({
     lat: String(currentCenter.lat),
@@ -6825,8 +6853,17 @@ function buildNearbyUrl() {
     gender,
   });
 
+  const group = getValidatedGroup();
+
+  if (group && group !== "__INVALID__") {
+    params.set("group", group);
+  }
+
   if (lockedChartYear != null) {
-    params.set("year", String(lockedChartYear));
+    params.set(
+      "year",
+      String(lockedChartYear)
+    );
   }
 
   return `/api/trials/nearby?${params.toString()}`;
@@ -7688,6 +7725,24 @@ refreshResearchIdBtn?.addEventListener("click", () => {
           }, 900);
         }
       });
+
+      document
+  .getElementById("clear-offence")
+  ?.addEventListener("click", async () => {
+    const groupInput =
+      document.getElementById("group");
+
+    if (!groupInput) return;
+
+    groupInput.value = "";
+
+    writeUrlState();
+
+    await render().catch(console.error);
+    await fetchNearby().catch(console.error);
+
+    groupInput.focus();
+  });
 
       document
         .getElementById("clear-research-note-btn")

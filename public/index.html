@@ -531,6 +531,36 @@
   }
 }
 
+#clear-offence {
+  margin-left: 8px;
+  padding: 8px 12px;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+
+#clear-offence:hover {
+  background: #f5f5f5;
+}
+
+#clear-offence:focus-visible {
+  outline: 2px solid rgba(0, 0, 0, 0.2);
+  outline-offset: 2px;
+}
+
+.offence-search-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.offence-search-controls #group {
+  flex: 1;
+  min-width: 0;
+}
+
     </style>
 
     <script
@@ -570,14 +600,22 @@
         </select>
       </label>
 
-      <label for="group">Search offence</label>
-      <input
-        id="group"
-        type="text"
-        list="groupOptions"
-        placeholder="Type to search offences..."
-        autocomplete="off"
-      />
+      <div class="offence-search-controls">
+  <input
+    id="group"
+    type="text"
+    list="groupOptions"
+    placeholder="Type to search offences..."
+    autocomplete="off"
+  />
+
+  <button
+    type="button"
+    id="clear-offence"
+  >
+    Clear offence
+  </button>
+</div>
 
       <div
         id="group-feedback"
