@@ -256,14 +256,10 @@ app.get("/api/trials/nearby", async (req, res) => {
     t.geocode_confidence,
     t.transcript_text,
     t.offence AS offence,
-    o.offence_name,
-    o.offence_group,
-    COALESCE(
-      d.defendant_name,
-      t.defendant_name
-    ) AS defendant_name,
+    t.offence_category,
+    t.offence_subcategory,
+    t.defendant_name,
     t.defendant_gender AS gender,
-    d.party_type,
     t.latitude,
     t.longitude,
     (6371000 * 2 * ASIN(SQRT(
@@ -272,10 +268,6 @@ app.get("/api/trials/nearby", async (req, res) => {
       POW(SIN(RADIANS(t.longitude - ?) / 2), 2)
     ))) AS distance_m
   FROM trials t
-  LEFT JOIN defendants d
-    ON d.defendant_id = t.defendant_id
-  LEFT JOIN offences o
-    ON o.offence_id = t.offence_id
   WHERE
     t.latitude IS NOT NULL
     AND t.longitude IS NOT NULL
@@ -323,9 +315,6 @@ app.get("/api/trials/series", async (req, res) => {
 
     const where = [];
     const params = [];
-    let joins = `
-      LEFT JOIN defendants d ON d.defendant_id = t.defendant_id
-    `;
 
     if (from) {
       where.push("t.trial_date >= ?");
@@ -373,7 +362,6 @@ app.get("/api/trials/series", async (req, res) => {
       COUNT(*) AS total,
       SUM(CASE WHEN LOWER(t.verdict) = 'guilty' THEN 1 ELSE 0 END) AS guilty
     FROM trials t
-    ${joins}
     ${whereSql}
     GROUP BY year
     ORDER BY year
@@ -640,20 +628,37 @@ app.get("/api/stats/offences", async (req, res) => {
     );
 
     const [rows] = await pool.query(
-      `SELECT
-         o.offence_id,
-         o.offence_name,
-         o.category,
-         COUNT(*) AS total_trials,
-         SUM(CASE WHEN t.verdict = 'Guilty' THEN 1 ELSE 0 END) AS guilty_trials,
-         SUM(CASE WHEN t.verdict = 'Not Guilty' THEN 1 ELSE 0 END) AS not_guilty_trials
-       FROM trials t
-       JOIN offences o ON o.offence_id = t.offence_id
-       GROUP BY o.offence_id, o.offence_name, o.category
-       ORDER BY total_trials DESC, o.offence_name ASC
-       LIMIT ?`,
-      [limit],
-    );
+  `SELECT
+     NULL AS offence_id,
+     t.offence_subcategory AS offence_name,
+     t.offence_category AS category,
+     COUNT(*) AS total_trials,
+     SUM(
+       CASE
+         WHEN t.verdict = 'Guilty'
+         THEN 1
+         ELSE 0
+       END
+     ) AS guilty_trials,
+     SUM(
+       CASE
+         WHEN t.verdict = 'Not Guilty'
+         THEN 1
+         ELSE 0
+       END
+     ) AS not_guilty_trials
+   FROM trials t
+   WHERE t.offence_subcategory IS NOT NULL
+     AND t.offence_subcategory <> ''
+   GROUP BY
+     t.offence_subcategory,
+     t.offence_category
+   ORDER BY
+     total_trials DESC,
+     t.offence_subcategory ASC
+   LIMIT ?`,
+  [limit],
+);
 
     res.json({ limit, total: rows.length, data: rows });
   } catch (err) {
@@ -689,19 +694,19 @@ app.get("/api/stats/offences/over-time", async (req, res) => {
 
     // Optional filters (either offenceId or offence text)
     if (offenceIdRaw) {
-      const offenceId = parseInt(offenceIdRaw, 10);
-      if (Number.isNaN(offenceId)) {
-        return res
-          .status(400)
-          .json({ error: "Invalid offenceId (must be a number)" });
-      }
-      where.push("t.offence_id = ?");
-      params.push(offenceId);
-    } else if (offenceText) {
-      // Match by offence name (case-insensitive-ish via LIKE)
-      where.push("o.offence_name LIKE ?");
-      params.push(`%${offenceText}%`);
-    }
+  return res.status(400).json({
+    error:
+      "offenceId filtering is not supported for structured offence data",
+  });
+}
+
+if (offenceText) {
+  where.push(
+    "LOWER(t.offence_subcategory) = LOWER(?)"
+  );
+
+  params.push(offenceText);
+}
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
 
@@ -712,7 +717,6 @@ app.get("/api/stats/offences/over-time", async (req, res) => {
          SUM(CASE WHEN t.verdict = 'Guilty' THEN 1 ELSE 0 END) AS guilty_trials,
          SUM(CASE WHEN t.verdict = 'Not Guilty' THEN 1 ELSE 0 END) AS not_guilty_trials
        FROM trials t
-       JOIN offences o ON o.offence_id = t.offence_id
        ${whereSql}
        GROUP BY period
        ORDER BY period ASC`,
@@ -848,7 +852,6 @@ app.get("/api/stats/party-type", async (req, res) => {
      ) AS guilty_rate
    FROM trials t
    JOIN defendants d ON d.defendant_id = t.defendant_id
-   LEFT JOIN offences o ON o.offence_id = t.offence_id
    ${whereSql}
    GROUP BY period, d.party_type
    ORDER BY period ASC, d.party_type ASC`,
@@ -1003,7 +1006,6 @@ app.get("/api/stats/gender-party", async (req, res) => {
 
        FROM trials t
        JOIN defendants d ON d.defendant_id = t.defendant_id
-       JOIN offences o ON o.offence_id = t.offence_id
        ${whereSql}
        GROUP BY t.defendant_gender, d.party_type
        ORDER BY known_verdicts DESC, guilty_rate DESC, t.defendant_gender ASC, d.party_type ASC`,
@@ -1103,7 +1105,6 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
          ) AS guilty_rate
        FROM trials t
        JOIN defendants d ON d.defendant_id = t.defendant_id
-       JOIN offences o ON o.offence_id = t.offence_id
        ${whereSql}
        GROUP BY period, t.defendant_gender, d.party_type
        ORDER BY period ASC, t.defendant_gender ASC, d.party_type ASC`,
@@ -1207,7 +1208,6 @@ app.get("/api/stats/party-type/over-time", async (req, res) => {
          ) AS guilty_rate
        FROM trials t
        JOIN defendants d ON d.defendant_id = t.defendant_id
-       JOIN offences o ON o.offence_id = t.offence_id
        ${whereSql}
        GROUP BY period, d.party_type
        ORDER BY period ASC, d.party_type ASC`,
