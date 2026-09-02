@@ -7313,7 +7313,12 @@ document.getElementById("toggle-ci")?.addEventListener("change", () => {
 document.getElementById("gender")?.addEventListener("change", () => {
   scheduleUrlSync();
 
-  render().then(updateLastUpdatedLabel).catch(console.error);
+  render()
+    .then(updateLastUpdatedLabel)
+    .catch(console.error);
+
+  fetchNearby()
+    .catch(console.error);
 });
 
 const radiusEl = document.getElementById("radius");

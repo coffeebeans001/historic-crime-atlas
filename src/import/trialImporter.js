@@ -57,6 +57,7 @@ async function insertTrial(
   source_case_id,
   trial_date,
   defendant_name,
+  defendant_gender,
   offence,
   offence_category,
   offence_subcategory,
@@ -87,13 +88,14 @@ async function insertTrial(
                VALUES (
   ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
   ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-  ?, ?, ?, ?, ?, ?, ?, ?, ?
+  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
     `,
     [
       record.source_case_id,
 record.trial_date,
 record.defendant_name,
+record.defendant_gender ?? null,
 record.offence,
 record.offence_category ?? null,
 record.offence_subcategory ?? null,

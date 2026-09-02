@@ -262,7 +262,7 @@ app.get("/api/trials/nearby", async (req, res) => {
       d.defendant_name,
       t.defendant_name
     ) AS defendant_name,
-    d.gender,
+    t.defendant_gender AS gender,
     d.party_type,
     t.latitude,
     t.longitude,
@@ -280,7 +280,7 @@ app.get("/api/trials/nearby", async (req, res) => {
     t.latitude IS NOT NULL
     AND t.longitude IS NOT NULL
     AND t.trial_date BETWEEN ? AND ?
-    ${gender !== "all" ? "AND LOWER(d.gender) = LOWER(?)" : ""}
+    ${gender !== "all" ? "AND LOWER(t.defendant_gender) = LOWER(?)" : ""}
     ${year ? "AND YEAR(t.trial_date) = ?" : ""}
     ${group ? "AND t.offence_subcategory = ?" : ""}
   HAVING distance_m <= ?
@@ -357,7 +357,9 @@ app.get("/api/trials/series", async (req, res) => {
       const paramsLoop = [...params];
 
       if (g) {
-        whereLoop.push("LOWER(d.gender) = LOWER(?)");
+       whereLoop.push(
+        "LOWER(t.defendant_gender) = LOWER(?)"
+      );
         paramsLoop.push(g);
       }
 
@@ -735,39 +737,66 @@ app.get("/api/stats/offences/over-time", async (req, res) => {
 // GET /api/stats/gender?from=1740-01-01&to=1800-12-31&group=Robbery
 app.get("/api/stats/gender", async (req, res) => {
   try {
-    const from = (req.query.from ?? "").toString().trim();
-    const to = (req.query.to ?? "").toString().trim();
-    const group = (req.query.group ?? "").toString().trim(); // e.g. Robbery, Murder
+    const from =
+      (req.query.from ?? "").toString().trim();
 
-    const where = ["d.gender IS NOT NULL"];
+    const to =
+      (req.query.to ?? "").toString().trim();
+
+    const group =
+      (req.query.group ?? "").toString().trim();
+
+    const where = [
+      "t.defendant_gender IS NOT NULL"
+    ];
+
     const params = [];
 
     if (from && to) {
-      where.push("t.trial_date BETWEEN ? AND ?");
+      where.push(
+        "t.trial_date BETWEEN ? AND ?"
+      );
+
       params.push(from, to);
     }
 
     if (group) {
-  where.push("t.offence_subcategory = ?");
-  params.push(group);
-}
+      where.push(
+        "t.offence_subcategory = ?"
+      );
 
-    const whereSql = `WHERE ${where.join(" AND ")}`;
+      params.push(group);
+    }
+
+    const whereSql =
+      `WHERE ${where.join(" AND ")}`;
 
     const [rows] = await pool.query(
-      `SELECT
-         d.gender AS gender,
-         COUNT(*) AS total_trials,
-         SUM(CASE WHEN t.verdict = 'Guilty' THEN 1 ELSE 0 END) AS guilty_trials,
-         SUM(CASE WHEN t.verdict = 'Not Guilty' THEN 1 ELSE 0 END) AS not_guilty_trials
-       FROM trials t
-       JOIN defendants d ON d.defendant_id = t.defendant_id
-       JOIN offences o ON o.offence_id = t.offence_id
-       ${whereSql}
-       GROUP BY d.gender
-       ORDER BY total_trials DESC, d.gender ASC`,
-      params,
-    );
+  `SELECT
+     t.defendant_gender AS gender,
+     COUNT(*) AS total_trials,
+     SUM(
+       CASE
+         WHEN t.verdict = 'Guilty'
+         THEN 1
+         ELSE 0
+       END
+     ) AS guilty_trials,
+     SUM(
+       CASE
+         WHEN t.verdict = 'Not Guilty'
+         THEN 1
+         ELSE 0
+       END
+     ) AS not_guilty_trials
+   FROM trials t
+   ${whereSql}
+   GROUP BY t.defendant_gender
+   ORDER BY
+     total_trials DESC,
+     t.defendant_gender ASC`,
+  params
+);
 
     res.json({
       from: from && to ? from : null,
@@ -891,7 +920,10 @@ app.get("/api/stats/gender-party", async (req, res) => {
       return res.status(400).json({ error: "Invalid z value" });
     }
 
-    const where = ["d.gender IS NOT NULL", "d.party_type IS NOT NULL"];
+    const where = [
+      "t.defendant_gender IS NOT NULL",
+      "d.party_type IS NOT NULL"
+    ];
     const params = [];
 
     if (from && to) {
@@ -907,7 +939,7 @@ app.get("/api/stats/gender-party", async (req, res) => {
 
     const [rows] = await pool.query(
       `SELECT
-         d.gender AS gender,
+        t.defendant_gender AS gender,
          d.party_type AS party_type,
          COUNT(*) AS total_trials,
 
@@ -973,8 +1005,8 @@ app.get("/api/stats/gender-party", async (req, res) => {
        JOIN defendants d ON d.defendant_id = t.defendant_id
        JOIN offences o ON o.offence_id = t.offence_id
        ${whereSql}
-       GROUP BY d.gender, d.party_type
-       ORDER BY known_verdicts DESC, guilty_rate DESC, d.gender ASC, d.party_type ASC`,
+       GROUP BY t.defendant_gender, d.party_type
+       ORDER BY known_verdicts DESC, guilty_rate DESC, t.defendant_gender ASC, d.party_type ASC`,
       [
         ...params,
         // Wilson params (12 placeholders)
@@ -1029,7 +1061,7 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
         : "YEAR(t.trial_date)";
 
     const where = [
-      "d.gender IS NOT NULL",
+      "t.defendant_gender IS NOT NULL",
       "d.party_type IS NOT NULL",
       "t.trial_date BETWEEN ? AND ?",
     ];
@@ -1042,13 +1074,8 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
       gender === "male" || gender === "female" ? gender : "all";
 
     if (genderFilter !== "all") {
-      where.push("d.gender = ?");
+      where.push("t.defendant_gender = ?");
       params.push(genderFilter);
-    }
-
-    if (gender === "male" || gender === "female") {
-      where.push("d.gender = ?");
-      params.push(gender);
     }
 
     if (group) {
@@ -1059,11 +1086,11 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
     const whereSql = `WHERE ${where.join(" AND ")}`;
 
     const [rows] = await pool.query(
-      `SELECT
-         ${bucketExpr} AS period,
-         d.gender AS gender,
-         d.party_type AS party_type,
-         COUNT(*) AS total_trials,
+  `SELECT
+     ${bucketExpr} AS period,
+     t.defendant_gender AS gender,
+     d.party_type AS party_type,
+     COUNT(*) AS total_trials,
 
          SUM(CASE WHEN t.verdict IN ('Guilty','Not Guilty') THEN 1 ELSE 0 END) AS known_verdicts,
          SUM(CASE WHEN t.verdict = 'Guilty' THEN 1 ELSE 0 END) AS guilty_trials,
@@ -1078,8 +1105,8 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
        JOIN defendants d ON d.defendant_id = t.defendant_id
        JOIN offences o ON o.offence_id = t.offence_id
        ${whereSql}
-       GROUP BY period, d.gender, d.party_type
-       ORDER BY period ASC, d.gender ASC, d.party_type ASC`,
+       GROUP BY period, t.defendant_gender, d.party_type
+       ORDER BY period ASC, t.defendant_gender ASC, d.party_type ASC`,
       params,
     );
     const format = (req.query.format ?? "").toString().trim().toLowerCase();

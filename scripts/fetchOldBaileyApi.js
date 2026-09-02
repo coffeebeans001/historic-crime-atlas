@@ -39,6 +39,8 @@ import { backfillTrialTextFields, } from "../src/import/backfillTrialTextFields.
 
 import { backfillTrialOffenceFields, } from "../src/import/backfillTrialOffenceFields.js";
 
+import { backfillTrialGenderFields, } from "../src/import/backfillTrialGenderFields.js";
+
 const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 5;
 
@@ -81,6 +83,11 @@ const backfillTrialText =
 const backfillTrialOffences =
   process.argv.includes(
     "--backfill-trial-offences"
+  );  
+
+const backfillTrialGender =
+  process.argv.includes(
+    "--backfill-trial-gender"
   );  
 
 
@@ -792,9 +799,7 @@ console.log(
   `Rows changed: ${backfillResults.changedRows}`
 );
 
-console.log(
-  "\n===============================================\n"
-);
+console.log("\n===============================================\n");
 
 let offenceBackfillResults = {
   checked: 0,
@@ -808,9 +813,7 @@ if (backfillTrialOffences) {
     );
 }
 
-console.log(
-  "\n========== TRIAL OFFENCE BACKFILL SUMMARY ==========\n"
-);
+console.log("\n========== TRIAL OFFENCE BACKFILL SUMMARY ==========\n");
 
 console.log(
   `Backfill enabled: ${
@@ -827,6 +830,38 @@ console.log(
 console.log(
   `Rows changed: ${
     offenceBackfillResults.changedRows
+  }`
+);
+
+let genderBackfillResults = {
+  checked: 0,
+  changedRows: 0,
+};
+
+if (backfillTrialGender) {
+  genderBackfillResults =
+    await backfillTrialGenderFields(
+      apiReadyRecords
+    );
+}
+
+console.log("\n========== TRIAL GENDER BACKFILL SUMMARY ==========\n");
+
+console.log(
+  `Backfill enabled: ${
+    backfillTrialGender ? "Yes" : "No"
+  }`
+);
+
+console.log(
+  `Records checked: ${
+    genderBackfillResults.checked
+  }`
+);
+
+console.log(
+  `Rows changed: ${
+    genderBackfillResults.changedRows
   }`
 );
 
