@@ -159,6 +159,9 @@ const geocodeResult =
     parsedXmlData?.defendantName ??
     defendantName,
 
+  defendants:
+  parsedXmlData?.defendants ?? [],  
+
   offence:
     parsedXmlData?.offenceText ??
     offenceDescription,

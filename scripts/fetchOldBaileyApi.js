@@ -88,7 +88,10 @@ const backfillTrialOffences =
 const backfillTrialGender =
   process.argv.includes(
     "--backfill-trial-gender"
-  );  
+  );
+  
+const allTrialsMode =
+  process.argv.includes("--all-trials");  
 
 
 const geocodeExistingTrials =
@@ -113,18 +116,26 @@ async function fetchOldBaileyRecords() {
     const allRecords = [];
     let totalResults = 0;
 
-    const queriesToFetch = MULTI_OFFENCE_MODE
-      ? MULTI_OFFENCE_QUERIES
-      : [query];
+    const queriesToFetch = allTrialsMode
+  ? [null]
+  : MULTI_OFFENCE_MODE
+    ? MULTI_OFFENCE_QUERIES
+    : [query];
 
     const recordsPerQuery = MULTI_OFFENCE_MODE
       ? MULTI_OFFENCE_SIZE
       : batchSize;
 
     for (const currentQuery of queriesToFetch) {
+      if (allTrialsMode) {
+      console.log(
+        "\nFetching general Old Bailey records...\n"
+      );
+    } else {
       console.log(
         `\nSearching Old Bailey API for "${currentQuery}"...\n`
       );
+    }
 
       const queryRecords = [];
 
@@ -133,10 +144,12 @@ async function fetchOldBaileyRecords() {
         from < recordsPerQuery;
         from += pageSize
       ) {
-        const pageUrl =
-          `https://www.dhi.ac.uk/api/data/oldbailey_record` +
-          `?text=${encodeURIComponent(currentQuery)}` +
-          `&from=${from}`;
+        const baseUrl =
+  "https://www.dhi.ac.uk/api/data/oldbailey_record";
+
+        const pageUrl = allTrialsMode
+          ? `${baseUrl}?from=${from}`
+          : `${baseUrl}?text=${encodeURIComponent(currentQuery)}&from=${from}`;
 
         const response = await fetch(pageUrl);
 
@@ -176,15 +189,21 @@ async function fetchOldBaileyRecords() {
       const selectedQueryRecords =
         queryRecords.slice(0, recordsPerQuery);
 
-      console.log(
-        `Selected for "${currentQuery}": ${selectedQueryRecords.length}`
-      );
+      if (allTrialsMode) {
+        console.log(
+          `Selected general records: ${selectedQueryRecords.length}`
+        );
+      } else {
+        console.log(
+          `Selected for "${currentQuery}": ${selectedQueryRecords.length}`
+        );
+      }
 
       allRecords.push(...selectedQueryRecords);
     }
 
     const requestedRecordCount =
-  MULTI_OFFENCE_MODE
+      MULTI_OFFENCE_MODE
     ? MULTI_OFFENCE_QUERIES.length *
       MULTI_OFFENCE_SIZE
     : batchSize;
@@ -378,6 +397,7 @@ const singleSource = singleRecord?._source ?? {};
   locationPrecision,
 } = parseOldBaileyXml(xml);
 
+
     if (DEBUG_INSPECTION) {
   console.log("\n========== XML INSPECTION ==========");
 
@@ -430,6 +450,8 @@ const singleSource = singleRecord?._source ?? {};
       /.{0,200}offence.{0,200}/gi
     );
 
+
+
     console.log("\n========== OFFENCE XML SEARCH ==========");
 
     const offenceSearch =
@@ -448,6 +470,7 @@ const singleSource = singleRecord?._source ?? {};
 
   console.log("============================================\n");
 }
+
 
    if (DEBUG_INSPECTION) {
   console.log("\n========== XML PARSER ==========");
@@ -638,6 +661,80 @@ const insertionReadyRecords =
         validation.status === "VALID" ||
         validation.status === "VALID_WITH_WARNINGS"
     );
+
+console.log("\n========== WARNING RECORD REVIEW ==========\n");
+
+const warningRecords = validationResults
+  .map((validation, index) => ({
+    validation,
+    record: transformedRecords[index],
+  }))
+  .filter(
+    ({ validation }) =>
+      validation.status === "VALID_WITH_WARNINGS"
+  );
+
+console.log(
+  `Warning records found: ${warningRecords.length}\n`
+);
+
+warningRecords.forEach(
+  ({ validation, record }, index) => {
+    console.log(
+      `--- Warning record ${index + 1} ---`
+    );
+
+    console.log(
+      "Source case ID:",
+      record?.source_case_id ?? "Missing"
+    );
+
+    console.log(
+      "Trial date:",
+      record?.trial_date ?? "Missing"
+    );
+
+    console.log(
+      "Defendant:",
+      record?.defendant_name ?? "Missing"
+    );
+
+    console.log(
+      "Offence:",
+      record?.offence ?? "Missing"
+    );
+
+    console.log(
+      "Offence category:",
+      record?.offence_category ?? "Missing"
+    );
+
+    console.log(
+      "Offence subcategory:",
+      record?.offence_subcategory ?? "Missing"
+    );
+
+    console.log(
+      "Verdict:",
+      record?.verdict ?? "Missing"
+    );
+
+    console.log(
+      "Plea:",
+      record?.plea ?? "Missing"
+    );
+
+    console.log(
+      "Warnings:",
+      validation.warnings?.join(" | ") ??
+        "No warning text"
+    );
+
+    console.log("");
+  }
+);
+
+console.log("===========================================\n");   
 
 const databaseDuplicateRecords = [];
 const databaseNewCandidates = [];
@@ -1195,6 +1292,65 @@ console.log(
   )}`
 );
   console.log("\n============================================\n");
+
+
+
+console.log("\n========== OFFENCE DISTRIBUTION SUMMARY ==========\n");
+
+const offenceDistribution = new Map();
+
+for (const record of transformedRecords) {
+  const category =
+    record.offence_category ?? "Unknown";
+
+  const subcategory =
+    record.offence_subcategory ?? "Unknown";
+
+  const key = `${category}|||${subcategory}`;
+
+  offenceDistribution.set(
+    key,
+    (offenceDistribution.get(key) ?? 0) + 1
+  );
+}
+
+const offenceRows = Array.from(
+  offenceDistribution.entries()
+)
+  .map(([key, count]) => {
+    const [category, subcategory] =
+      key.split("|||");
+
+    return {
+      category,
+      subcategory,
+      count,
+    };
+  })
+  .sort(
+    (a, b) =>
+      b.count - a.count ||
+      a.category.localeCompare(b.category) ||
+      a.subcategory.localeCompare(b.subcategory)
+  );
+
+for (const row of offenceRows) {
+  console.log(
+    `${row.category} | ${row.subcategory}: ${row.count}`
+  );
+}
+
+console.log(
+  `\nUnique offence categories: ${
+    new Set(offenceRows.map((row) => row.category)).size
+  }`
+);
+
+console.log(
+  `Unique offence subcategories: ${offenceRows.length}`
+);
+
+console.log("\n==================================================\n");  
   
 function createCoverageEntry(present, total) {
   return {
@@ -1272,6 +1428,145 @@ function createCoverageEntry(present, total) {
   parserFailures: 0,
 }
 };
+
+const defendantStructureSummary =
+  transformedRecords.reduce(
+    (summary, record) => {
+      const defendants = Array.isArray(
+        record.defendants
+      )
+        ? record.defendants
+        : [];
+
+      const genders = new Set(
+        defendants
+          .map((defendant) =>
+            defendant.gender?.toLowerCase()
+          )
+          .filter(Boolean)
+      );
+
+      summary.trialsInspected += 1;
+
+      if (defendants.length === 1) {
+        summary.singleDefendantNodeTrials += 1;
+      }
+
+      if (defendants.length > 1) {
+        summary.multiDefendantNodeTrials += 1;
+      }
+
+      if (genders.has("male")) {
+        summary.trialsWithMale += 1;
+      }
+
+      if (genders.has("female")) {
+        summary.trialsWithFemale += 1;
+      }
+
+      if (genders.has("indeterminate")) {
+        summary.trialsWithIndeterminate += 1;
+      }
+
+      if (
+        genders.has("male") &&
+        genders.has("female")
+      ) {
+        summary.mixedMaleFemaleTrials += 1;
+      }
+
+      summary.defendantNodes += defendants.length;
+
+      summary.defendantNodesWithAge +=
+        defendants.filter(
+          (defendant) =>
+            Number.isInteger(defendant.age)
+        ).length;
+
+      return summary;
+    },
+    {
+      trialsInspected: 0,
+      singleDefendantNodeTrials: 0,
+      multiDefendantNodeTrials: 0,
+      defendantNodes: 0,
+      trialsWithMale: 0,
+      trialsWithFemale: 0,
+      trialsWithIndeterminate: 0,
+      mixedMaleFemaleTrials: 0,
+      defendantNodesWithAge: 0,
+    }
+  );
+
+  const multiDefendantPercentage =
+  defendantStructureSummary.trialsInspected > 0
+    ? (
+        (
+          defendantStructureSummary
+            .multiDefendantNodeTrials /
+          defendantStructureSummary
+            .trialsInspected
+        ) * 100
+      ).toFixed(1)
+    : "0.0";
+
+console.log(
+  "\n========== DEFENDANT STRUCTURE SUMMARY ==========\n"
+);
+
+console.log(
+  "Trial records inspected:",
+  defendantStructureSummary.trialsInspected
+);
+
+console.log(
+  "Single defendant node:",
+  defendantStructureSummary.singleDefendantNodeTrials
+);
+
+console.log(
+  "Multiple defendant nodes:",
+  defendantStructureSummary.multiDefendantNodeTrials
+);
+
+console.log(
+  "Multi-defendant coverage:",
+  `${multiDefendantPercentage}%`
+);
+
+console.log(
+  "Total defendant nodes:",
+  defendantStructureSummary.defendantNodes
+);
+
+console.log(
+  "Trials containing male:",
+  defendantStructureSummary.trialsWithMale
+);
+
+console.log(
+  "Trials containing female:",
+  defendantStructureSummary.trialsWithFemale
+);
+
+console.log(
+  "Trials containing indeterminate:",
+  defendantStructureSummary.trialsWithIndeterminate
+);
+
+console.log(
+  "Mixed male/female trials:",
+  defendantStructureSummary.mixedMaleFemaleTrials
+);
+
+console.log(
+  "Defendant nodes with age:",
+  defendantStructureSummary.defendantNodesWithAge
+);
+
+console.log(
+  "\n=================================================\n"
+);
 
 function isNonTrialRecord(record) {
   const title =
@@ -1476,6 +1771,110 @@ console.log(`Ready for insertion: ${databaseDuplicateCheck.readyRecords.length}`
 console.log(`\nDatabase changes: ${insertedTrials.length}`);
 
 console.log("\n================================================\n");
+
+/*console.log("\n========== NEW INSERTION CANDIDATE REVIEW ==========\n");
+
+console.log(
+  `Candidates found: ${databaseDuplicateCheck.readyRecords.length}\n`
+);
+
+const candidateOffenceCounts = new Map();
+
+databaseDuplicateCheck.readyRecords.forEach(
+  (item, index) => {
+    const record = item.record;
+
+    console.log(
+      `--- Candidate ${index + 1} ---`
+    );
+
+    console.log(
+      "Source case ID:",
+      record?.source_case_id ?? "Missing"
+    );
+
+    console.log(
+      "Trial date:",
+      record?.trial_date ?? "Missing"
+    );
+
+    console.log(
+      "Defendant:",
+      record?.defendant_name ?? "Missing"
+    );
+
+    console.log(
+      "Gender:",
+      record?.defendant_gender ?? "Missing"
+    );
+
+    console.log(
+      "Offence category:",
+      record?.offence_category ?? "Missing"
+    );
+
+    console.log(
+      "Offence subcategory:",
+      record?.offence_subcategory ?? "Missing"
+    );
+
+    console.log(
+      "Verdict:",
+      record?.verdict ?? "Missing"
+    );
+
+    console.log(
+      "Crime location:",
+      record?.crime_location ?? "Missing"
+    );
+
+    console.log(
+      "Mapped:",
+      Number.isFinite(Number(record?.latitude)) &&
+      Number.isFinite(Number(record?.longitude))
+        ? "Yes"
+        : "No"
+    );
+
+    console.log("");
+
+    const key =
+      `${record?.offence_category ?? "Unknown"}|||` +
+      `${record?.offence_subcategory ?? "Unknown"}`;
+
+    candidateOffenceCounts.set(
+      key,
+      (candidateOffenceCounts.get(key) ?? 0) + 1
+    );
+  }
+);
+
+console.log("\n========== CANDIDATE OFFENCE DISTRIBUTION ==========\n");
+
+Array.from(candidateOffenceCounts.entries())
+  .map(([key, count]) => {
+    const [category, subcategory] =
+      key.split("|||");
+
+    return {
+      category,
+      subcategory,
+      count,
+    };
+  })
+  .sort(
+    (a, b) =>
+      b.count - a.count ||
+      a.category.localeCompare(b.category) ||
+      a.subcategory.localeCompare(b.subcategory)
+  )
+  .forEach((row) => {
+    console.log(
+      `${row.category} | ${row.subcategory}: ${row.count}`
+    );
+  });
+
+console.log("\n===================================================\n"); */
 
 const existingSourceCaseIds = new Set(
   databaseDuplicateCheck.databaseDuplicates.map(

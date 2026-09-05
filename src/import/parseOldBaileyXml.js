@@ -76,24 +76,54 @@ const crimeLocation =
 const locationPrecision =
   classifyLocationPrecision(crimeLocation);  
 
-  const defendantNode = defendantMatches[0] ?? null;
-
-    let defendantName = null;
-    let defendantGender = null;
-
-    if (defendantNode) {
-    defendantName = defendantNode
-        .replace(/<interp[\s\S]*?\/>/g, "")
-        .replace(/<[^>]+>/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
+  const defendants = defendantMatches.map((defendantNode) => {
+  const idMatch = defendantNode.match(
+    /<persName[^>]*id="([^"]+)"/
+  );
 
   const genderMatch = defendantNode.match(
     /<interp[^>]*type="gender"[^>]*value="([^"]+)"/
   );
 
-  defendantGender = genderMatch?.[1] ?? null;
-}  
+  const ageMatch = defendantNode.match(
+  /<interp[^>]*type="defendantNameAgeInt"[^>]*value="([^"]+)"/
+);
+
+  const labelTypeMatch = defendantNode.match(
+    /<rs[^>]*type="([^"]+)"[^>]*>/
+  );
+
+  const labelValueMatch = defendantNode.match(
+    /<interp[^>]*type="defendantNameLabel"[^>]*value="([^"]+)"/
+  );
+
+  const label = defendantNode
+    .replace(/<interp[\s\S]*?\/>/g, "")
+    .replace(/<join[\s\S]*?\/>/g, "")
+    .replace(/<xptr[\s\S]*?\/>/g, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return {
+    id: idMatch?.[1] ?? null,
+    label: label || labelValueMatch?.[1] || null,
+    gender: genderMatch?.[1] ?? null,
+    age: ageMatch?.[1]
+      ? Number.parseInt(ageMatch[1], 10)
+      : null,
+    labelType: labelTypeMatch?.[1] ?? null,
+    labelValue: labelValueMatch?.[1] ?? null,
+  };
+});
+
+const defendantNode = defendantMatches[0] ?? null;
+
+const defendantName =
+  defendants[0]?.label ?? null;
+
+const defendantGender =
+  defendants[0]?.gender ?? null;
 
 const verdictNode = verdictMatches[0] ?? null;
 
@@ -172,6 +202,7 @@ if (offenceNode) {
 
     defendantName,
     defendantGender,
+    defendants,
     verdictCategory,
     verdictSubcategory,
     plea,
