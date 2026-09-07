@@ -156,6 +156,38 @@ if (verdictNode) {
     .trim();
 }
 
+const verdicts = verdictMatches.map((node) => {
+  const idMatch = node.match(
+    /<rs[^>]*id="([^"]+)"[^>]*type="verdictDescription"/
+  );
+
+  const categoryMatch = node.match(
+    /<interp[^>]*type="verdictCategory"[^>]*value="([^"]+)"/
+  );
+
+  const subcategoryMatch = node.match(
+    /<interp[^>]*type="verdictSubcategory"[^>]*value="([^"]+)"/
+  );
+
+  const pleaMatch = node.match(
+    /<interp[^>]*type="plea"[^>]*value="([^"]+)"/
+  );
+
+  const text = node
+    .replace(/<interp[\s\S]*?\/>/g, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return {
+    id: idMatch?.[1] ?? null,
+    category: categoryMatch?.[1] ?? null,
+    subcategory: subcategoryMatch?.[1] ?? null,
+    plea: pleaMatch?.[1] ?? null,
+    text: text || null,
+  };
+});
+
 const punishmentNode = punishmentMatches[0] ?? null;
 
 let punishment = null;
@@ -167,6 +199,104 @@ if (punishmentNode) {
     .replace(/\s+/g, " ")
     .trim();
 }
+
+const punishments = punishmentMatches.map((node) => {
+  const idMatch = node.match(
+    /<rs[^>]*id="([^"]+)"[^>]*type="punishmentDescription"/
+  );
+
+  const categoryMatch = node.match(
+    /<interp[^>]*type="punishmentCategory"[^>]*value="([^"]+)"/
+  );
+
+  const subcategoryMatch = node.match(
+    /<interp[^>]*type="punishmentSubcategory"[^>]*value="([^"]+)"/
+  );
+
+  const text = node
+    .replace(/<interp[\s\S]*?\/>/g, "")
+    .replace(/<join[\s\S]*?\/>/g, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return {
+    id: idMatch?.[1] ?? null,
+    category: categoryMatch?.[1] ?? null,
+    subcategory: subcategoryMatch?.[1] ?? null,
+    text: text || null,
+  };
+});
+
+const criminalChargeMatches = [
+  ...xml.matchAll(
+    /<join\b[^>]*result=["']criminalCharge["'][^>]*\/>/gi
+  ),
+];
+
+const criminalCharges = criminalChargeMatches.map((match) => {
+  const node = match[0];
+
+  const idMatch = node.match(
+    /\bid=["']([^"']+)["']/
+  );
+
+  const targetsMatch = node.match(
+    /\btargets=["']([^"']+)["']/
+  );
+
+  const targets = targetsMatch?.[1]
+    ?.trim()
+    .split(/\s+/) ?? [];
+
+  const verdictReference =
+  targets[2] ?? null;
+
+const verdictId =
+  verdictReference === "NOVERDICTR"
+    ? null
+    : verdictReference;
+
+  return {
+    id: idMatch?.[1] ?? null,
+    defendantId: targets[0] ?? null,
+    offenceId: targets[1] ?? null,
+    verdictId,
+    verdictReference,
+  };
+});
+
+const defendantPunishmentMatches = [
+  ...xml.matchAll(
+    /<join\b[^>]*result=["']defendantPunishment["'][^>]*\/>/gi
+  ),
+];
+
+const defendantPunishments = [
+  ...new Map(
+    defendantPunishmentMatches.map((match) => {
+      const node = match[0];
+
+      const targetsMatch = node.match(
+        /\btargets=["']([^"']+)["']/
+      );
+
+      const targets = targetsMatch?.[1]
+        ?.trim()
+        .split(/\s+/) ?? [];
+
+      const relationship = {
+        defendantId: targets[0] ?? null,
+        punishmentId: targets[1] ?? null,
+      };
+
+      const key =
+        `${relationship.defendantId}|${relationship.punishmentId}`;
+
+      return [key, relationship];
+    })
+  ).values(),
+];
 
 const offenceNode = offenceMatches[0] ?? null;
 
@@ -193,6 +323,33 @@ if (offenceNode) {
     .trim();
 }
 
+const offences = offenceMatches.map((node) => {
+  const idMatch = node.match(
+    /<rs[^>]*id="([^"]+)"[^>]*type="offenceDescription"/
+  );
+
+  const categoryMatch = node.match(
+    /<interp[^>]*type="offenceCategory"[^>]*value="([^"]+)"/
+  );
+
+  const subcategoryMatch = node.match(
+    /<interp[^>]*type="offenceSubcategory"[^>]*value="([^"]+)"/
+  );
+
+  const text = node
+    .replace(/<interp[\s\S]*?\/>/g, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return {
+    id: idMatch?.[1] ?? null,
+    category: categoryMatch?.[1] ?? null,
+    subcategory: subcategoryMatch?.[1] ?? null,
+    text: text || null,
+  };
+});  
+
   return {
     defendantMatches,
     verdictMatches,
@@ -207,10 +364,15 @@ if (offenceNode) {
     verdictSubcategory,
     plea,
     verdictText,
+    verdicts,
     punishment,
+    punishments,
+    criminalCharges,
+    defendantPunishments,
     offenceCategory,
     offenceSubcategory,
     offenceText,
+    offences,
 
     crimeLocation,
     locationText,

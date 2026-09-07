@@ -24,6 +24,7 @@ export async function enrichOldBaileyRecord(
   const parsedXmlData =
     parseOldBaileyXml(xml);
 
+
  return {
   originalRecord: record,
   detailedRecord,

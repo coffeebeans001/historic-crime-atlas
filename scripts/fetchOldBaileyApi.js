@@ -530,6 +530,157 @@ for (const record of trialRecords) {
 
 if (DEBUG_INSPECTION) {console.log("===================================");}
 
+const relationshipStructureSummary =
+  enrichedRecords.reduce(
+    (summary, enrichedRecord) => {
+      const xml =
+        enrichedRecord?.detailedRecord?._source?.xml ?? "";
+
+      if (!xml) {
+        return summary;
+      }
+
+      const defendantNodes = [
+        ...xml.matchAll(
+          /<persName\b[^>]*type=["']defendantName["'][^>]*>[\s\S]*?<\/persName>/gi
+        ),
+      ];
+
+      const offenceNodes = [
+        ...xml.matchAll(
+          /<rs\b[^>]*type=["']offenceDescription["'][^>]*>/gi
+        ),
+      ];
+
+      const verdictNodes = [
+        ...xml.matchAll(
+          /<rs\b[^>]*type=["']verdictDescription["'][^>]*>/gi
+        ),
+      ];
+
+      const punishmentNodes = [
+        ...xml.matchAll(
+          /<rs\b[^>]*type=["']punishmentDescription["'][^>]*>/gi
+        ),
+      ];
+
+      const criminalChargeJoins = [
+        ...xml.matchAll(
+          /<join\b[^>]*result=["']criminalCharge["'][^>]*\/>/gi
+        ),
+      ];
+
+      const defendantPunishmentJoins = [
+        ...xml.matchAll(
+          /<join\b[^>]*result=["']defendantPunishment["'][^>]*\/>/gi
+        ),
+      ];
+
+      summary.trialsInspected += 1;
+
+      if (defendantNodes.length > 1) {
+        summary.multipleDefendantNodes += 1;
+      }
+
+      if (offenceNodes.length > 1) {
+        summary.multipleOffenceNodes += 1;
+      }
+
+      if (verdictNodes.length > 1) {
+        summary.multipleVerdictNodes += 1;
+      }
+
+      if (punishmentNodes.length > 1) {
+        summary.multiplePunishmentNodes += 1;
+      }
+
+      if (criminalChargeJoins.length > 0) {
+        summary.withCriminalChargeJoins += 1;
+      }
+
+      if (defendantPunishmentJoins.length > 0) {
+        summary.withDefendantPunishmentJoins += 1;
+      }
+
+      const distinctCriminalCharges = new Set(
+        criminalChargeJoins
+          .map((match) => {
+            const targetsMatch = match[0].match(
+              /targets=["']([^"']+)["']/
+            );
+
+            return targetsMatch?.[1]
+              ?.trim()
+              .replace(/\s+/g, " ");
+          })
+          .filter(Boolean)
+      );
+
+      if (distinctCriminalCharges.size > 1) {
+        summary.multipleDistinctCriminalCharges += 1;
+      }
+
+      return summary;
+    },
+    {
+      trialsInspected: 0,
+      multipleDefendantNodes: 0,
+      multipleOffenceNodes: 0,
+      multipleVerdictNodes: 0,
+      multiplePunishmentNodes: 0,
+      withCriminalChargeJoins: 0,
+      withDefendantPunishmentJoins: 0,
+      multipleDistinctCriminalCharges: 0,
+    }
+  );
+
+  console.log("\n========== RELATIONSHIP STRUCTURE SUMMARY ==========\n");
+
+console.log(
+  "Trials inspected:",
+  relationshipStructureSummary.trialsInspected
+);
+
+console.log(
+  "Multiple defendant nodes:",
+  relationshipStructureSummary.multipleDefendantNodes
+);
+
+console.log(
+  "Multiple offence nodes:",
+  relationshipStructureSummary.multipleOffenceNodes
+);
+
+console.log(
+  "Multiple verdict nodes:",
+  relationshipStructureSummary.multipleVerdictNodes
+);
+
+console.log(
+  "Multiple punishment nodes:",
+  relationshipStructureSummary.multiplePunishmentNodes
+);
+
+console.log(
+  "With criminalCharge joins:",
+  relationshipStructureSummary.withCriminalChargeJoins
+);
+
+console.log(
+  "With defendantPunishment joins:",
+  relationshipStructureSummary.withDefendantPunishmentJoins
+);
+
+console.log(
+  "Multiple distinct criminal charges:",
+  relationshipStructureSummary.multipleDistinctCriminalCharges
+);
+
+console.log("\n====================================================\n");
+
+console.log("==================================================\n");
+
+
 const transformedRecords = enrichedRecords.map((enrichedRecord) => {
   const recordForTransform =
     enrichedRecord.detailedRecord ??
