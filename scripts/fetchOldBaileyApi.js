@@ -41,6 +41,10 @@ import { backfillTrialOffenceFields, } from "../src/import/backfillTrialOffenceF
 
 import { backfillTrialGenderFields, } from "../src/import/backfillTrialGenderFields.js";
 
+import writeTrialRelationships, {
+  checkRelationshipBackfillReadiness,
+} from "../src/import/writeTrialRelationships.js";
+
 const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 5;
 
@@ -89,6 +93,9 @@ const backfillTrialGender =
   process.argv.includes(
     "--backfill-trial-gender"
   );
+
+const backfillRelationships =
+  process.argv.includes("--backfill-relationships");  
   
 const allTrialsMode =
   process.argv.includes("--all-trials");  
@@ -678,7 +685,300 @@ console.log(
 
 console.log("\n====================================================\n");
 
-console.log("==================================================\n");
+const relationshipBackfillReadiness = [];
+
+for (const enrichedRecord of enrichedRecords) {
+  const sourceCaseId =
+    enrichedRecord.originalRecord?._source?.idkey ??
+    enrichedRecord.detailedRecord?._source?.idkey ??
+    null;
+
+  const readiness =
+  await checkRelationshipBackfillReadiness({
+    sourceCaseId,
+    parsedXmlData:
+      enrichedRecord.parsedXmlData ?? null,
+  });
+
+  relationshipBackfillReadiness.push(readiness);
+}
+
+const relationshipResolved =
+  relationshipBackfillReadiness.filter(
+    (record) => record.resolved
+  );
+
+const relationshipComplete =
+  relationshipBackfillReadiness.filter(
+    (record) => record.status === "complete"
+  );
+
+const relationshipReady =
+  relationshipBackfillReadiness.filter(
+    (record) => record.status === "ready"
+  );
+
+const relationshipPartial =
+  relationshipBackfillReadiness.filter(
+    (record) => record.status === "partial"
+  );
+
+const relationshipUnresolved =
+  relationshipBackfillReadiness.filter(
+    (record) => record.status === "unresolved"
+  );  
+
+    if (
+    backfillRelationships &&
+    relationshipPartial.length > 0
+  ) {
+    throw new Error(
+      "Relationship backfill blocked: partial/inconsistent records detected."
+    );
+  }
+
+
+
+console.log(
+  "\n========== RELATIONSHIP BACKFILL SAFETY GATE ==========\n"
+);
+
+console.log(
+  "Trial records inspected:",
+  relationshipBackfillReadiness.length
+);
+
+console.log(
+  "Database trials resolved:",
+  relationshipResolved.length
+);
+
+console.log(
+  "Already complete:",
+  relationshipComplete.length
+);
+
+console.log(
+  "Ready for relationship backfill:",
+  relationshipReady.length
+);
+
+console.log(
+  "Partial / inconsistent:",
+  relationshipPartial.length
+);
+
+console.log(
+  "Unresolved:",
+  relationshipUnresolved.length
+);
+
+console.log("\nAlready complete:");
+
+for (const record of relationshipComplete) {
+  console.log(
+    `${record.sourceCaseId} | trial ${record.trialId} | expected ${record.expectedTotal} | actual ${record.actualTotal}`
+  );
+}
+
+console.log("\nPartial / inconsistent:");
+
+if (relationshipPartial.length === 0) {
+  console.log("None");
+} else {
+  for (const record of relationshipPartial) {
+    console.log(
+      `\n${record.sourceCaseId} | trial ${record.trialId}`
+    );
+
+    console.log(
+      "Expected:",
+      record.expectedCounts
+    );
+
+    console.log(
+      "Actual:",
+      record.actualCounts
+    );
+  }
+}
+
+console.log("\nDatabase changes: 0");
+
+const relationshipBackfillExpectedTotals =
+  relationshipReady.reduce(
+    (totals, record) => {
+      totals.defendantNodes +=
+        record.expectedCounts.defendantNodes;
+
+      totals.offenceNodes +=
+        record.expectedCounts.offenceNodes;
+
+      totals.verdictNodes +=
+        record.expectedCounts.verdictNodes;
+
+      totals.punishmentNodes +=
+        record.expectedCounts.punishmentNodes;
+
+      totals.criminalCharges +=
+        record.expectedCounts.criminalCharges;
+
+      totals.defendantPunishments +=
+        record.expectedCounts.defendantPunishments;
+
+      return totals;
+    },
+    {
+      defendantNodes: 0,
+      offenceNodes: 0,
+      verdictNodes: 0,
+      punishmentNodes: 0,
+      criminalCharges: 0,
+      defendantPunishments: 0,
+    }
+  );
+
+  const relationshipBackfillExpectedTotalRows =
+  Object.values(
+    relationshipBackfillExpectedTotals
+  ).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+
+console.log(
+  "\n========== RELATIONSHIP BACKFILL EXPECTED ROWS ==========\n"
+);
+
+console.log(
+  "Trials ready:",
+  relationshipReady.length
+);
+
+console.log(
+  "Defendant nodes:",
+  relationshipBackfillExpectedTotals.defendantNodes
+);
+
+console.log(
+  "Offence nodes:",
+  relationshipBackfillExpectedTotals.offenceNodes
+);
+
+console.log(
+  "Verdict nodes:",
+  relationshipBackfillExpectedTotals.verdictNodes
+);
+
+console.log(
+  "Punishment nodes:",
+  relationshipBackfillExpectedTotals.punishmentNodes
+);
+
+console.log(
+  "Criminal charges:",
+  relationshipBackfillExpectedTotals.criminalCharges
+);
+
+console.log(
+  "Defendant punishments:",
+  relationshipBackfillExpectedTotals.defendantPunishments
+);
+
+console.log(
+  "Total expected rows:",
+  relationshipBackfillExpectedTotalRows
+);
+
+console.log("\nDatabase changes: 0");  
+
+let relationshipBackfillResults = {
+  trialsProcessed: 0,
+  rowsInserted: 0,
+  failed: 0,
+};
+
+if (backfillRelationships) {
+  console.log(
+    "\n========== RELATIONSHIP BACKFILL INSERT ==========\n"
+  );
+
+  for (const readyRecord of relationshipReady) {
+    try {
+      const enrichedRecord =
+        enrichedRecords.find((record) => {
+          const sourceCaseId =
+            record.originalRecord?._source?.idkey ??
+            record.detailedRecord?._source?.idkey ??
+            null;
+
+          return (
+            sourceCaseId === readyRecord.sourceCaseId
+          );
+        });
+
+      if (!enrichedRecord) {
+        throw new Error(
+          `Enriched record not found for ${readyRecord.sourceCaseId}`
+        );
+      }
+
+      const result =
+        await writeTrialRelationships({
+          trialId: readyRecord.trialId,
+          parsedXmlData:
+            enrichedRecord.parsedXmlData,
+          insert: true,
+        });
+
+      relationshipBackfillResults.trialsProcessed += 1;
+      relationshipBackfillResults.rowsInserted +=
+        result.summary.totalRows;
+
+      console.log(
+        `${readyRecord.sourceCaseId} | trial ${readyRecord.trialId} | inserted ${result.summary.totalRows} rows`
+      );
+    } catch (error) {
+      relationshipBackfillResults.failed += 1;
+
+      console.error(
+        `Relationship backfill failed for ${readyRecord.sourceCaseId}:`,
+        error.message
+      );
+
+      throw error;
+    }
+  }
+}
+
+console.log("\n========== RELATIONSHIP BACKFILL SUMMARY ==========\n");
+
+console.log(
+  "Backfill enabled:",
+  backfillRelationships ? "Yes" : "No"
+);
+
+console.log(
+  "Trials processed:",
+  relationshipBackfillResults.trialsProcessed
+);
+
+console.log(
+  "Rows inserted:",
+  relationshipBackfillResults.rowsInserted
+);
+
+console.log(
+  "Failed:",
+  relationshipBackfillResults.failed
+);
+
+console.log(
+  "Expected rows:",
+  relationshipBackfillExpectedTotalRows
+);
+
+console.log("\n===================================================\n");
 
 
 const transformedRecords = enrichedRecords.map((enrichedRecord) => {
@@ -914,9 +1214,7 @@ for (const result of insertionReadyRecords) {
   }
 } 
 
-console.log(
-  "\n========== DATABASE DUPLICATE READINESS ==========\n"
-);
+console.log("\n========== DATABASE DUPLICATE READINESS ==========\n");
 
 console.log(
   `Validation-eligible records: ${insertionReadyRecords.length}`
@@ -955,9 +1253,7 @@ console.log(
   }`
 );
 
-console.log(
-  "\n=================================================\n"
-);
+console.log("\n=================================================\n");
 
 const validationSummary =
   summariseValidation(validationResults);
@@ -1661,9 +1957,7 @@ const defendantStructureSummary =
       ).toFixed(1)
     : "0.0";
 
-console.log(
-  "\n========== DEFENDANT STRUCTURE SUMMARY ==========\n"
-);
+console.log("\n========== DEFENDANT STRUCTURE SUMMARY ==========\n");
 
 console.log(
   "Trial records inspected:",
@@ -1715,9 +2009,7 @@ console.log(
   defendantStructureSummary.defendantNodesWithAge
 );
 
-console.log(
-  "\n=================================================\n"
-);
+console.log("\n=================================================\n");
 
 function isNonTrialRecord(record) {
   const title =
