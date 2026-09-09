@@ -41,9 +41,11 @@ import { backfillTrialOffenceFields, } from "../src/import/backfillTrialOffenceF
 
 import { backfillTrialGenderFields, } from "../src/import/backfillTrialGenderFields.js";
 
-import writeTrialRelationships, {
-  checkRelationshipBackfillReadiness,
-} from "../src/import/writeTrialRelationships.js";
+import writeTrialRelationships, { checkRelationshipBackfillReadiness, } from "../src/import/writeTrialRelationships.js";
+
+import { readTrialRelationships, checkTrialRelationshipIntegrity, } from "../src/import/readTrialRelationships.js";
+
+import { pool } from "../db.js";
 
 const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 5;
@@ -2516,6 +2518,76 @@ for (const record of recordsWithCrimeLocation) {
 }
 
 console.log("\n==============================================");*/
+
+const [relationshipTrialRows] =
+  await pool.query(`
+    SELECT DISTINCT trial_id
+    FROM trial_defendant_nodes
+    ORDER BY trial_id
+  `);
+
+let integrityPassed = 0;
+let integrityFailed = 0;
+const integrityIssues = [];
+
+for (const row of relationshipTrialRows) {
+  const result =
+    await checkTrialRelationshipIntegrity(
+      row.trial_id
+    );
+
+  if (result.isValid) {
+    integrityPassed += 1;
+  } else {
+    integrityFailed += 1;
+
+    integrityIssues.push({
+      trialId: row.trial_id,
+      issues: result.issues,
+    });
+  }
+}
+
+console.log("\n========== RELATIONAL READ INTEGRITY ==========\n");
+
+console.log(
+  "Trials checked:",
+  relationshipTrialRows.length
+);
+
+console.log(
+  "Passed:",
+  integrityPassed
+);
+
+console.log(
+  "Failed:",
+  integrityFailed
+);
+
+console.log(
+  "Dangling relationship issues:",
+  integrityIssues.reduce(
+    (total, result) =>
+      total + result.issues.length,
+    0
+  )
+);
+
+if (integrityIssues.length > 0) {
+  console.log(
+    "\n--- INTEGRITY ISSUES ---"
+  );
+
+  console.dir(
+    integrityIssues,
+    { depth: null }
+  );
+}
+
+console.log("\nDatabase changes: 0");
+
+
 
 console.log("\n========== GEOCODE ENRICHMENT SUMMARY ==========\n");
 
