@@ -737,11 +737,7 @@ const relationshipUnresolved =
     );
   }
 
-
-
-console.log(
-  "\n========== RELATIONSHIP BACKFILL SAFETY GATE ==========\n"
-);
+console.log("\n========== RELATIONSHIP BACKFILL SAFETY GATE ==========\n");
 
 console.log(
   "Trial records inspected:",
@@ -846,9 +842,7 @@ const relationshipBackfillExpectedTotals =
     0
   );
 
-console.log(
-  "\n========== RELATIONSHIP BACKFILL EXPECTED ROWS ==========\n"
-);
+console.log("\n========== RELATIONSHIP BACKFILL EXPECTED ROWS ==========\n");
 
 console.log(
   "Trials ready:",
@@ -1034,6 +1028,52 @@ const locationPrecisionSummary = {
   mappedRecords: mappedLocationRecords.length,
   counts: locationPrecisionCounts,
 };  
+
+//TEMPORARY!!! 
+console.log("\n========== UNRESOLVED TRIAL TRANSFORMATION REVIEW ==========\n");
+
+for (const unresolved of relationshipUnresolved) {
+  const transformedRecord =
+    transformedRecords.find(
+      (record) =>
+        record.source_case_id ===
+        unresolved.sourceCaseId
+    );
+
+  console.log(
+    `\nSource case ID: ${unresolved.sourceCaseId}`
+  );
+
+  if (!transformedRecord) {
+    console.log("Transformed record: NOT FOUND");
+    continue;
+  }
+
+  console.log(
+    "Defendant:",
+    transformedRecord.defendant_name ?? null
+  );
+
+  console.log(
+    "Trial date:",
+    transformedRecord.trial_date ?? null
+  );
+
+  console.log(
+    "Offence:",
+    transformedRecord.offence ?? null
+  );
+
+  console.log(
+    "Verdict:",
+    transformedRecord.verdict ?? null
+  );
+
+  console.log(
+    "Source URL:",
+    transformedRecord.source_url ?? null
+  );
+}
 
 console.log("\n========== LOCATION PRECISION SUMMARY ==========\n");
 
@@ -1262,6 +1302,7 @@ const reviewedRecords = createApiReviewRecords({
   records: trialRecords,
   transformedRecords,
   validationResults,
+  enrichedRecords,
 });
 
 const apiReadyRecords = reviewedRecords

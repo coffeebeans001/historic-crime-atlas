@@ -2,12 +2,45 @@ export function createApiReviewRecords({
   records,
   transformedRecords,
   validationResults,
+  enrichedRecords,
 }) {
   return transformedRecords.map((record, index) => {
     const source = records[index]?._source ?? {};
     const validation = validationResults[index];
 
     const transcriptLength = source.text?.length ?? 0;
+    const sourceCaseId =
+      source.idkey ?? null;
+
+    const enrichedRecord =
+      enrichedRecords?.find((candidate) => {
+        const candidateSourceCaseId =
+          candidate.originalRecord?._source?.idkey ??
+          candidate.detailedRecord?._source?.idkey ??
+          null;
+
+        return candidateSourceCaseId === sourceCaseId;
+      });
+
+    const parsedXmlData =
+      enrichedRecord?.parsedXmlData ?? null;
+
+    const verdictNodes =
+  parsedXmlData?.verdicts ?? [];
+
+const criminalCharges =
+  parsedXmlData?.criminalCharges ?? [];
+
+const hasStructuredNoVerdict =
+  !record.verdict &&
+  verdictNodes.length === 0 &&
+  criminalCharges.length > 0 &&
+  criminalCharges.every(
+    (charge) =>
+      charge.verdictReference == null ||
+      charge.verdictReference === "NOVERDICTR"
+  );
+
     const missingFields = [];
 
     if (!record.source_case_id) {
@@ -22,7 +55,9 @@ export function createApiReviewRecords({
       missingFields.push("offence");
     }
 
-    if (!record.verdict) {
+    if (!record.verdict &&
+      !hasStructuredNoVerdict
+    ) {
       missingFields.push("verdict");
     }
 
@@ -41,6 +76,8 @@ export function createApiReviewRecords({
           ? "READY"
           : "REVIEW_REQUIRED",
       missingFields,
+      structuredNoVerdict:
+      hasStructuredNoVerdict,
       validation: {
         status: validation.status,
         isValid: validation.isValid,
