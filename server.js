@@ -1,6 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import { pool } from "./db.js";
+import { readTrialRelationships, } from "./src/import/readTrialRelationships.js";
 
 dotenv.config();
 
@@ -212,6 +213,55 @@ app.get("/api/trials", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* api/trials/:id/relationships */
+app.get("/api/trials/:id/relationships", async (req, res) => {
+  try {
+    const trialId = Number.parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(trialId) || trialId <= 0) {
+      return res.status(400).json({
+        error: "Invalid trial ID",
+      });
+    }
+
+    const [trialRows] = await pool.query(
+      `
+        SELECT
+          id,
+          source_case_id,
+          trial_date,
+          defendant_name,
+          offence,
+          verdict
+        FROM trials
+        WHERE id = ?
+        LIMIT 1
+      `,
+      [trialId],
+    );
+
+    if (trialRows.length === 0) {
+      return res.status(404).json({
+        error: "Trial not found",
+      });
+    }
+
+    const relationships =
+      await readTrialRelationships(trialId);
+
+    res.json({
+      trial: trialRows[0],
+      relationships,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Internal server error",
+    });
   }
 });
 
