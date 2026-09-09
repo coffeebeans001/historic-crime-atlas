@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { pool } from "./db.js";
 import { readTrialRelationships, } from "./src/import/readTrialRelationships.js";
+import { buildTrialRelationshipResponse, } from "./src/import/buildTrialRelationshipResponse.js";
 
 dotenv.config();
 
@@ -250,12 +251,15 @@ app.get("/api/trials/:id/relationships", async (req, res) => {
     }
 
     const relationships =
-      await readTrialRelationships(trialId);
+  await readTrialRelationships(trialId);
 
-    res.json({
-      trial: trialRows[0],
-      relationships,
-    });
+    const response =
+      buildTrialRelationshipResponse({
+        trial: trialRows[0],
+        relationships,
+      });
+
+    res.json(response);
   } catch (err) {
     console.error(err);
 
