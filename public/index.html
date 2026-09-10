@@ -292,6 +292,39 @@
   padding: 24px;
 }
 
+.transcript-modal__relationships {
+  margin: 24px 0;
+}
+
+.transcript-modal__relationships h3 {
+  margin: 0 0 16px;
+  font-size: 1.35rem;
+}
+
+.trial-relationship-card {
+  padding: 16px 0;
+  border-top: 1px solid #d9d9d9;
+}
+
+.trial-relationship-card:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.trial-relationship-card:last-child {
+  padding-bottom: 0;
+}
+
+.trial-relationship-card h4 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+
+.trial-relationship-card p {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
 .transcript-modal.is-open {
   display: flex;
 }
@@ -991,6 +1024,24 @@
     >
       ×
     </button>
+
+    <section
+      id="transcript-modal-charges-section"
+      class="transcript-modal__relationships"
+      hidden
+    >
+      <h3>Detailed Charges</h3>
+      <div id="transcript-modal-charges"></div>
+   </section>
+
+   <section
+      id="transcript-modal-punishments-section"
+      class="transcript-modal__relationships"
+      hidden
+    >
+      <h3>Punishments</h3>
+      <div id="transcript-modal-punishments"></div>
+   </section>
 
     <h2 id="transcript-modal-title">
       Full Trial Transcript

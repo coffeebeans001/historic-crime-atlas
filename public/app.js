@@ -6026,7 +6026,7 @@ function renderUnmappedTrials() {
   unmappedTrialsVisible <= 8;
 }
 
-function openTranscriptModal(trial) {
+async function openTranscriptModal(trial) {
    if (!trial?.transcript_text) {
     return;
   }
@@ -6063,8 +6063,24 @@ function openTranscriptModal(trial) {
     "transcript-modal-text"
   );
 
+  const chargesSection = document.getElementById(
+    "transcript-modal-charges-section"
+  );
+
+  const punishmentsSection = document.getElementById(
+    "transcript-modal-punishments-section"
+  );
+
   if (!transcriptModal || !transcriptText) {
     return;
+  }
+
+  if (chargesSection) {
+    chargesSection.hidden = true;
+  }
+
+  if (punishmentsSection) {
+    punishmentsSection.hidden = true;
   }
 
   transcriptDate.textContent =
@@ -6101,11 +6117,214 @@ function openTranscriptModal(trial) {
     "false"
   );
 
+  try {
+  const response = await fetch(
+    `/api/trials/${trial.id}/relationships`
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Relationship request failed: ${response.status}`
+    );
+  }
+
+  const relationshipData = await response.json();
+
+  renderTrialRelationships(relationshipData);
+
+  console.log(
+    "Trial relationship data:",
+    relationshipData
+  );
+    renderTrialRelationships(
+    relationshipData
+  );
+
+} catch (error) {
+  console.error(
+    "Could not load trial relationships:",
+    error
+  );
+}
+
   const closeButton = transcriptModal.querySelector(
     ".transcript-modal__close"
   );
 
   closeButton?.focus();
+}
+
+function formatRelationshipLabel(value) {
+  if (!value) {
+    return "Not available";
+  }
+
+  const withSpaces = String(value)
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .trim();
+
+  return withSpaces
+    .charAt(0)
+    .toUpperCase() +
+    withSpaces.slice(1);
+}
+
+function renderTrialRelationships(relationshipData) {
+  const chargesSection = document.getElementById(
+    "transcript-modal-charges-section"
+  );
+
+  const chargesContainer = document.getElementById(
+    "transcript-modal-charges"
+  );
+
+  const punishmentsSection = document.getElementById(
+    "transcript-modal-punishments-section"
+  );
+
+  const punishmentsContainer = document.getElementById(
+    "transcript-modal-punishments"
+  );
+
+  if (
+    !chargesSection ||
+    !chargesContainer ||
+    !punishmentsSection ||
+    !punishmentsContainer
+  ) {
+    return;
+  }
+
+  const charges =
+    relationshipData?.relationships?.charges ?? [];
+
+  const punishments =
+    relationshipData?.relationships?.punishments ?? [];
+
+  chargesContainer.innerHTML = "";
+  punishmentsContainer.innerHTML = "";
+
+  if (charges.length > 0) {
+    chargesContainer.innerHTML = charges
+      .map((charge) => {
+        const defendantName =
+          charge.defendant?.name || "Unknown";
+
+        const offenceCategory =
+          formatRelationshipLabel(
+            charge.offence?.category
+          );
+
+        const offenceSubcategory =
+          formatRelationshipLabel(
+            charge.offence?.subcategory
+          );
+
+        const offenceText =
+          charge.offence?.text || "";
+
+        const plea =
+          charge.verdict?.plea
+            ? formatRelationshipLabel(
+                charge.verdict.plea
+              )
+            : "Not available";
+
+        let verdictText = "Not recorded in source";
+
+        if (charge.verdict) {
+          verdictText =
+            formatRelationshipLabel(
+              charge.verdict.category
+            );
+        }
+
+        const outcomeText =
+          charge.verdict?.text || "";
+
+        return `
+          <article class="trial-relationship-card">
+            <h4>${defendantName}</h4>
+
+            <p>
+              <b>Offence:</b>
+              ${offenceCategory}
+              / ${offenceSubcategory}
+            </p>
+
+            ${
+              offenceText
+                ? `<p>${offenceText}</p>`
+                : ""
+            }
+
+            <p>
+              <b>Plea:</b> ${plea}
+            </p>
+
+            <p>
+              <b>Verdict:</b> ${verdictText}
+            </p>
+
+            ${
+              outcomeText
+                ? `<p><b>Outcome:</b> ${outcomeText}</p>`
+                : ""
+            }
+          </article>
+        `;
+      })
+      .join("");
+
+    chargesSection.hidden = false;
+  } else {
+    chargesSection.hidden = true;
+  }
+
+  if (punishments.length > 0) {
+    punishmentsContainer.innerHTML = punishments
+      .map((relationship) => {
+        const defendantName =
+          relationship.defendant?.name || "Unknown";
+
+        const punishmentCategory =
+          formatRelationshipLabel(
+            relationship.punishment?.category
+          );
+
+        const punishmentSubcategory =
+          formatRelationshipLabel(
+            relationship.punishment?.subcategory
+          );
+
+        const punishmentText =
+          relationship.punishment?.text || "";
+
+        return `
+          <article class="trial-relationship-card">
+            <h4>${defendantName}</h4>
+
+            <p>
+              <b>Punishment:</b>
+              ${punishmentCategory}
+              / ${punishmentSubcategory}
+            </p>
+
+            ${
+              punishmentText
+                ? `<p>${punishmentText}</p>`
+                : ""
+            }
+          </article>
+        `;
+      })
+      .join("");
+
+    punishmentsSection.hidden = false;
+  } else {
+    punishmentsSection.hidden = true;
+  }
 }
 
 async function searchMapLocation() {
