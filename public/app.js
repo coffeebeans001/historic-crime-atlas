@@ -6254,9 +6254,9 @@ function renderTrialRelationships(relationshipData) {
             </p>
 
             ${
-              offenceText
-                ? `<p>${offenceText}</p>`
-                : ""
+             offenceText
+              ? `<p class="trial-relationship-card__source-text">${offenceText}</p>`
+              : ""
             }
 
             <p>
@@ -6268,9 +6268,16 @@ function renderTrialRelationships(relationshipData) {
             </p>
 
             ${
-              outcomeText
-                ? `<p><b>Outcome:</b> ${outcomeText}</p>`
-                : ""
+             outcomeText
+              ? `
+                <p>
+                  <b>Outcome:</b>
+                  <span class="trial-relationship-card__source-text">
+                    ${outcomeText}
+                  </span>
+                </p>
+              `
+              : ""
             }
           </article>
         `;
@@ -6313,7 +6320,11 @@ function renderTrialRelationships(relationshipData) {
 
             ${
               punishmentText
-                ? `<p>${punishmentText}</p>`
+                ? `
+                  <p class="trial-relationship-card__source-text">
+                    ${punishmentText}
+                  </p>
+                `
                 : ""
             }
           </article>

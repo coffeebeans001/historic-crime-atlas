@@ -976,7 +976,6 @@ console.log(
 
 console.log("\n===================================================\n");
 
-
 const transformedRecords = enrichedRecords.map((enrichedRecord) => {
   const recordForTransform =
     enrichedRecord.detailedRecord ??
@@ -2586,7 +2585,6 @@ if (integrityIssues.length > 0) {
 }
 
 console.log("\nDatabase changes: 0");
-
 
 
 console.log("\n========== GEOCODE ENRICHMENT SUMMARY ==========\n");
