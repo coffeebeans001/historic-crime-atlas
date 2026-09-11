@@ -1008,6 +1008,22 @@
     </div>
   </div>
 
+  <div class="unmapped-trials-filters">
+  <label>
+    Year:
+    <select id="unmapped-trials-year">
+      <option value="">All years</option>
+    </select>
+  </label>
+
+  <label>
+    Month:
+    <select id="unmapped-trials-month">
+      <option value="">All months</option>
+    </select>
+  </label>
+</div>
+
   <div
     id="unmapped-trials-list"
     class="unmapped-trials-list"
@@ -1017,23 +1033,23 @@
     </p>
   </div>
 
-  <div class="unmapped-trials-actions">
+  <div class="unmapped-trials-navigation">
   <button
     type="button"
-    id="unmapped-trials-less"
-    class="unmapped-trials-less"
-    hidden
+    id="unmapped-trials-previous"
   >
-    Show fewer
+    Previous
   </button>
+
+  <span id="unmapped-trials-position">
+    0 of 0
+  </span>
 
   <button
     type="button"
-    id="unmapped-trials-more"
-    class="unmapped-trials-more"
-    hidden
+    id="unmapped-trials-next"
   >
-    Show 8 more
+    Next
   </button>
 </div>
 

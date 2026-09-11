@@ -97,7 +97,10 @@ const backfillTrialGender =
   );
 
 const backfillRelationships =
-  process.argv.includes("--backfill-relationships");  
+  process.argv.includes("--backfill-relationships"); 
+  
+const backfillNakedRelationships =
+  process.argv.includes("--backfill-naked-relationships");  
   
 const allTrialsMode =
   process.argv.includes("--all-trials");  
@@ -686,6 +689,373 @@ console.log(
 );
 
 console.log("\n====================================================\n");
+
+const [nakedTrialRows] = await pool.query(`
+  SELECT
+    t.id,
+    t.source_case_id
+  FROM trials t
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM trial_defendant_nodes d
+    WHERE d.trial_id = t.id
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM trial_offence_nodes o
+    WHERE o.trial_id = t.id
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM trial_verdict_nodes v
+    WHERE v.trial_id = t.id
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM trial_punishment_nodes p
+    WHERE p.trial_id = t.id
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM criminal_charges c
+    WHERE c.trial_id = t.id
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM defendant_punishments dp
+    WHERE dp.trial_id = t.id
+  )
+  AND t.source_case_id IS NOT NULL
+  AND TRIM(t.source_case_id) <> ''
+  ORDER BY t.id
+`);
+
+const nakedTrialRelationshipReview = [];
+
+for (const trial of nakedTrialRows) {
+  try {
+    const detailedResult =
+      await fetchOldBaileyRecordById(
+        trial.source_case_id
+      );
+
+    const detailedRecord =
+      detailedResult.records?.[0] ?? null;
+
+    const nakedTrialXml =
+      detailedRecord?._source?.xml ?? null;
+
+    if (!nakedTrialXml) {
+      nakedTrialRelationshipReview.push({
+        trialId: trial.id,
+        sourceCaseId: trial.source_case_id,
+        status: "source_limited",
+        parsedXmlData: null,
+      });
+
+      continue;
+    }
+
+    const nakedTrialParsedXmlData =
+      parseOldBaileyXml(nakedTrialXml);
+
+    nakedTrialRelationshipReview.push({
+      trialId: trial.id,
+      sourceCaseId: trial.source_case_id,
+      status: "parsed",
+      parsedXmlData:
+        nakedTrialParsedXmlData,
+    });
+  } catch (error) {
+    nakedTrialRelationshipReview.push({
+      trialId: trial.id,
+      sourceCaseId: trial.source_case_id,
+      status: "fetch_failed",
+      parsedXmlData: null,
+      error: error.message,
+    });
+  }
+}
+
+const nakedParsed =
+  nakedTrialRelationshipReview.filter(
+    (record) => record.status === "parsed"
+  );
+
+const nakedSourceLimited =
+  nakedTrialRelationshipReview.filter(
+    (record) =>
+      record.status === "source_limited"
+  );
+
+const nakedFetchFailed =
+  nakedTrialRelationshipReview.filter(
+    (record) =>
+      record.status === "fetch_failed"
+  );
+
+console.log("\n========== NAKED TRIAL RELATIONSHIP SOURCE REVIEW ==========\n");
+
+const nakedTrialBackfillReadiness = [];
+
+for (const record of nakedParsed) {
+  const readiness =
+    await checkRelationshipBackfillReadiness({
+      sourceCaseId: record.sourceCaseId,
+      parsedXmlData: record.parsedXmlData,
+    });
+
+  nakedTrialBackfillReadiness.push(readiness);
+}
+
+const nakedRelationshipComplete =
+  nakedTrialBackfillReadiness.filter(
+    (record) => record.status === "complete"
+  );
+
+const nakedRelationshipReady =
+  nakedTrialBackfillReadiness.filter(
+    (record) => record.status === "ready"
+  );
+
+const nakedRelationshipPartial =
+  nakedTrialBackfillReadiness.filter(
+    (record) => record.status === "partial"
+  );
+
+  if (
+  backfillNakedRelationships &&
+  nakedRelationshipPartial.length > 0
+) {
+  throw new Error(
+    "Naked relationship backfill blocked: partial/inconsistent records detected."
+  );
+}
+
+const nakedRelationshipUnresolved =
+  nakedTrialBackfillReadiness.filter(
+    (record) => record.status === "unresolved"
+  );
+
+const nakedRelationshipExpectedTotals =
+  nakedRelationshipReady.reduce(
+    (totals, record) => {
+      totals.defendantNodes +=
+        record.expectedCounts.defendantNodes;
+
+      totals.offenceNodes +=
+        record.expectedCounts.offenceNodes;
+
+      totals.verdictNodes +=
+        record.expectedCounts.verdictNodes;
+
+      totals.punishmentNodes +=
+        record.expectedCounts.punishmentNodes;
+
+      totals.criminalCharges +=
+        record.expectedCounts.criminalCharges;
+
+      totals.defendantPunishments +=
+        record.expectedCounts.defendantPunishments;
+
+      return totals;
+    },
+    {
+      defendantNodes: 0,
+      offenceNodes: 0,
+      verdictNodes: 0,
+      punishmentNodes: 0,
+      criminalCharges: 0,
+      defendantPunishments: 0,
+    }
+  );
+
+const nakedRelationshipExpectedTotalRows =
+  Object.values(
+    nakedRelationshipExpectedTotals
+  ).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+  
+console.log("\n========== NAKED TRIAL RELATIONSHIP EXPECTED ROWS ==========\n");
+
+console.log(
+  "Trials ready:",
+  nakedRelationshipReady.length
+);
+
+console.log(
+  "Defendant nodes:",
+  nakedRelationshipExpectedTotals.defendantNodes
+);
+
+console.log(
+  "Offence nodes:",
+  nakedRelationshipExpectedTotals.offenceNodes
+);
+
+console.log(
+  "Verdict nodes:",
+  nakedRelationshipExpectedTotals.verdictNodes
+);
+
+console.log(
+  "Punishment nodes:",
+  nakedRelationshipExpectedTotals.punishmentNodes
+);
+
+console.log(
+  "Criminal charges:",
+  nakedRelationshipExpectedTotals.criminalCharges
+);
+
+console.log(
+  "Defendant punishments:",
+  nakedRelationshipExpectedTotals.defendantPunishments
+);
+
+console.log(
+  "Total expected rows:",
+  nakedRelationshipExpectedTotalRows
+);
+
+console.log("\nDatabase changes: 0");  
+
+let nakedRelationshipBackfillResults = {
+  trialsProcessed: 0,
+  rowsInserted: 0,
+  failed: 0,
+};
+
+if (backfillNakedRelationships) {
+  console.log(
+    "\n========== NAKED TRIAL RELATIONSHIP BACKFILL INSERT ==========\n"
+  );
+
+  for (const readyRecord of nakedRelationshipReady) {
+    try {
+      const sourceReviewRecord =
+        nakedParsed.find(
+          (record) =>
+            record.sourceCaseId ===
+            readyRecord.sourceCaseId
+        );
+
+      if (!sourceReviewRecord) {
+        throw new Error(
+          `Parsed XML review record not found for ${readyRecord.sourceCaseId}`
+        );
+      }
+
+      const result =
+        await writeTrialRelationships({
+          trialId: readyRecord.trialId,
+          parsedXmlData:
+            sourceReviewRecord.parsedXmlData,
+          insert: true,
+        });
+
+      nakedRelationshipBackfillResults.trialsProcessed += 1;
+
+      nakedRelationshipBackfillResults.rowsInserted +=
+        result.summary.totalRows;
+
+      console.log(
+        `${readyRecord.sourceCaseId} | trial ${readyRecord.trialId} | inserted ${result.summary.totalRows} rows`
+      );
+    } catch (error) {
+      nakedRelationshipBackfillResults.failed += 1;
+
+      console.error(
+        `Naked relationship backfill failed for ${readyRecord.sourceCaseId}:`,
+        error.message
+      );
+
+      throw error;
+    }
+  }
+}
+
+console.log("\n========== NAKED TRIAL RELATIONSHIP BACKFILL SUMMARY ==========\n");
+
+console.log(
+  "Backfill enabled:",
+  backfillNakedRelationships ? "Yes" : "No"
+);
+
+console.log(
+  "Trials processed:",
+  nakedRelationshipBackfillResults.trialsProcessed
+);
+
+console.log(
+  "Rows inserted:",
+  nakedRelationshipBackfillResults.rowsInserted
+);
+
+console.log(
+  "Failed:",
+  nakedRelationshipBackfillResults.failed
+);
+
+console.log(
+  "Expected rows:",
+  nakedRelationshipExpectedTotalRows
+);
+
+console.log("\n===============================================================\n");
+
+console.log("\n========== NAKED TRIAL RELATIONSHIP SAFETY GATE ==========\n");
+
+console.log(
+  "XML records inspected:",
+  nakedTrialBackfillReadiness.length
+);
+
+console.log(
+  "Already complete:",
+  nakedRelationshipComplete.length
+);
+
+console.log(
+  "Ready for relationship backfill:",
+  nakedRelationshipReady.length
+);
+
+console.log(
+  "Partial / inconsistent:",
+  nakedRelationshipPartial.length
+);
+
+console.log(
+  "Unresolved:",
+  nakedRelationshipUnresolved.length
+);
+
+console.log("\nDatabase changes: 0");  
+
+console.log(
+  "Naked trials inspected:",
+  nakedTrialRelationshipReview.length
+);
+
+console.log(
+  "Detailed XML parsed:",
+  nakedParsed.length
+);
+
+console.log(
+  "Source-limited:",
+  nakedSourceLimited.length
+);
+
+console.log(
+  "Fetch failed:",
+  nakedFetchFailed.length
+);
+
+console.log("\nDatabase changes: 0");  
 
 const relationshipBackfillReadiness = [];
 

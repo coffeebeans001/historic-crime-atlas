@@ -5853,7 +5853,8 @@ async function captureResearchMapCanvas() {
 }
 
 let unmappedTrials = [];
-let unmappedTrialsVisible = 8;
+let filteredUnmappedTrials = [];
+let unmappedTrialIndex = 0;
 
 async function fetchUnmappedTrials() {
   const list = document.getElementById(
@@ -5864,13 +5865,9 @@ async function fetchUnmappedTrials() {
     "unmapped-trials-count"
   );
 
-  const moreButton = document.getElementById(
-    "unmapped-trials-more"
-  );
-
-  if (!list || !count || !moreButton) {
-    return;
-  }
+  if (!list || !count) {
+  return;
+}
 
   try {
     const res = await fetch(
@@ -5887,15 +5884,20 @@ async function fetchUnmappedTrials() {
 
     const payload = await res.json();
 
-    unmappedTrials = payload.data || [];
-    unmappedTrialsVisible = 8;
+unmappedTrials = payload.data || [];
+filteredUnmappedTrials = [...unmappedTrials];
+unmappedTrialIndex = 0;
 
-    count.textContent =
-      `${unmappedTrials.length} trial${
-        unmappedTrials.length === 1 ? "" : "s"
-      }`;
+count.textContent =
+  `${unmappedTrials.length} trial${
+    unmappedTrials.length === 1 ? "" : "s"
+  }`;
 
-    renderUnmappedTrials();
+populateUnmappedYearFilter();
+populateUnmappedMonthFilter();
+applyUnmappedTrialFilters();
+
+renderUnmappedTrials();
   } catch (error) {
     console.error(
       "Failed to load unmapped trials:",
@@ -5910,120 +5912,139 @@ async function fetchUnmappedTrials() {
       </p>
     `;
 
-    moreButton.hidden = true;
   }
 }
+
+
 
 function renderUnmappedTrials() {
   const list = document.getElementById(
     "unmapped-trials-list"
   );
 
-  const moreButton = document.getElementById(
-    "unmapped-trials-more"
+  const previousButton = document.getElementById(
+    "unmapped-trials-previous"
   );
 
-  const lessButton = document.getElementById(
-    "unmapped-trials-less"
+  const nextButton = document.getElementById(
+    "unmapped-trials-next"
   );
 
-  if (!list || !moreButton || !lessButton) {
+  const position = document.getElementById(
+    "unmapped-trials-position"
+  );
+
+  if (
+    !list ||
+    !previousButton ||
+    !nextButton ||
+    !position
+  ) {
     return;
   }
 
-  if (unmappedTrials.length === 0) {
+  if (filteredUnmappedTrials.length === 0) {
     list.innerHTML = `
       <p class="unmapped-trials-empty">
         No unmapped trials found.
       </p>
     `;
 
-    moreButton.hidden = true;
-    lessButton.hidden = true;
+    position.textContent = "0 of 0";
+    previousButton.disabled = true;
+    nextButton.disabled = true;
+
     return;
   }
 
-  const visibleTrials =
-    unmappedTrials.slice(
-      0,
-      unmappedTrialsVisible
-    );
+  if (unmappedTrialIndex < 0) {
+    unmappedTrialIndex = 0;
+  }
 
-  list.innerHTML = visibleTrials
-    .map((trial) => {
-      const date = trial.trial_date
-        ? String(trial.trial_date).slice(0, 10)
-        : "Unknown";
+ if (
+  unmappedTrialIndex >=
+  filteredUnmappedTrials.length - 1
+) {
+  return;
+}
 
-      const defendant =
-        trial.defendant_name || "Unknown";
+  const trial =
+  filteredUnmappedTrials[unmappedTrialIndex];
 
-      const verdict =
-        trial.verdict || "Unknown";
+  const date = trial.trial_date
+    ? String(trial.trial_date).slice(0, 10)
+    : "Unknown";
 
-      const offence =
-        trial.offence || "Unknown";
+  const defendant =
+    trial.defendant_name || "Unknown";
 
-      const historicalLocation =
-        trial.crime_location ||
-        trial.location_text ||
-        "Not available";
+  const verdict =
+    trial.verdict || "Unknown";
 
-      const transcriptButton =
-        trial.transcript_text
-          ? `
-            <div class="unmapped-trial-card__transcript">
-              <button
-                type="button"
-                class="unmapped-trial-transcript-button"
-                data-case-id="${trial.id}"
-              >
-                View full transcript
-              </button>
-            </div>
-          `
-          : "";
+  const offence =
+    trial.offence || "Unknown";
 
-      return `
-        <article
-          class="unmapped-trial-card"
-          data-case-id="${trial.id}"
-        >
-          <h3 class="unmapped-trial-card__offence">
-            ${offence}
-          </h3>
+  const historicalLocation =
+    trial.crime_location ||
+    trial.location_text ||
+    "Not available";
 
-          <div class="unmapped-trial-card__details">
-            <div>
-              <b>Date:</b> ${date}
-            </div>
+  const transcriptButton =
+    trial.transcript_text
+      ? `
+        <div class="unmapped-trial-card__transcript">
+          <button
+            type="button"
+            class="unmapped-trial-transcript-button"
+            data-case-id="${trial.id}"
+          >
+            View full transcript
+          </button>
+        </div>
+      `
+      : "";
 
-            <div>
-              <b>Defendant:</b> ${defendant}
-            </div>
+  list.innerHTML = `
+    <article
+      class="unmapped-trial-card"
+      data-case-id="${trial.id}"
+    >
+      <h3 class="unmapped-trial-card__offence">
+        ${offence}
+      </h3>
 
-            <div>
-              <b>Verdict:</b> ${verdict}
-            </div>
+      <div class="unmapped-trial-card__details">
+        <div>
+          <b>Date:</b> ${date}
+        </div>
 
-            <div>
-              <b>Historical location:</b>
-              ${historicalLocation}
-            </div>
-          </div>
+        <div>
+          <b>Defendant:</b> ${defendant}
+        </div>
 
-          ${transcriptButton}
-        </article>
-      `;
-    })
-    .join("");
+        <div>
+          <b>Verdict:</b> ${verdict}
+        </div>
 
-  moreButton.hidden =
-    unmappedTrialsVisible >=
-    unmappedTrials.length;
+        <div>
+          <b>Historical location:</b>
+          ${historicalLocation}
+        </div>
+      </div>
 
-    lessButton.hidden =
-  unmappedTrialsVisible <= 8;
+      ${transcriptButton}
+    </article>
+  `;
+
+  position.textContent =
+  `${unmappedTrialIndex + 1} of ${filteredUnmappedTrials.length}`;
+
+  previousButton.disabled =
+    unmappedTrialIndex === 0;
+
+  nextButton.disabled =
+  unmappedTrialIndex ===
+  filteredUnmappedTrials.length - 1;
 }
 
 async function openTranscriptModal(trial) {
@@ -6417,6 +6438,144 @@ async function searchMapLocation() {
     status.textContent =
       "Unable to search for that location.";
   }
+}
+
+function populateUnmappedYearFilter() {
+  const yearSelect = document.getElementById(
+    "unmapped-trials-year"
+  );
+
+  if (!yearSelect) {
+    return;
+  }
+
+  const years = [
+    ...new Set(
+      unmappedTrials
+        .map((trial) =>
+          trial.trial_date
+            ? String(trial.trial_date).slice(0, 4)
+            : null
+        )
+        .filter(Boolean)
+    ),
+  ].sort();
+
+  yearSelect.innerHTML = `
+    <option value="">All years</option>
+    ${years
+      .map(
+        (year) =>
+          `<option value="${year}">${year}</option>`
+      )
+      .join("")}
+  `;
+}
+
+function populateUnmappedMonthFilter() {
+  const yearSelect = document.getElementById(
+    "unmapped-trials-year"
+  );
+
+  const monthSelect = document.getElementById(
+    "unmapped-trials-month"
+  );
+
+  if (!yearSelect || !monthSelect) {
+    return;
+  }
+
+  const selectedYear = yearSelect.value;
+
+  const monthNumbers = [
+    ...new Set(
+      unmappedTrials
+        .filter((trial) => {
+          if (!trial.trial_date) {
+            return false;
+          }
+
+          const year =
+            String(trial.trial_date).slice(0, 4);
+
+          return (
+            !selectedYear ||
+            year === selectedYear
+          );
+        })
+        .map((trial) =>
+          String(trial.trial_date).slice(5, 7)
+        )
+        .filter(Boolean)
+    ),
+  ].sort();
+
+  const monthFormatter =
+    new Intl.DateTimeFormat("en-GB", {
+      month: "long",
+    });
+
+  monthSelect.innerHTML = `
+    <option value="">All months</option>
+    ${monthNumbers
+      .map((month) => {
+        const monthName =
+          monthFormatter.format(
+            new Date(
+              2000,
+              Number(month) - 1,
+              1
+            )
+          );
+
+        return `
+          <option value="${month}">
+            ${monthName}
+          </option>
+        `;
+      })
+      .join("")}
+  `;
+}
+
+function applyUnmappedTrialFilters() {
+  const year =
+    document.getElementById(
+      "unmapped-trials-year"
+    )?.value ?? "";
+
+  const month =
+    document.getElementById(
+      "unmapped-trials-month"
+    )?.value ?? "";
+
+  filteredUnmappedTrials =
+    unmappedTrials.filter((trial) => {
+      if (!trial.trial_date) {
+        return !year && !month;
+      }
+
+      const date =
+        String(trial.trial_date);
+
+      const trialYear =
+        date.slice(0, 4);
+
+      const trialMonth =
+        date.slice(5, 7);
+
+      const yearMatches =
+        !year || trialYear === year;
+
+      const monthMatches =
+        !month || trialMonth === month;
+
+      return yearMatches && monthMatches;
+    });
+
+  unmappedTrialIndex = 0;
+
+  renderUnmappedTrials();
 }
 
 async function render() {
@@ -8176,6 +8335,46 @@ document
 
     openTranscriptModal(trial);
   });  
+
+  document
+  .getElementById("unmapped-trials-previous")
+  ?.addEventListener("click", () => {
+    if (unmappedTrialIndex <= 0) {
+      return;
+    }
+
+    unmappedTrialIndex -= 1;
+    renderUnmappedTrials();
+  });
+
+document
+  .getElementById("unmapped-trials-next")
+  ?.addEventListener("click", () => {
+    if (
+      unmappedTrialIndex >=
+      unmappedTrials.length - 1
+    ) {
+      return;
+    }
+
+    unmappedTrialIndex += 1;
+    renderUnmappedTrials();
+  });
+
+document
+  .getElementById("unmapped-trials-year")
+  ?.addEventListener("change", () => {
+    populateUnmappedMonthFilter();
+    applyUnmappedTrialFilters();
+  });
+
+document
+  .getElementById("unmapped-trials-month")
+  ?.addEventListener(
+    "change",
+    applyUnmappedTrialFilters
+  );  
+
 
   updateLastUpdatedLabel();
   updateLastUpdatedLabel();
