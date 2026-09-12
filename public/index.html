@@ -474,11 +474,9 @@
   background: #fff;
 }
 
-.unmapped-trial-card__offence {
-  margin: 0 0 12px;
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.35;
+#unmapped-trials-offence {
+  width: 180px;
+  max-width: 100%;
 }
 
 .unmapped-trial-card__details {
@@ -542,6 +540,28 @@
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.unmapped-trials-filters {
+  display: flex;
+  gap: 16px;
+  align-items: end;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  margin: 18px 0;
+}
+
+.unmapped-trials-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.unmapped-trials-filters select {
+  min-width: 140px;
+  padding: 7px 10px;
 }
 
 /* Map location search */
@@ -670,7 +690,7 @@
           <option value="year" selected>year</option>
           <option value="decade">decade</option>
         </select>
-      </label>
+      </label>   
 
       <div class="offence-search-controls">
   <input
@@ -1022,6 +1042,13 @@
       <option value="">All months</option>
     </select>
   </label>
+
+  <label>
+  Offence:
+  <select id="unmapped-trials-offence">
+    <option value="">All offences</option>
+  </select>
+</label>
 </div>
 
   <div

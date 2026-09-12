@@ -5895,9 +5895,10 @@ count.textContent =
 
 populateUnmappedYearFilter();
 populateUnmappedMonthFilter();
+populateUnmappedOffenceFilter();
 applyUnmappedTrialFilters();
 
-renderUnmappedTrials();
+
   } catch (error) {
     console.error(
       "Failed to load unmapped trials:",
@@ -5914,8 +5915,6 @@ renderUnmappedTrials();
 
   }
 }
-
-
 
 function renderUnmappedTrials() {
   const list = document.getElementById(
@@ -5963,9 +5962,10 @@ function renderUnmappedTrials() {
 
  if (
   unmappedTrialIndex >=
-  filteredUnmappedTrials.length - 1
+  filteredUnmappedTrials.length
 ) {
-  return;
+  unmappedTrialIndex =
+    filteredUnmappedTrials.length - 1;
 }
 
   const trial =
@@ -6549,33 +6549,83 @@ function applyUnmappedTrialFilters() {
       "unmapped-trials-month"
     )?.value ?? "";
 
+  const offence =
+    document.getElementById(
+      "unmapped-trials-offence"
+    )?.value ?? "";
+
+
   filteredUnmappedTrials =
-    unmappedTrials.filter((trial) => {
-      if (!trial.trial_date) {
-        return !year && !month;
-      }
+  unmappedTrials.filter((trial) => {
+    const date =
+      trial.trial_date
+        ? String(trial.trial_date)
+        : "";
 
-      const date =
-        String(trial.trial_date);
+    const trialYear =
+      date ? date.slice(0, 4) : "";
 
-      const trialYear =
-        date.slice(0, 4);
+    const trialMonth =
+      date ? date.slice(5, 7) : "";
 
-      const trialMonth =
-        date.slice(5, 7);
+    const yearMatches =
+      !year ||
+      trialYear === year;
 
-      const yearMatches =
-        !year || trialYear === year;
+    const monthMatches =
+      !month ||
+      trialMonth === month;
 
-      const monthMatches =
-        !month || trialMonth === month;
+    const offenceMatches =
+      !offence ||
+      trial.offence_category === offence;
 
-      return yearMatches && monthMatches;
-    });
+    return (
+      yearMatches &&
+      monthMatches &&
+      offenceMatches
+    );
+  });
 
-  unmappedTrialIndex = 0;
+unmappedTrialIndex = 0;
 
-  renderUnmappedTrials();
+renderUnmappedTrials();
+}
+
+function populateUnmappedOffenceFilter() {
+  const offenceSelect = document.getElementById(
+    "unmapped-trials-offence"
+  );
+
+  if (!offenceSelect) {
+    return;
+  }
+
+  const offences = [
+    ...new Set(
+      unmappedTrials
+        .map((trial) =>
+      trial.offence_category
+        ? String(trial.offence_category).trim()
+        : null
+    )
+        .filter(Boolean)
+    ),
+  ].sort((a, b) =>
+    a.localeCompare(b)
+  );
+
+  offenceSelect.innerHTML = `
+    <option value="">All offences</option>
+    ${offences
+      .map(
+        (offence) =>
+          `<option value="${offence}">
+            ${offence}
+          </option>`
+      )
+      .join("")}
+  `;
 }
 
 async function render() {
@@ -8352,12 +8402,13 @@ document
   ?.addEventListener("click", () => {
     if (
       unmappedTrialIndex >=
-      unmappedTrials.length - 1
+      filteredUnmappedTrials.length - 1
     ) {
       return;
     }
 
     unmappedTrialIndex += 1;
+    
     renderUnmappedTrials();
   });
 
@@ -8373,7 +8424,14 @@ document
   ?.addEventListener(
     "change",
     applyUnmappedTrialFilters
-  );  
+  );
+
+document
+  .getElementById("unmapped-trials-offence")
+  ?.addEventListener(
+    "change",
+    applyUnmappedTrialFilters
+  );
 
 
   updateLastUpdatedLabel();

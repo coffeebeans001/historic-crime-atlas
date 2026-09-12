@@ -41,6 +41,7 @@ app.get("/api/trials/unmapped", async (req, res) => {
         trial_date,
         defendant_name,
         offence,
+        offence_category,
         verdict,
         crime_location,
         location_text,
