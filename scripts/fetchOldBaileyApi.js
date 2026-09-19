@@ -49,6 +49,7 @@ import { pool } from "../db.js";
 
 const DEFAULT_QUERY = "robbery";
 const DEFAULT_BATCH_SIZE = 5;
+const DEFAULT_START_OFFSET = 0;
 
 const MULTI_OFFENCE_MODE = false; // Set to true to enable multi-offence mode
 
@@ -118,7 +119,17 @@ const requestedBatchSize = Number.parseInt(
 const batchSize =
   Number.isInteger(requestedBatchSize) && requestedBatchSize > 0
     ? requestedBatchSize
-    : DEFAULT_BATCH_SIZE;  
+    : DEFAULT_BATCH_SIZE; 
+    
+const requestedStartOffset = Number.parseInt(
+  getArgumentValue("from", String(DEFAULT_START_OFFSET)),
+  10
+);
+
+const startOffset =
+  Number.isInteger(requestedStartOffset) && requestedStartOffset >= 0
+    ? requestedStartOffset
+    : DEFAULT_START_OFFSET;    
 
 const pageSize = 10;
 
@@ -151,10 +162,10 @@ async function fetchOldBaileyRecords() {
       const queryRecords = [];
 
       for (
-        let from = 0;
-        from < recordsPerQuery;
-        from += pageSize
-      ) {
+            let from = startOffset;
+            from < startOffset + recordsPerQuery;
+            from += pageSize
+          ) {
         const baseUrl =
   "https://www.dhi.ac.uk/api/data/oldbailey_record";
 
