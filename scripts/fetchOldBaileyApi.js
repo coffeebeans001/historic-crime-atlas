@@ -2245,6 +2245,28 @@ for (const item of databaseDuplicateCheck.readyRecords) {
   );
 }
 
+const mappedReadyRecords =
+  databaseDuplicateCheck.readyRecords.filter(
+    (item) =>
+      item.record.latitude !== null &&
+      item.record.longitude !== null
+  );
+
+const unmappedReadyRecords =
+  databaseDuplicateCheck.readyRecords.filter(
+    (item) =>
+      item.record.latitude === null ||
+      item.record.longitude === null
+  );
+
+console.log("\nInsertion candidate mapping readiness:");
+console.log(
+  `Mapped candidates: ${mappedReadyRecords.length}`
+);
+console.log(
+  `Unmapped candidates: ${unmappedReadyRecords.length}`
+);
+
 console.log("\n=================================================\n");
 
 
