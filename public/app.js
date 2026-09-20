@@ -6047,8 +6047,15 @@ function renderUnmappedTrials() {
   filteredUnmappedTrials.length - 1;
 }
 
-async function openTranscriptModal(trial) {
-   if (!trial?.transcript_text) {
+let transcriptModalReturnFocusElement = null;
+
+async function openTranscriptModal(
+  trial,
+  triggerElement = null
+) {
+  transcriptModalReturnFocusElement =
+    triggerElement;
+  if (!trial?.transcript_text) {
     return;
   }
 
@@ -6153,20 +6160,12 @@ async function openTranscriptModal(trial) {
 
   renderTrialRelationships(relationshipData);
 
-  console.log(
-    "Trial relationship data:",
-    relationshipData
-  );
-    renderTrialRelationships(
-    relationshipData
-  );
-
-} catch (error) {
-  console.error(
-    "Could not load trial relationships:",
-    error
-  );
-}
+  } catch (error) {
+    console.error(
+      "Could not load trial relationships:",
+      error
+    );
+  }
 
   const closeButton = transcriptModal.querySelector(
     ".transcript-modal__close"
@@ -7082,7 +7081,10 @@ function ensureMap() {
 
           const trial = openMarker?.caseData;
 
-        openTranscriptModal(trial);
+          openTranscriptModal(
+            trial,
+            transcriptButton
+          );
         }
       },
       true
@@ -7099,6 +7101,13 @@ function ensureMap() {
   );
 
   if (!transcriptModal) return;
+
+  if (
+    transcriptModalReturnFocusElement
+      ?.isConnected
+  ) {
+    transcriptModalReturnFocusElement.focus();
+  }
 
   transcriptModal.classList.remove("is-open");
 
@@ -7122,13 +7131,21 @@ document.addEventListener("keydown", (event) => {
     return;
   }
 
+  if (
+    transcriptModalReturnFocusElement
+      ?.isConnected
+  ) {
+    transcriptModalReturnFocusElement.focus();
+  }
+
   transcriptModal.classList.remove("is-open");
+
   transcriptModal.setAttribute(
     "aria-hidden",
     "true"
   );
 });
-  }
+}
 
   if (!baseTiles) {
   baseTiles = L.tileLayer(
@@ -8383,9 +8400,11 @@ document
       return;
     }
 
-    openTranscriptModal(trial);
-  });  
-
+    openTranscriptModal(
+      trial,
+      transcriptButton
+    );
+  });
   document
   .getElementById("unmapped-trials-previous")
   ?.addEventListener("click", () => {
