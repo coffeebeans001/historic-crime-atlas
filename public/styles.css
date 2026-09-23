@@ -720,6 +720,26 @@
   color: #333;
 }
 
+.confidence-badge--unavailable {
+  background: #e9ecef;
+  color: #333;
+}
+
+.confidence-badge--low {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.confidence-badge--moderate {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.confidence-badge--stronger {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
 .insight-text {
   margin-top: 12px;
   padding: 10px;
@@ -727,6 +747,19 @@
   font-size: 14px;
   line-height: 1.5;
   white-space: pre-line;
+  border-radius: 4px;
+}
+
+.insight-text--low {
+  border-left: 4px solid #d63333;
+}
+
+.insight-text--moderate {
+  border-left: 4px solid #fd7e14;
+}
+
+.insight-text--stronger {
+  border-left: 4px solid #198754;
 }
 
 .confidence-tooltip {
@@ -742,5 +775,34 @@
   font-size: 12px;
   line-height: 1.4;
   z-index: 10;
+}
+
+.confidence-tooltip--visible {
+  display: block;
+}
+
+.group-input--invalid {
+  border-color: #d63333;
+  background-color: #fff5f5;
+  outline: 2px solid rgba(214, 51, 51, 0.15);
+  box-shadow: 0 0 0 2px rgba(214, 51, 51, 0.12);
+}
+
+.gender-gap-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.gender-gap-badge--standard {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.gender-gap-badge--low-sample {
+  background: #fef3c7;
+  color: #92400e;
 }
 

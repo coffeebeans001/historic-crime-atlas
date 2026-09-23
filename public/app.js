@@ -1273,32 +1273,6 @@ ${confidenceLabel}${warning}
 `;
 }
 
-function updateConfidenceBadge(minN) {
-  const badge = document.getElementById("confidence-badge");
-  if (!badge) return;
-
-  if (minN === null || typeof minN !== "number") {
-    badge.textContent = "Confidence: unavailable";
-    badge.style.background = "#e9ecef";
-    badge.style.color = "#333";
-    return;
-  }
-
-  if (minN < 5) {
-    badge.textContent = `Low confidence (min n = ${minN})`;
-    badge.style.background = "#f8d7da";
-    badge.style.color = "#842029";
-  } else if (minN < 20) {
-    badge.textContent = `Moderate confidence (min n = ${minN})`;
-    badge.style.background = "#fff3cd";
-    badge.style.color = "#664d03";
-  } else {
-    badge.textContent = `Stronger confidence (min n = ${minN})`;
-    badge.style.background = "#d1e7dd";
-    badge.style.color = "#0f5132";
-  }
-}
-
 function buildInsightHeading({ groupLabel, genderLabel, seriesArr }) {
   const cleanGroup = groupLabel || "All offences";
   const cleanGender = genderLabel || "All";
@@ -1339,22 +1313,25 @@ function updateInsightPanel({
   }
 
   if (badgeEl) {
+    badgeEl.classList.remove(
+      "confidence-badge--unavailable",
+      "confidence-badge--low",
+      "confidence-badge--moderate",
+      "confidence-badge--stronger",
+    );
+
     if (minN === null || typeof minN !== "number") {
       badgeEl.textContent = "Confidence: unavailable";
-      badgeEl.style.background = "#e9ecef";
-      badgeEl.style.color = "#333";
+      badgeEl.classList.add("confidence-badge--unavailable");
     } else if (minN < 5) {
       badgeEl.textContent = `Low confidence (min n = ${minN})`;
-      badgeEl.style.background = "#f8d7da";
-      badgeEl.style.color = "#842029";
+      badgeEl.classList.add("confidence-badge--low");
     } else if (minN < 20) {
       badgeEl.textContent = `Moderate confidence (min n = ${minN})`;
-      badgeEl.style.background = "#fff3cd";
-      badgeEl.style.color = "#664d03";
+      badgeEl.classList.add("confidence-badge--moderate");
     } else {
       badgeEl.textContent = `Stronger confidence (min n = ${minN})`;
-      badgeEl.style.background = "#d1e7dd";
-      badgeEl.style.color = "#0f5132";
+      badgeEl.classList.add("confidence-badge--stronger");
     }
   }
 
@@ -1362,18 +1339,21 @@ function updateInsightPanel({
     insightEl.textContent =
       insightText || "No data available for the selected filters.";
 
-    if (minN === null || typeof minN !== "number" || minN < 5) {
-      insightEl.style.borderLeft = "4px solid #d63333";
-    } else if (minN < 20) {
-      insightEl.style.borderLeft = "4px solid #fd7e14";
-    } else {
-      insightEl.style.borderLeft = "4px solid #198754";
-    }
+    insightEl.classList.remove(
+      "insight-text--low",
+      "insight-text--moderate",
+      "insight-text--stronger",
+    );
 
-    insightEl.style.borderRadius = "4px";
+    if (minN === null || typeof minN !== "number" || minN < 5) {
+      insightEl.classList.add("insight-text--low");
+    } else if (minN < 20) {
+      insightEl.classList.add("insight-text--moderate");
+    } else {
+      insightEl.classList.add("insight-text--stronger");
+    }
   }
 }
-
 function updateGroupInputState() {
   const groupInput = document.getElementById("group");
   const feedbackEl = document.getElementById("group-feedback");
@@ -1381,10 +1361,7 @@ function updateGroupInputState() {
 
   const validatedGroup = getValidatedGroup();
 
-  groupInput.style.borderColor = "";
-  groupInput.style.backgroundColor = "";
-  groupInput.style.outline = "";
-  groupInput.style.boxShadow = "";
+  groupInput.classList.remove("group-input--invalid");
 
   if (feedbackEl) {
     feedbackEl.textContent = "";
@@ -1397,10 +1374,7 @@ function updateGroupInputState() {
 
   // invalid = red + feedback
   if (validatedGroup === "__INVALID__") {
-    groupInput.style.borderColor = "#d63333";
-    groupInput.style.backgroundColor = "#fff5f5";
-    groupInput.style.outline = "2px solid rgba(214, 51, 51, 0.15)";
-    groupInput.style.boxShadow = "0 0 0 2px rgba(214, 51, 51, 0.12)";
+    groupInput.classList.add("group-input--invalid");
 
     const raw = groupInput.value.trim();
     const suggestion = getClosestGroupSuggestion(raw);
@@ -3080,13 +3054,14 @@ function updateGenderGapBadge(seriesArr) {
     ? `Largest gap: ${gap.year} ⚠`
     : `Largest gap: ${gap.year}`;
 
-  badge.style.background = lowSample ? "#fef3c7" : "#dbeafe";
-  badge.style.color = lowSample ? "#92400e" : "#1d4ed8";
-  badge.style.padding = "4px 10px";
-  badge.style.borderRadius = "999px";
-  badge.style.fontSize = "13px";
-  badge.style.fontWeight = "600";
-  badge.style.display = "inline-block";
+  badge.classList.remove(
+    "gender-gap-badge--standard",
+    "gender-gap-badge--low-sample",
+  );
+
+  badge.classList.add(
+    lowSample ? "gender-gap-badge--low-sample" : "gender-gap-badge--standard",
+  );
 }
 
 function hasSharedMarkerLocations() {
@@ -6816,33 +6791,6 @@ async function render() {
   }
 }
 
-function updateSampleWarning(seriesArr) {
-  const el = document.getElementById("sample-warning");
-  if (!el) return;
-
-  const points = (seriesArr || [])
-    .filter((series) => series && Array.isArray(series.data))
-    .flatMap((series) => series.data)
-    .filter((p) => p && typeof p.n === "number");
-
-  if (points.length === 0) {
-    el.textContent = "";
-    el.style.display = "none";
-    return;
-  }
-
-  const minN = Math.min(...points.map((p) => p.n));
-  const show = minN < LOW_SAMPLE_THRESHOLD;
-
-  if (show) {
-    el.textContent = `This view includes years with very small sample sizes (minimum n = ${minN}). Confidence intervals and trend values in these periods should be interpreted cautiously.`;
-    el.style.display = "";
-  } else {
-    el.textContent = "";
-    el.style.display = "none";
-  }
-}
-
 // --------------------
 // Leaflet: Nearby crimes
 // --------------------
@@ -7880,11 +7828,11 @@ async function init() {
 
   if (info && tooltip) {
     info.addEventListener("mouseenter", () => {
-      tooltip.style.display = "block";
+      tooltip.classList.add("confidence-tooltip--visible");
     });
 
     info.addEventListener("mouseleave", () => {
-      tooltip.style.display = "none";
+      tooltip.classList.remove("confidence-tooltip--visible");
     });
   }
 
