@@ -82,15 +82,7 @@
   </button>
 </div>
 
-      <div
-        id="group-feedback"
-        style="
-          margin-top: 6px;
-          font-size: 13px;
-          color: #d63333;
-          min-height: 18px;
-        "
-      ></div>
+      <div id="group-feedback" class="group-feedback"></div>
       <datalist id="groupOptions"></datalist>
 
       <label for="gender">Gender</label>
@@ -101,7 +93,7 @@
       </select>
       <small id="last-updated" class="muted"></small>
 
-      <button id="reload" style="padding: 10px 14px; font-size: 14px">
+      <button id="reload" class="control-button">
         Reload
       </button>
     </div>
@@ -114,20 +106,13 @@
     <button id="play-timeline-btn" type="button">▶ Play timeline</button>
 
     <button id="stop-timeline-btn" type="button" hidden>■ Stop timeline</button>
-    <label style="display: inline-flex; align-items: center; gap: 0.5rem">
+    <label class="inline-control-label">
       <input type="checkbox" id="toggle-ci" checked />
       Show confidence intervals
     </label>
     <small id="ci-status" class="muted"></small>
 
-    <label
-      style="
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-left: 1rem;
-      "
-    >
+    <label class="inline-control-label inline-control-label--spaced">
       Confidence:
       <select id="confidence">
         <option value="1.645">90%</option>
@@ -146,65 +131,27 @@
 
     <small id="chart-data-status" class="muted"></small>
 
-    <div
-      id="insight-heading"
-      style="margin-top: 16px; font-size: 16px; font-weight: 600"
-    ></div>
+    <div id="insight-heading" class="insight-heading"></div>
 
     <span id="gender-gap-badge" hidden></span>
 
     <p id="gender-gap-note" class="muted"></p>
 
-    <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px">
-      <div
-        id="confidence-badge"
-        style="
-          padding: 4px 10px;
-          border-radius: 999px;
-          font-size: 13px;
-          font-weight: 600;
-          background: #eee;
-          color: #333;
-        "
-      >
+    <div class="confidence-display">
+      <div id="confidence-badge" class="confidence-badge">
         Confidence: unavailable
       </div>
 
-      <span
-        id="confidence-info"
-        style="
-          font-size: 14px;
-          cursor: pointer;
-          position: relative;
-          display: inline-flex;
-          align-items: center;
-        "
-      >
+      <span id="confidence-info" class="confidence-info">
         ⓘ
-        <span
-          id="confidence-tooltip"
-          style="
-            display: none;
-            position: absolute;
-            top: 22px;
-            left: 0;
-            width: 260px;
-            background: #333;
-            color: #fff;
-            padding: 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            line-height: 1.4;
-            z-index: 10;
-          "
-        >
+        <span id="confidence-tooltip" class="confidence-tooltip">
           Confidence reflects the minimum sample size (n) in the selected data.
           Smaller sample sizes can produce less stable or less reliable trends.
         </span>
       </span>
     </div>
 
-    <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap">
+    <div class="export-actions">
       <button id="download-chart-btn" type="button">
         Download chart (PNG)
       </button>
@@ -227,28 +174,12 @@
     <small id="map-export-status" class="muted"></small>
 
     
-  <div
-  style="
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 8px;
-    flex-wrap: wrap;
-  "
->
+  <div class="pdf-export-controls">
   <button id="download-snapshot-pdf-btn" type="button">
     Export multi-page PDF
   </button>
 
-  <label
-    for="include-map-pdf"
-    style="
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-    "
-  >
+  <label for="include-map-pdf" class="pdf-map-option">
     <input
       id="include-map-pdf"
       type="checkbox"
@@ -288,30 +219,20 @@
       </select>
     </div>
     <small id="export-theme-status" class="muted"></small>
-    <div
-      id="insight-text"
-      style="
-        margin-top: 12px;
-        padding: 10px;
-        background: #f5f5f5;
-        font-size: 14px;
-        line-height: 1.5;
-        white-space: pre-line;
-      "
-    ></div>
+    <div id="insight-text" class="insight-text"></div>
 
     <div id="sampleWarning" hidden></div>
 
-    <hr style="margin: 24px 0" />
+    <hr class="section-divider" />
 
     <h2>Nearby historic crimes</h2>
 
-    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center">
-      <button id="use-gps" style="padding: 10px 14px; font-size: 14px">
+    <div class="nearby-controls">
+      <button id="use-gps" class="control-button">
         Use my location
       </button>
 
-      <label style="display: inline-flex; align-items: center; gap: 0.5rem">
+      <label class="inline-control-label">
         Radius (m):
         <input
           id="radius"
@@ -323,7 +244,7 @@
         />
       </label>
 
-      <label style="display: inline-flex; align-items: center; gap: 0.5rem">
+      <label class="inline-control-label">
         Limit:
         <input
           id="nearby-limit"
@@ -335,7 +256,7 @@
         />
       </label>
 
-      <button id="nearby" style="padding: 10px 14px; font-size: 14px">
+      <button id="nearby" class="control-button">
         Find nearby
       </button>
     </div>
@@ -368,17 +289,9 @@
   ></p>
 </div>
 
-    <div
-      id="map"
-      style="
-        height: 420px;
-        margin-top: 12px;
-        border-radius: 12px;
-        overflow: hidden;
-      "
-    ></div>
+    <div id="map" class="research-map"></div>
     <p id="map-quality-note" class="muted"></p>
-    <div id="nearby-results" style="margin-top: 12px"></div>
+    <div id="nearby-results" class="nearby-results"></div>
 
     <section
   id="unmapped-trials-section"

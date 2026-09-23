@@ -624,3 +624,123 @@
   min-width: 0;
 }
 
+.control-button {
+  padding: 10px 14px;
+  font-size: 14px;
+}
+
+.inline-control-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-divider {
+  margin: 24px 0;
+}
+
+.nearby-results {
+  margin-top: 12px;
+}
+
+.insight-heading {
+  margin-top: 16px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.export-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.pdf-export-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.pdf-map-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.nearby-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.research-map {
+  height: 420px;
+  margin-top: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.inline-control-label--spaced {
+  margin-left: 1rem;
+}
+
+.group-feedback {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #d63333;
+  min-height: 18px;
+}
+
+.confidence-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.confidence-info {
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.confidence-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #eee;
+  color: #333;
+}
+
+.insight-text {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f5f5f5;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.confidence-tooltip {
+  display: none;
+  position: absolute;
+  top: 22px;
+  left: 0;
+  width: 260px;
+  background: #333;
+  color: #fff;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  z-index: 10;
+}
+
