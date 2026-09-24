@@ -156,6 +156,7 @@ function applyBestGroupMatchAndRender(groupInput) {
   }
 
   updateGroupInputState();
+  updateOffenceCoverage();
 
   lockedChartYear = null;
   resetMarkerHighlight();
@@ -974,6 +975,74 @@ async function loadGroupOptions() {
 
   const groups = await res.json();
   populateGroupOptions(groups);
+}
+
+let offenceCoverageData = null;
+
+async function loadOffenceCoverage() {
+  const res = await fetch("/api/stats/offence-coverage");
+
+  if (!res.ok) {
+    throw new Error("Failed to load offence coverage");
+  }
+
+  offenceCoverageData = await res.json();
+  updateOffenceCoverage();
+}
+
+function updateOffenceCoverage() {
+  if (!offenceCoverageData) return;
+
+  const contextEl = document.getElementById("offence-coverage-context");
+  const totalEl = document.getElementById("offence-coverage-total");
+  const mappedEl = document.getElementById("offence-coverage-mapped");
+  const unmappedEl = document.getElementById("offence-coverage-unmapped");
+  const percentEl = document.getElementById("offence-coverage-percent");
+  const classificationEl = document.getElementById(
+    "offence-classification-status",
+  );
+
+  if (
+    !contextEl ||
+    !totalEl ||
+    !mappedEl ||
+    !unmappedEl ||
+    !percentEl ||
+    !classificationEl
+  ) {
+    return;
+  }
+
+  const selectedGroup = getValidatedGroup();
+
+  if (selectedGroup && selectedGroup !== "__INVALID__") {
+    const offence = offenceCoverageData.offences.find(
+      (item) => item.offence_name === selectedGroup,
+    );
+
+    if (offence) {
+      contextEl.textContent =
+        `Selected offence subcategory: ${selectedGroup} · Whole research corpus · all genders · all dates`;
+      totalEl.textContent = offence.total_trials;
+      mappedEl.textContent = offence.mapped_trials;
+      unmappedEl.textContent = offence.unmapped_trials;
+      percentEl.textContent = `${offence.mapping_coverage_pct}%`;
+      classificationEl.textContent =
+        "Dataset coverage is independent of the chart's date and gender filters.";
+      return;
+    }
+  }
+
+  const summary = offenceCoverageData.summary;
+
+  contextEl.textContent = "Research corpus";
+  totalEl.textContent = summary.total_trials;
+  mappedEl.textContent = summary.mapped_trials;
+  unmappedEl.textContent = summary.unmapped_trials;
+  percentEl.textContent = `${summary.mapping_coverage_pct}%`;
+  classificationEl.textContent =
+    `${summary.classified_trials} trials classified by offence · ` +
+    `${summary.unclassified_trials} unclassified`;
 }
 
 function showNoDataOverlay(show) {
@@ -7766,6 +7835,7 @@ if (nearbyBtn) {
 async function init() {
   // Chart
   await loadGroupOptions().catch(console.error);
+  await loadOffenceCoverage().catch(console.error);
 
   // offence search input: live preview + apply on blur/enter
 
@@ -8144,6 +8214,7 @@ refreshResearchIdBtn?.addEventListener("click", () => {
     if (!groupInput) return;
 
     groupInput.value = "";
+    updateOffenceCoverage();
 
     writeUrlState();
 

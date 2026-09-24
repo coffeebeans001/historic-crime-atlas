@@ -806,3 +806,53 @@
   color: #92400e;
 }
 
+/* Dataset-wide offence coverage */
+.offence-coverage {
+  margin-top: 18px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+.offence-coverage h2 {
+  margin: 0 0 6px;
+}
+
+.offence-coverage-context {
+  margin: 0 0 16px;
+}
+
+.offence-coverage-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.offence-coverage-stats > div {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.offence-coverage-stats strong,
+.offence-coverage-stats span {
+  display: block;
+}
+
+.offence-coverage-stats strong {
+  margin-bottom: 4px;
+  font-size: 1.25rem;
+}
+
+#offence-classification-status {
+  margin: 14px 0 0;
+}
+
+@media (max-width: 640px) {
+  .offence-coverage-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
