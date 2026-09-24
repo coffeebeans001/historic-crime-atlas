@@ -722,6 +722,111 @@ app.get("/api/stats/offences", async (req, res) => {
   }
 });
 
+// GET /api/stats/offence-coverage
+app.get("/api/stats/offence-coverage", async (_req, res) => {
+  try {
+    const [summaryRows] = await pool.query(`
+      SELECT
+        COUNT(*) AS total_trials,
+        SUM(
+          CASE
+            WHEN offence_subcategory IS NOT NULL
+             AND offence_subcategory <> ''
+            THEN 1
+            ELSE 0
+          END
+        ) AS classified_trials,
+        SUM(
+          CASE
+            WHEN offence_subcategory IS NULL
+              OR offence_subcategory = ''
+            THEN 1
+            ELSE 0
+          END
+        ) AS unclassified_trials,
+        SUM(
+          CASE
+            WHEN latitude IS NOT NULL
+             AND longitude IS NOT NULL
+            THEN 1
+            ELSE 0
+          END
+        ) AS mapped_trials,
+        SUM(
+          CASE
+            WHEN latitude IS NULL
+              OR longitude IS NULL
+            THEN 1
+            ELSE 0
+          END
+        ) AS unmapped_trials,
+        ROUND(
+          100.0 * SUM(
+            CASE
+              WHEN latitude IS NOT NULL
+               AND longitude IS NOT NULL
+              THEN 1
+              ELSE 0
+            END
+          ) / NULLIF(COUNT(*), 0),
+          1
+        ) AS mapping_coverage_pct
+      FROM trials
+    `);
+
+    const [offenceRows] = await pool.query(`
+      SELECT
+        offence_subcategory AS offence_name,
+        offence_category AS category,
+        COUNT(*) AS total_trials,
+        SUM(
+          CASE
+            WHEN latitude IS NOT NULL
+             AND longitude IS NOT NULL
+            THEN 1
+            ELSE 0
+          END
+        ) AS mapped_trials,
+        SUM(
+          CASE
+            WHEN latitude IS NULL
+              OR longitude IS NULL
+            THEN 1
+            ELSE 0
+          END
+        ) AS unmapped_trials,
+        ROUND(
+          100.0 * SUM(
+            CASE
+              WHEN latitude IS NOT NULL
+               AND longitude IS NOT NULL
+              THEN 1
+              ELSE 0
+            END
+          ) / NULLIF(COUNT(*), 0),
+          1
+        ) AS mapping_coverage_pct
+      FROM trials
+      WHERE offence_subcategory IS NOT NULL
+        AND offence_subcategory <> ''
+      GROUP BY
+        offence_subcategory,
+        offence_category
+      ORDER BY
+        total_trials DESC,
+        offence_subcategory ASC
+    `);
+
+    res.json({
+      summary: summaryRows[0],
+      offences: offenceRows,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // GET /api/stats/offences/over-time?bucket=year|decade&from=1740-01-01&to=1800-12-31&offenceId=2
 // OR  /api/stats/offences/over-time?bucket=year&from=1740-01-01&to=1800-12-31&offence=robbery
 app.get("/api/stats/offences/over-time", async (req, res) => {
