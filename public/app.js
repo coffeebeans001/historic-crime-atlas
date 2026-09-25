@@ -170,20 +170,6 @@ function applyBestGroupMatchAndRender(groupInput) {
     .catch(console.error);
 }
 
-function previewBestGroupMatch(groupInput) {
-  const raw = groupInput.value.trim();
-  if (!raw) return;
-
-  const best = getBestMatchingGroup(raw);
-  if (!best) return;
-
-  // Only preview when the user typed a partial match
-  if (best.toLowerCase() !== raw.toLowerCase()) {
-    groupInput.value = best;
-    groupInput.setSelectionRange(raw.length, best.length);
-  }
-}
-
 function buildUrl() {
   const from = document.getElementById("from").value;
   const to = document.getElementById("to").value;
@@ -1014,6 +1000,17 @@ function updateOffenceCoverage() {
   }
 
   const selectedGroup = getValidatedGroup();
+
+  if (selectedGroup === "__INVALID__") {
+    contextEl.textContent = "Invalid offence selection";
+    totalEl.textContent = "—";
+    mappedEl.textContent = "—";
+    unmappedEl.textContent = "—";
+    percentEl.textContent = "—";
+    classificationEl.textContent =
+      "Select a recognised offence subcategory to view dataset coverage.";
+    return;
+  }
 
   if (selectedGroup && selectedGroup !== "__INVALID__") {
     const offence = offenceCoverageData.offences.find(
@@ -6735,14 +6732,10 @@ async function render() {
     if (noData) {
       chart.data.datasets = [];
 
-      const rawGroup = document.getElementById("group")?.value?.trim() || "";
-
       const groupLabel =
-        validatedGroup === null
+        validatedGroup === null || validatedGroup === "__INVALID__"
           ? "All offences"
-          : validatedGroup === "__INVALID__"
-            ? rawGroup
-            : validatedGroup;
+          : validatedGroup;
 
       const genderLabel =
         document.getElementById("gender")?.selectedOptions?.[0]?.text ||
@@ -7837,7 +7830,7 @@ async function init() {
   await loadGroupOptions().catch(console.error);
   await loadOffenceCoverage().catch(console.error);
 
-  // offence search input: live preview + apply on blur/enter
+  // offence search input: validate while typing + apply on change/blur/enter
 
   const groupInput = document.getElementById("group");
 
@@ -7860,18 +7853,13 @@ async function init() {
       if (best) {
         groupInput.value = best;
         groupInput.setSelectionRange(best.length, best.length);
-        applyBestGroupMatchAndRender(groupInput);
       }
+
+      applyBestGroupMatchAndRender(groupInput);
     }, 0);
   });
 
-  groupInput.addEventListener("input", (e) => {
-    const isDeleting = e.inputType && e.inputType.startsWith("delete");
-
-    if (!isDeleting) {
-      previewBestGroupMatch(groupInput);
-    }
-
+  groupInput.addEventListener("input", () => {
     updateGroupInputState();
 
     const value = groupInput.value.trim();
@@ -7880,7 +7868,7 @@ async function init() {
       document.getElementById("groupOptions")?.options || [],
     ).some((option) => option.value === value);
 
-    if (!isDeleting && exactMatch) {
+    if (exactMatch) {
       applyBestGroupMatchAndRender(groupInput);
     }
   });
