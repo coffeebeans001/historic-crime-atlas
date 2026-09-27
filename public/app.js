@@ -5970,15 +5970,20 @@ function renderUnmappedTrials() {
     "unmapped-trials-next"
   );
 
-  const position = document.getElementById(
-    "unmapped-trials-position"
+  const jumpInput = document.getElementById(
+    "unmapped-trials-jump"
+  );
+
+  const total = document.getElementById(
+    "unmapped-trials-total"
   );
 
   if (
     !list ||
     !previousButton ||
     !nextButton ||
-    !position
+    !jumpInput ||
+    !total
   ) {
     return;
   }
@@ -5990,7 +5995,10 @@ function renderUnmappedTrials() {
       </p>
     `;
 
-    position.textContent = "0 of 0";
+    jumpInput.value = "";
+    jumpInput.disabled = true;
+    total.textContent = "of 0";
+
     previousButton.disabled = true;
     nextButton.disabled = true;
 
@@ -6030,20 +6038,23 @@ function renderUnmappedTrials() {
     trial.location_text ||
     "Not available";
 
-  const transcriptButton =
-    trial.transcript_text
-      ? `
-        <div class="unmapped-trial-card__transcript">
-          <button
-            type="button"
-            class="unmapped-trial-transcript-button"
-            data-case-id="${trial.id}"
-          >
-            View full transcript
-          </button>
-        </div>
-      `
-      : "";
+  const transcriptButton = `
+    <div class="unmapped-trial-card__transcript">
+      ${
+        trial.transcript_text
+          ? `
+            <button
+              type="button"
+              class="unmapped-trial-transcript-button"
+              data-case-id="${trial.id}"
+            >
+              View full transcript
+            </button>
+          `
+          : ""
+      }
+    </div>
+  `;
 
   list.innerHTML = `
     <article
@@ -6077,8 +6088,12 @@ function renderUnmappedTrials() {
     </article>
   `;
 
-  position.textContent =
-  `${unmappedTrialIndex + 1} of ${filteredUnmappedTrials.length}`;
+  jumpInput.disabled = false;
+  jumpInput.max = String(filteredUnmappedTrials.length);
+  jumpInput.value = String(unmappedTrialIndex + 1);
+
+  total.textContent =
+    `of ${filteredUnmappedTrials.length}`;
 
   previousButton.disabled =
     unmappedTrialIndex === 0;
@@ -6521,11 +6536,16 @@ function populateUnmappedMonthFilter() {
     "unmapped-trials-month"
   );
 
-  if (!yearSelect || !monthSelect) {
-    return;
-  }
+  const offenceSelect = document.getElementById(
+    "unmapped-trials-offence"
+  );
+
+    if (!yearSelect || !monthSelect || !offenceSelect) {
+      return;
+    }
 
   const selectedYear = yearSelect.value;
+  const selectedOffence = offenceSelect.value;
 
   const monthNumbers = [
     ...new Set(
@@ -6538,10 +6558,15 @@ function populateUnmappedMonthFilter() {
           const year =
             String(trial.trial_date).slice(0, 4);
 
-          return (
+          const yearMatches =
             !selectedYear ||
-            year === selectedYear
-          );
+            year === selectedYear;
+
+          const offenceMatches =
+            !selectedOffence ||
+            trial.offence_category === selectedOffence;
+
+          return yearMatches && offenceMatches;
         })
         .map((trial) =>
           String(trial.trial_date).slice(5, 7)
@@ -8364,25 +8389,6 @@ downloadSnapshotBtn.textContent =
   await render().catch(console.error);
   await fetchNearby().catch(console.error);
   await fetchUnmappedTrials().catch(console.error);
-  await fetchUnmappedTrials().catch(console.error);
-
-  document
-  .getElementById("unmapped-trials-more")
-  ?.addEventListener("click", () => {
-    unmappedTrialsVisible += 8;
-    renderUnmappedTrials();
-  });
-
-document
-  .getElementById("unmapped-trials-less")
-  ?.addEventListener("click", () => {
-    unmappedTrialsVisible = Math.max(
-      8,
-      unmappedTrialsVisible - 8
-    );
-
-    renderUnmappedTrials();
-  });
 
   document
   .getElementById("unmapped-trials-list")
@@ -8424,6 +8430,24 @@ document
   });
 
 document
+  .getElementById("unmapped-trials-jump")
+  ?.addEventListener("change", (event) => {
+    const requestedPosition = Number(event.target.value);
+
+    if (
+      !Number.isInteger(requestedPosition) ||
+      requestedPosition < 1 ||
+      requestedPosition > filteredUnmappedTrials.length
+    ) {
+      renderUnmappedTrials();
+      return;
+    }
+
+    unmappedTrialIndex = requestedPosition - 1;
+    renderUnmappedTrials();
+  });
+
+document
   .getElementById("unmapped-trials-next")
   ?.addEventListener("click", () => {
     if (
@@ -8454,10 +8478,10 @@ document
 
 document
   .getElementById("unmapped-trials-offence")
-  ?.addEventListener(
-    "change",
-    applyUnmappedTrialFilters
-  );
+  ?.addEventListener("change", () => {
+    populateUnmappedMonthFilter();
+    applyUnmappedTrialFilters();
+  });
 
 
   updateLastUpdatedLabel();

@@ -434,6 +434,33 @@
   grid-template-columns:
     repeat(auto-fit, minmax(260px, 1fr));
   gap: 16px;
+  min-height: 230px;
+}
+
+.unmapped-trials-navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+#unmapped-trials-position {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+#unmapped-trials-jump {
+  width: 64px;
+  padding: 7px 6px;
+  text-align: center;
+}
+
+#unmapped-trials-jump:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 
 .unmapped-trial-card {
@@ -461,6 +488,7 @@
 }
 
 .unmapped-trial-card__transcript {
+  min-height: 30px;
   margin-top: auto;
   padding-top: 12px;
 }
@@ -488,17 +516,18 @@
   .unmapped-trials-list {
     grid-template-columns: 1fr;
   }
-}
 
-.unmapped-trials-actions {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
-}
+  .unmapped-trial-card {
+    min-height: 430px;
+  }
 
-.unmapped-trials-more {
-  padding: 9px 16px;
-  cursor: pointer;
+  .unmapped-trials-navigation {
+    gap: 8px;
+  }
+
+  #unmapped-trials-jump {
+    width: 58px;
+  }
 }
 
 .unmapped-trial-card__offence {
@@ -506,6 +535,7 @@
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.35;
+  min-height: 5.4em;
 
   display: -webkit-box;
   -webkit-line-clamp: 4;

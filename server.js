@@ -51,7 +51,7 @@ app.get("/api/trials/unmapped", async (req, res) => {
       FROM trials
       WHERE latitude IS NULL
          OR longitude IS NULL
-      ORDER BY trial_date DESC
+      ORDER BY trial_date ASC, id ASC
     `);
 
     res.json({
