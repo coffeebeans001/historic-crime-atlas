@@ -1233,7 +1233,11 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
     const params = [cleanFrom, cleanTo];
 
     const genderFilter =
-      gender === "male" || gender === "female" ? gender : "all";
+      gender === "male" ||
+      gender === "female" ||
+      gender === "indeterminate"
+        ? gender
+        : "all";
 
     if (genderFilter !== "all") {
       where.push("t.defendant_gender = ?");
