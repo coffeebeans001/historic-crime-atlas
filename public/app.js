@@ -178,6 +178,9 @@ function buildUrl() {
   const params = new URLSearchParams({ bucket, from, to, format: "series", z });
   const gender = document.getElementById("gender")?.value || "all";
   params.set("gender", gender);
+  const composition =
+    document.getElementById("composition")?.value || "all";
+  params.set("composition", composition);
 
   const group = getValidatedGroup();
 
@@ -193,12 +196,14 @@ function buildUrl() {
 async function loadSeries() {
   const group = getValidatedGroup();
   const gender = document.getElementById("gender")?.value || "all";
+  const composition = document.getElementById("composition")?.value || "all";
   const from = document.getElementById("from")?.value || "";
   const to = document.getElementById("to")?.value || "";
   const radius = Number(document.getElementById("radius")?.value) || 2000;
 
   const params = new URLSearchParams({
     gender,
+    composition,
     from,
     to,
     lat: String(currentCenter.lat),
@@ -742,6 +747,7 @@ function getGenderLabel() {
 
   if (val === "male") return "Male Defendants";
   if (val === "female") return "Female Defendants";
+  if (val === "indeterminate") return "Indeterminate Defendants";
   return "All Defendants";
 }
 
@@ -756,6 +762,7 @@ function readUrlState() {
     confidence: p.get("confidence"),
     ci: p.get("ci"), // "1" or "0"
     gender: p.get("gender"),
+    composition: p.get("composition"),
 
     lat: p.get("lat"),
     lng: p.get("lng"),
@@ -779,7 +786,7 @@ function writeUrlState({ push = false } = {}) {
   const confEl = document.getElementById("confidence");
   const ciEl = document.getElementById("toggle-ci");
   const genderEl = document.getElementById("gender");
-
+  const compositionEl = document.getElementById("composition");
   const limitEl = document.getElementById("nearby-limit");
 
   // Chart params
@@ -803,6 +810,8 @@ function writeUrlState({ push = false } = {}) {
   else p.delete("confidence");
   if (genderEl?.value) p.set("gender", genderEl.value);
   else p.delete("gender");
+  if (compositionEl?.value) p.set("composition", compositionEl.value);
+  else p.delete("composition");
   if (ciEl) p.set("ci", ciEl.checked ? "1" : "0");
 
   // Map params
@@ -860,6 +869,7 @@ function applyStateToUI(state) {
   const confEl = document.getElementById("confidence");
   const ciEl = document.getElementById("toggle-ci");
   const genderEl = document.getElementById("gender");
+  const compositionEl = document.getElementById("composition");
   const exportThemeEl = document.getElementById("export-theme");
 
   if (fromEl && state.from) fromEl.value = state.from;
@@ -868,6 +878,9 @@ function applyStateToUI(state) {
   if (bucketEl && state.bucket) bucketEl.value = state.bucket;
   if (confEl && state.confidence) confEl.value = state.confidence;
   if (genderEl && state.gender) genderEl.value = state.gender;
+  if (compositionEl && state.composition) {
+    compositionEl.value = state.composition;
+  }
   if (exportThemeEl && state.exportTheme) {
     exportThemeEl.value = state.exportTheme;
   }
@@ -6832,10 +6845,16 @@ async function render() {
       document.getElementById("gender")?.selectedOptions?.[0]?.text ||
       "All Defendants";
 
+    const compositionLabel =
+      document.getElementById("composition")?.selectedOptions?.[0]?.text ||
+      "All";
+
     // chart title (KEEP THIS)
     const radius = Number(document.getElementById("radius")?.value || 2000);
 
-    chart.options.plugins.title.text = `${groupLabel} — Conviction Rate by ${bucket === "decade" ? "Decade" : "Year"} (${genderLabel}) • Radius ${radius}m`;
+    chart.options.plugins.title.text = `${groupLabel} — Conviction Rate by ${
+      bucket === "decade" ? "Decade" : "Year"
+    } (${genderLabel} • ${compositionLabel}) • Radius ${radius}m`;
     chart.options.plugins.subtitle.text = `Map center: ${currentCenter.lat.toFixed(4)}, ${currentCenter.lng.toFixed(4)}`;
     // 🔥 NEW unified panel logic (REPLACE old heading block with this)
     let insightText = generateInsight(payload.series);
@@ -6854,7 +6873,7 @@ async function render() {
 
     const pointsForConfidence = (payload.series || [])
       .flatMap((s) => s.data || [])
-      .filter((p) => p && typeof p.n === "number");
+      .filter((p) => p && p.y !== null && typeof p.n === "number" && p.n > 0);
 
     const minN = pointsForConfidence.length
       ? Math.min(...pointsForConfidence.map((p) => p.n))
@@ -7802,6 +7821,17 @@ document.getElementById("toggle-ci")?.addEventListener("change", () => {
 });
 
 document.getElementById("gender")?.addEventListener("change", () => {
+  scheduleUrlSync();
+
+  render()
+    .then(updateLastUpdatedLabel)
+    .catch(console.error);
+
+  fetchNearby()
+    .catch(console.error);
+});
+
+document.getElementById("composition")?.addEventListener("change", () => {
   scheduleUrlSync();
 
   render()

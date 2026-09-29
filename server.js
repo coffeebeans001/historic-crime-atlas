@@ -366,7 +366,7 @@ app.get("/api/trials/nearby", async (req, res) => {
 
 app.get("/api/trials/series", async (req, res) => {
   try {
-    const { group, gender, from, to } = req.query;
+    const { group, gender, composition, from, to } = req.query;
 
     const where = [];
     const params = [];
@@ -389,10 +389,30 @@ app.get("/api/trials/series", async (req, res) => {
       genderValues = [gender];
     }
 
-   if (group) {
-  where.push("t.offence_subcategory = ?");
-  params.push(group);
-}
+    if (group) {
+      where.push("t.offence_subcategory = ?");
+      params.push(group);
+    }
+
+    if (composition === "single") {
+      where.push(`
+        (
+          SELECT COUNT(*)
+          FROM trial_defendant_nodes tdn
+          WHERE tdn.trial_id = t.id
+        ) = 1
+      `);
+    }
+
+    if (composition === "multiple") {
+      where.push(`
+        (
+          SELECT COUNT(*)
+          FROM trial_defendant_nodes tdn
+          WHERE tdn.trial_id = t.id
+        ) > 1
+      `);
+    }
 
     const results = [];
 
@@ -1210,6 +1230,10 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
     const group = (req.query.group ?? "").toString().trim();
     const z = Number(req.query.z ?? 1.96); // add this near other query params if not already there
     const gender = (req.query.gender || "all").toLowerCase();
+    const composition = (req.query.composition || "all")
+      .toString()
+      .trim()
+      .toLowerCase();
 
     if (!from || !to) {
       return res.status(400).json({
@@ -1242,6 +1266,26 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
     if (genderFilter !== "all") {
       where.push("t.defendant_gender = ?");
       params.push(genderFilter);
+    }
+
+    if (composition === "single") {
+      where.push(`
+    (
+      SELECT COUNT(*)
+      FROM trial_defendant_nodes tdn
+      WHERE tdn.trial_id = t.id
+    ) = 1
+  `);
+    }
+
+    if (composition === "multiple") {
+      where.push(`
+    (
+      SELECT COUNT(*)
+      FROM trial_defendant_nodes tdn
+      WHERE tdn.trial_id = t.id
+    ) > 1
+  `);
     }
 
     if (group) {
