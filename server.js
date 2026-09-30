@@ -488,6 +488,179 @@ app.get("/api/trials/nearest", async (req, res) => {
   }
 });
 
+app.get("/api/trials/offence-distribution", async (req, res) => {
+  try {
+    const group = (req.query.group ?? "").toString().trim();
+    const from = (req.query.from ?? "").toString().trim().slice(0, 10);
+    const to = (req.query.to ?? "").toString().trim().slice(0, 10);
+    const year = (req.query.year ?? "").toString().trim();
+    const gender = (req.query.gender ?? "all").toString().trim();
+    const composition = (req.query.composition ?? "all")
+      .toString()
+      .trim()
+      .toLowerCase();
+
+    if (!group) {
+      return res.status(400).json({
+        error: "group is required",
+      });
+    }
+
+    if (from.length !== 10 || to.length !== 10) {
+      return res.status(400).json({
+        error: "from and to must be YYYY-MM-DD",
+      });
+    }
+
+    const where = [
+      "t.offence_subcategory = ?",
+      "t.trial_date BETWEEN ? AND ?",
+    ];
+
+    const params = [group, from, to];
+
+    if (gender !== "all") {
+      where.push("LOWER(t.defendant_gender) = LOWER(?)");
+      params.push(gender);
+    }
+
+    if (composition === "single") {
+      where.push(`
+        (
+          SELECT COUNT(*)
+          FROM trial_defendant_nodes tdn
+          WHERE tdn.trial_id = t.id
+        ) = 1
+      `);
+    }
+
+    if (composition === "multiple") {
+      where.push(`
+        (
+          SELECT COUNT(*)
+          FROM trial_defendant_nodes tdn
+          WHERE tdn.trial_id = t.id
+        ) > 1
+      `);
+    }
+
+    if (year) {
+      where.push("YEAR(t.trial_date) = ?");
+      params.push(Number(year));
+    }
+
+    const whereSql = `WHERE ${where.join(" AND ")}`;
+
+    const [summaryRows] = await pool.query(
+      `
+        SELECT
+          COUNT(*) AS total_trials,
+          SUM(
+            CASE
+              WHEN t.latitude IS NOT NULL
+               AND t.longitude IS NOT NULL
+              THEN 1 ELSE 0
+            END
+          ) AS mapped_trials,
+          SUM(
+            CASE
+              WHEN t.latitude IS NULL
+                OR t.longitude IS NULL
+              THEN 1 ELSE 0
+            END
+          ) AS unmapped_trials,
+          COUNT(
+            DISTINCT CASE
+              WHEN t.latitude IS NOT NULL
+               AND t.longitude IS NOT NULL
+              THEN CONCAT(t.latitude, ',', t.longitude)
+            END
+          ) AS mapped_location_count
+        FROM trials t
+        ${whereSql}
+      `,
+      params,
+    );
+
+    const [locationRows] = await pool.query(
+      `
+        SELECT
+          t.latitude,
+          t.longitude,
+          COUNT(*) AS trial_count,
+          COUNT(DISTINCT t.crime_location) AS distinct_location_labels,
+          GROUP_CONCAT(
+            DISTINCT t.crime_location
+            ORDER BY t.crime_location
+            SEPARATOR ' | '
+          ) AS location_labels,
+          DATE_FORMAT(MIN(t.trial_date), '%Y-%m-%d') AS earliest_trial,
+          DATE_FORMAT(MAX(t.trial_date), '%Y-%m-%d') AS latest_trial
+        FROM trials t
+        ${whereSql}
+          AND t.latitude IS NOT NULL
+          AND t.longitude IS NOT NULL
+        GROUP BY
+          t.latitude,
+          t.longitude
+        ORDER BY
+          trial_count DESC,
+          location_labels ASC
+      `,
+      params,
+    );
+
+    const summary = summaryRows[0] ?? {};
+    const totalTrials = Number(summary.total_trials) || 0;
+    const mappedTrials = Number(summary.mapped_trials) || 0;
+    const unmappedTrials = Number(summary.unmapped_trials) || 0;
+    const mappedLocationCount =
+      Number(summary.mapped_location_count) || 0;
+
+    const mappingCoveragePct =
+      totalTrials > 0
+        ? Number(((mappedTrials / totalTrials) * 100).toFixed(1))
+        : 0;
+
+    res.json({
+      offence: {
+        subcategory: group,
+      },
+      filters: {
+        from,
+        to,
+        year: year || null,
+        gender,
+        composition,
+      },
+      summary: {
+        totalTrials,
+        mappedTrials,
+        unmappedTrials,
+        mappingCoveragePct,
+        mappedLocationCount,
+      },
+      locations: locationRows.map((row) => ({
+        latitude: Number(row.latitude),
+        longitude: Number(row.longitude),
+        trialCount: Number(row.trial_count) || 0,
+        distinctLocationLabels:
+          Number(row.distinct_location_labels) || 0,
+        locationLabels: row.location_labels
+          ? row.location_labels.split(" | ")
+          : [],
+        earliestTrial: row.earliest_trial,
+        latestTrial: row.latest_trial,
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});
+
 app.get("/api/trials/series", async (req, res) => {
   try {
     const { group, gender, composition, from, to } = req.query;
