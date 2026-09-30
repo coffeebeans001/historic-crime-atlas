@@ -886,3 +886,8 @@
   }
 }
 
+#nearby-results button.nearest-match-button[data-id] {
+  width: fit-content;
+  margin-top: 0.5rem;
+  padding: 0.45rem 1rem;
+}
