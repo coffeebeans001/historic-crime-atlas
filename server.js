@@ -289,6 +289,10 @@ app.get("/api/trials/nearby", async (req, res) => {
     const group = (req.query.group ?? "").toString().trim();
     const year = (req.query.year ?? "").toString().trim();
     const gender = (req.query.gender ?? "all").toString().trim();
+    const composition = (req.query.composition ?? "all")
+      .toString()
+      .trim()
+      .toLowerCase();
 
     if (Number.isNaN(lat) || Number.isNaN(lng)) {
       return res
@@ -328,6 +332,21 @@ app.get("/api/trials/nearby", async (req, res) => {
     AND t.longitude IS NOT NULL
     AND t.trial_date BETWEEN ? AND ?
     ${gender !== "all" ? "AND LOWER(t.defendant_gender) = LOWER(?)" : ""}
+    ${
+      composition === "single"
+        ? `AND (
+            SELECT COUNT(*)
+            FROM trial_defendant_nodes tdn
+            WHERE tdn.trial_id = t.id
+          ) = 1`
+        : composition === "multiple"
+          ? `AND (
+              SELECT COUNT(*)
+              FROM trial_defendant_nodes tdn
+              WHERE tdn.trial_id = t.id
+            ) > 1`
+          : ""
+    }
     ${year ? "AND YEAR(t.trial_date) = ?" : ""}
     ${group ? "AND t.offence_subcategory = ?" : ""}
   HAVING distance_m <= ?
@@ -355,6 +374,111 @@ app.get("/api/trials/nearby", async (req, res) => {
       group: group || null,
       center: { lat, lng },
       radius_m: radius,
+      count: rows.length,
+      data: rows,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/api/trials/nearest", async (req, res) => {
+  try {
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    const limit = Math.min(Math.max(Number(req.query.limit ?? 5), 1), 20);
+
+    const from = (req.query.from ?? "").toString().trim().slice(0, 10);
+    const to = (req.query.to ?? "").toString().trim().slice(0, 10);
+    const group = (req.query.group ?? "").toString().trim();
+    const year = (req.query.year ?? "").toString().trim();
+    const gender = (req.query.gender ?? "all").toString().trim();
+    const composition = (req.query.composition ?? "all")
+      .toString()
+      .trim()
+      .toLowerCase();
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      return res
+        .status(400)
+        .json({ error: "lat and lng are required numbers" });
+    }
+
+    if (from.length !== 10 || to.length !== 10) {
+      return res.status(400).json({
+        error: "from and to must be YYYY-MM-DD",
+      });
+    }
+
+    const sql = `
+      SELECT
+        t.id,
+        t.trial_date,
+        t.verdict,
+        t.trial_location,
+        t.crime_location,
+        t.location_precision,
+        t.geocode_confidence,
+        t.transcript_text,
+        t.offence AS offence,
+        t.offence_category,
+        t.offence_subcategory,
+        t.defendant_name,
+        t.defendant_gender AS gender,
+        t.latitude,
+        t.longitude,
+        (6371000 * 2 * ASIN(SQRT(
+          POW(SIN(RADIANS(t.latitude - ?) / 2), 2) +
+          COS(RADIANS(?)) * COS(RADIANS(t.latitude)) *
+          POW(SIN(RADIANS(t.longitude - ?) / 2), 2)
+        ))) AS distance_m
+      FROM trials t
+      WHERE
+        t.latitude IS NOT NULL
+        AND t.longitude IS NOT NULL
+        AND t.trial_date BETWEEN ? AND ?
+        ${gender !== "all" ? "AND LOWER(t.defendant_gender) = LOWER(?)" : ""}
+        ${
+          composition === "single"
+            ? `AND (
+                SELECT COUNT(*)
+                FROM trial_defendant_nodes tdn
+                WHERE tdn.trial_id = t.id
+              ) = 1`
+            : composition === "multiple"
+              ? `AND (
+                  SELECT COUNT(*)
+                  FROM trial_defendant_nodes tdn
+                  WHERE tdn.trial_id = t.id
+                ) > 1`
+              : ""
+        }
+        ${year ? "AND YEAR(t.trial_date) = ?" : ""}
+        ${group ? "AND t.offence_subcategory = ?" : ""}
+      ORDER BY distance_m ASC
+      LIMIT ?;
+    `;
+
+    const params = [
+      lat,
+      lat,
+      lng,
+      from,
+      to,
+      ...(gender !== "all" ? [gender] : []),
+      ...(year ? [Number(year)] : []),
+      ...(group ? [group] : []),
+      limit,
+    ];
+
+    const [rows] = await pool.query(sql, params);
+
+    res.json({
+      from,
+      to,
+      group: group || null,
+      center: { lat, lng },
       count: rows.length,
       data: rows,
     });

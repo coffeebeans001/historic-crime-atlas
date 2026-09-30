@@ -7353,6 +7353,9 @@ function buildNearbyUrl() {
   const gender =
     document.getElementById("gender")?.value || "all";
 
+  const composition =
+    document.getElementById("composition")?.value || "all";
+
   const params = new URLSearchParams({
     lat: String(currentCenter.lat),
     lng: String(currentCenter.lng),
@@ -7361,6 +7364,7 @@ function buildNearbyUrl() {
     radius: String(radius),
     limit: String(limit),
     gender,
+    composition,
   });
 
   const group = getValidatedGroup();
@@ -7377,6 +7381,39 @@ function buildNearbyUrl() {
   }
 
   return `/api/trials/nearby?${params.toString()}`;
+}
+
+function buildNearestUrl() {
+  const from = document.getElementById("from").value;
+  const to = document.getElementById("to").value;
+
+  const gender =
+    document.getElementById("gender")?.value || "all";
+
+  const composition =
+    document.getElementById("composition")?.value || "all";
+
+  const params = new URLSearchParams({
+    lat: String(currentCenter.lat),
+    lng: String(currentCenter.lng),
+    from,
+    to,
+    limit: "5",
+    gender,
+    composition,
+  });
+
+  const group = getValidatedGroup();
+
+  if (group && group !== "__INVALID__") {
+    params.set("group", group);
+  }
+
+  if (lockedChartYear != null) {
+    params.set("year", String(lockedChartYear));
+  }
+
+  return `/api/trials/nearest?${params.toString()}`;
 }
 
 function updateRadiusCircle() {
@@ -7434,7 +7471,10 @@ function renderNearbyList(rows, markerById) {
       const who = r.defendant_name || "(unknown defendant)";
       const verdict = r.verdict || "(unknown verdict)";
       const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "";
-      const where = r.trial_location || "";
+      const where =
+        r.crime_location ||
+        r.trial_location ||
+        "";
       const d = r.distance_m != null ? `${Math.round(r.distance_m)} m` : "";
 
       return `
@@ -7472,6 +7512,102 @@ function renderNearbyList(rows, markerById) {
       });
 
       btn.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  });
+}
+
+function renderNearestMatches(rows, radius) {
+  const el = document.getElementById("nearby-results");
+  if (!el) return;
+
+  if (!rows || !rows.length) {
+    el.innerHTML = `
+      <p>
+        No matching mapped trials were found within
+        ${Math.round(radius)} m of the current map centre.
+      </p>
+      <p>
+        No mapped matches were found elsewhere for the active research filters.
+      </p>
+    `;
+    return;
+  }
+
+  const items = rows
+    .map((r) => {
+      const id = r.id != null ? String(r.id) : "";
+      const offence =
+        r.offence_name ||
+        r.offence ||
+        "(unknown offence)";
+      const who =
+        r.defendant_name ||
+        "(unknown defendant)";
+      const verdict =
+        r.verdict ||
+        "(unknown verdict)";
+      const date = r.trial_date
+        ? String(r.trial_date).slice(0, 10)
+        : "";
+      const where =
+        r.crime_location ||
+        r.trial_location ||
+        "Unknown mapped location";
+      const distance =
+        r.distance_m != null
+          ? `${Math.round(r.distance_m)} m`
+          : "";
+
+      return `
+        <li>
+          <strong>${where}</strong><br/>
+          ${offence} — ${who} (${verdict})<br/>
+          ${date} • ${distance}<br/>
+          <button
+            type="button"
+            class="nearest-match-button"
+            data-id="${id}"
+            data-lat="${r.latitude}"
+            data-lng="${r.longitude}"
+          >
+            View on map
+          </button>
+        </li>
+      `;
+    })
+    .join("");
+
+    el.innerHTML = `
+      <div class="nearest-match-results">
+        <p>
+          No matching mapped trials were found within
+          ${Math.round(radius)} m of the current map centre.
+        </p>
+        <p><strong>Nearest mapped matches:</strong></p>
+        <ol>${items}</ol>
+      </div>
+    `;
+    el.querySelectorAll(".nearest-match-button").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const lat = Number(btn.dataset.lat);
+      const lng = Number(btn.dataset.lng);
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return;
+      }
+
+      currentCenter = { lat, lng };
+
+      map.setView([lat, lng], 15);
+      centerMarker.setLatLng([lat, lng]);
+
+      updateRadiusCircle();
+
+      try {
+        await fetchNearby();
+      } catch (err) {
+        console.error("Nearest-match navigation failed:", err);
+      }
     });
   });
 }
@@ -7526,6 +7662,25 @@ async function fetchNearby() {
 
     const payload = await res.json();
     const rows = payload.data || [];
+
+    const selectedGroup = getValidatedGroup();
+
+    let nearestRows = [];
+
+    if (
+      rows.length === 0 &&
+      selectedGroup &&
+      selectedGroup !== "__INVALID__"
+    ) {
+      const nearestRes = await fetch(buildNearestUrl());
+
+      if (!nearestRes.ok) {
+        throw new Error(`Nearest lookup failed: ${nearestRes.status}`);
+      }
+
+      const nearestPayload = await nearestRes.json();
+      nearestRows = nearestPayload.data || [];
+    }
 
     const mapQualityNote = document.getElementById("map-quality-note");
 
@@ -7720,7 +7875,18 @@ const safeOffencePreview =
     });
     markersLayer.refreshClusters?.();
     // Render list AFTER markers exist
-    renderNearbyList(rows, markerById);
+    if (
+      rows.length === 0 &&
+      selectedGroup &&
+      selectedGroup !== "__INVALID__"
+    ) {
+      const radius =
+        Number(document.getElementById("radius")?.value) || 2000;
+
+      renderNearestMatches(nearestRows, radius);
+    } else {
+      renderNearbyList(rows, markerById);
+    }
 
     if (lockedChartYear != null) {
       const firstMarker = markersLayer.getLayers()[0];
