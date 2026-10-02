@@ -336,6 +336,125 @@
     <div id="map" class="research-map"></div>
     <p id="map-quality-note" class="muted"></p>
     <div id="nearby-results" class="nearby-results"></div>
+  <section
+  id="offence-discovery-section"
+  class="offence-discovery-section"
+>
+  <div class="offence-discovery-section__header">
+    <div>
+      <h2>Global offence discovery</h2>
+      <p>
+        Explore where the selected offence occurs across the research corpus.
+      </p>
+    </div>
+  </div>
+
+  <div
+    id="offence-discovery-content"
+    class="offence-discovery-content"
+  >
+    <p id="offence-discovery-status" class="muted">
+      Select an offence to explore its geographic distribution.
+    </p>
+
+    <div
+      id="offence-discovery-summary"
+      class="offence-discovery-summary"
+      hidden
+    >
+      <div>
+        <strong id="offence-discovery-total">—</strong>
+        <span>Total trials</span>
+      </div>
+
+      <div>
+        <strong id="offence-discovery-mapped">—</strong>
+        <span>Mapped</span>
+      </div>
+
+      <div>
+        <strong id="offence-discovery-unmapped">—</strong>
+        <span>Unmapped</span>
+      </div>
+
+      <div>
+        <strong id="offence-discovery-coverage">—</strong>
+        <span>Mapping coverage</span>
+      </div>
+
+      <div>
+        <strong id="offence-discovery-locations">—</strong>
+        <span>Geographic points</span>
+      </div>
+    </div>
+
+    <div
+  id="offence-discovery-locations-list"
+  class="offence-discovery-locations-list"
+  hidden
+>
+  <h3>Geographic locations</h3>
+
+  <div
+    id="offence-discovery-location-card"
+    class="offence-discovery-location-card"
+  ></div>
+
+  <div class="offence-discovery-location-navigation">
+    <button
+      type="button"
+      id="offence-discovery-location-previous"
+    >
+      Previous
+    </button>
+
+    <span id="offence-discovery-location-position">
+      0 of 0
+    </span>
+
+    <button
+      type="button"
+      id="offence-discovery-location-next"
+    >
+      Next
+    </button>
+  </div>
+
+  <div
+    id="offence-discovery-trial-panel"
+    class="offence-discovery-trial-panel"
+    hidden
+  >
+    <h4>Trials at this location</h4>
+
+    <div
+      id="offence-discovery-trial-card"
+      class="offence-discovery-trial"
+    ></div>
+
+    <div class="offence-discovery-trial-navigation">
+      <button
+        type="button"
+        id="offence-discovery-trial-previous"
+      >
+        Previous
+      </button>
+
+      <span id="offence-discovery-trial-position">
+        0 of 0
+      </span>
+
+      <button
+        type="button"
+        id="offence-discovery-trial-next"
+      >
+        Next
+      </button>
+    </div>
+  </div>
+</div>
+  </div>
+</section>
 
     <section
   id="unmapped-trials-section"

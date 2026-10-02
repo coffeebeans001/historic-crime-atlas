@@ -891,3 +891,166 @@
   margin-top: 0.5rem;
   padding: 0.45rem 1rem;
 }
+
+/* Global offence discovery */
+
+.offence-discovery-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #d9dee7;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.offence-discovery-section__header {
+  margin-bottom: 1.25rem;
+}
+
+.offence-discovery-section__header h2 {
+  margin: 0 0 0.4rem;
+}
+
+.offence-discovery-section__header p {
+  margin: 0;
+}
+
+.offence-discovery-content {
+  display: grid;
+  gap: 1rem;
+}
+
+.offence-discovery-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.offence-discovery-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  border: 1px solid #d9dee7;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.offence-discovery-summary strong {
+  font-size: 1.4rem;
+  line-height: 1.2;
+}
+
+.offence-discovery-summary span {
+  font-size: 0.9rem;
+}
+
+.offence-discovery-locations-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.offence-discovery-summary[hidden],
+.offence-discovery-locations-list[hidden],
+.offence-discovery-trial-panel[hidden] {
+  display: none;
+}
+
+.offence-discovery-locations-list h3 {
+  margin: 0.5rem 0 0;
+}
+
+.offence-discovery-location-card {
+  height: 150px;
+  overflow-y: auto;
+  padding: 1rem;
+  border: 1px solid #d9dee7;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.offence-discovery-location-card h4 {
+  margin: 0 0 0.5rem;
+}
+
+.offence-discovery-location-count {
+  margin: 0;
+  font-weight: 600;
+}
+
+.offence-discovery-location-dates {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.offence-discovery-location-navigation,
+.offence-discovery-trial-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+}
+
+.offence-discovery-location-navigation span,
+.offence-discovery-trial-navigation span {
+  min-width: 5rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.offence-discovery-location-navigation button,
+.offence-discovery-trial-navigation button {
+  padding: 0.45rem 0.9rem;
+}
+
+.offence-discovery-location-navigation button:disabled,
+.offence-discovery-trial-navigation button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.offence-discovery-trial-panel {
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #d9dee7;
+}
+
+.offence-discovery-trial-panel h4 {
+  margin: 0 0 0.75rem;
+}
+
+.offence-discovery-trial {
+  height: 180px;
+  overflow-y: auto;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.offence-discovery-trial strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.offence-discovery-trial p {
+  max-width: 75ch;
+  margin: 0.25rem 0;
+}
+
+@media (max-width: 900px) {
+  .offence-discovery-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .offence-discovery-section {
+    padding: 1rem;
+  }
+
+  .offence-discovery-summary {
+    grid-template-columns: 1fr;
+  }
+}

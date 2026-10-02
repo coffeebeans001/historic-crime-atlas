@@ -661,6 +661,145 @@ app.get("/api/trials/offence-distribution", async (req, res) => {
   }
 });
 
+app.get("/api/trials/offence-location", async (req, res) => {
+  try {
+    const group = (req.query.group ?? "").toString().trim();
+    const from = (req.query.from ?? "").toString().trim().slice(0, 10);
+    const to = (req.query.to ?? "").toString().trim().slice(0, 10);
+    const gender = (req.query.gender ?? "all").toString().trim();
+    const composition = (req.query.composition ?? "all")
+      .toString()
+      .trim();
+
+    const latitude = Number(req.query.latitude);
+    const longitude = Number(req.query.longitude);
+
+    if (!group) {
+      return res.status(400).json({
+        error: "group is required",
+      });
+    }
+
+    if (from.length !== 10 || to.length !== 10) {
+      return res.status(400).json({
+        error: "from and to dates are required",
+      });
+    }
+
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude)
+    ) {
+      return res.status(400).json({
+        error: "valid latitude and longitude are required",
+      });
+    }
+
+    const where = [
+      "t.offence_subcategory = ?",
+      "t.trial_date BETWEEN ? AND ?",
+      "t.latitude = ?",
+      "t.longitude = ?",
+    ];
+
+    const params = [
+      group,
+      from,
+      to,
+      latitude,
+      longitude,
+    ];
+
+    if (gender !== "all") {
+      where.push(
+        "LOWER(t.defendant_gender) = LOWER(?)",
+      );
+      params.push(gender);
+    }
+
+    if (composition === "single") {
+      where.push(`
+        (
+          SELECT COUNT(*)
+          FROM trial_defendant_nodes tdn
+          WHERE tdn.trial_id = t.id
+        ) = 1
+      `);
+    }
+
+    if (composition === "multiple") {
+      where.push(`
+        (
+          SELECT COUNT(*)
+          FROM trial_defendant_nodes tdn
+          WHERE tdn.trial_id = t.id
+        ) > 1
+      `);
+    }
+
+    const [rows] = await pool.query(
+      `
+        SELECT
+          t.id,
+          t.source_case_id,
+          DATE_FORMAT(t.trial_date, '%Y-%m-%d') AS trial_date,
+          t.defendant_name,
+          t.defendant_gender,
+          t.offence,
+          t.offence_category,
+          t.offence_subcategory,
+          t.verdict,
+          t.crime_location,
+          t.latitude,
+          t.longitude
+        FROM trials t
+        WHERE ${where.join(" AND ")}
+        ORDER BY
+          t.trial_date ASC,
+          t.id ASC
+      `,
+      params,
+    );
+
+    res.json({
+      offence: {
+        subcategory: group,
+      },
+      location: {
+        latitude,
+        longitude,
+      },
+      filters: {
+        from,
+        to,
+        gender,
+        composition,
+      },
+      count: rows.length,
+      trials: rows.map((row) => ({
+        id: row.id,
+        sourceCaseId: row.source_case_id,
+        trialDate: row.trial_date,
+        defendantName: row.defendant_name,
+        defendantGender: row.defendant_gender,
+        offence: row.offence,
+        offenceCategory: row.offence_category,
+        offenceSubcategory: row.offence_subcategory,
+        verdict: row.verdict,
+        crimeLocation: row.crime_location,
+        latitude: Number(row.latitude),
+        longitude: Number(row.longitude),
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to load offence location trials",
+    });
+  }
+});
+
 app.get("/api/trials/series", async (req, res) => {
   try {
     const { group, gender, composition, from, to } = req.query;

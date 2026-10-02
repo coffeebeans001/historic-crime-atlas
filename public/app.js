@@ -978,6 +978,426 @@ async function loadGroupOptions() {
 
 let offenceCoverageData = null;
 
+let offenceDiscoveryLocations = [];
+let offenceDiscoveryLocationIndex = 0;
+let offenceDiscoverySelectedLocation = null;
+
+let offenceDiscoveryTrials = [];
+let offenceDiscoveryTrialIndex = 0;
+
+function renderOffenceDiscoveryTrial() {
+  const trialPanel = document.getElementById(
+    "offence-discovery-trial-panel",
+  );
+  const trialCard = document.getElementById(
+    "offence-discovery-trial-card",
+  );
+  const positionEl = document.getElementById(
+    "offence-discovery-trial-position",
+  );
+  const previousButton = document.getElementById(
+    "offence-discovery-trial-previous",
+  );
+  const nextButton = document.getElementById(
+    "offence-discovery-trial-next",
+  );
+
+  if (
+    !trialPanel ||
+    !trialCard ||
+    !positionEl ||
+    !previousButton ||
+    !nextButton
+  ) {
+    return;
+  }
+
+  trialCard.innerHTML = "";
+
+  if (offenceDiscoveryTrials.length === 0) {
+    trialPanel.hidden = true;
+    return;
+  }
+
+  if (offenceDiscoveryTrialIndex < 0) {
+    offenceDiscoveryTrialIndex = 0;
+  }
+
+  if (
+    offenceDiscoveryTrialIndex >= offenceDiscoveryTrials.length
+  ) {
+    offenceDiscoveryTrialIndex =
+      offenceDiscoveryTrials.length - 1;
+  }
+
+  const trial =
+    offenceDiscoveryTrials[offenceDiscoveryTrialIndex];
+
+  const dateEl = document.createElement("strong");
+  dateEl.textContent = trial.trialDate || "Date unavailable";
+
+  const defendantEl = document.createElement("p");
+  defendantEl.textContent =
+    trial.defendantName || "Defendant unavailable";
+
+  const offenceEl = document.createElement("p");
+  offenceEl.textContent =
+    trial.offence ||
+    trial.offenceSubcategory ||
+    "Offence unavailable";
+
+  const verdictEl = document.createElement("p");
+  verdictEl.textContent = trial.verdict
+    ? `Verdict: ${trial.verdict}`
+    : "Verdict unavailable";
+
+  trialCard.appendChild(dateEl);
+  trialCard.appendChild(defendantEl);
+  trialCard.appendChild(offenceEl);
+  trialCard.appendChild(verdictEl);
+
+  positionEl.textContent =
+    `${offenceDiscoveryTrialIndex + 1} of ` +
+    `${offenceDiscoveryTrials.length}`;
+
+  previousButton.disabled =
+    offenceDiscoveryTrialIndex === 0;
+
+  nextButton.disabled =
+    offenceDiscoveryTrialIndex ===
+    offenceDiscoveryTrials.length - 1;
+
+  trialPanel.hidden = false;
+}
+
+async function loadOffenceDiscoveryTrials(location) {
+  const trialPanel = document.getElementById(
+    "offence-discovery-trial-panel",
+  );
+  const trialCard = document.getElementById(
+    "offence-discovery-trial-card",
+  );
+
+  if (!trialPanel || !trialCard) {
+    return;
+  }
+
+  const group = getValidatedGroup();
+
+  if (!group || group === "__INVALID__") {
+    trialPanel.hidden = true;
+    return;
+  }
+
+  const gender = document.getElementById("gender")?.value || "all";
+  const composition =
+    document.getElementById("composition")?.value || "all";
+  const from = document.getElementById("from")?.value || "";
+  const to = document.getElementById("to")?.value || "";
+
+  const params = new URLSearchParams({
+    group,
+    from,
+    to,
+    gender,
+    composition,
+    latitude: String(location.latitude),
+    longitude: String(location.longitude),
+  });
+
+  offenceDiscoveryTrials = [];
+  offenceDiscoveryTrialIndex = 0;
+
+  trialPanel.hidden = false;
+  trialCard.textContent = "Loading trials…";
+
+  try {
+    const res = await fetch(
+      `/api/trials/offence-location?${params.toString()}`,
+    );
+
+    if (!res.ok) {
+      throw new Error(
+        `Offence location lookup failed: ${res.status}`,
+      );
+    }
+
+    const payload = await res.json();
+
+    offenceDiscoveryTrials = payload.trials || [];
+    offenceDiscoveryTrialIndex = 0;
+
+    if (offenceDiscoveryTrials.length === 0) {
+      trialCard.textContent =
+        "No trials were found for this geographic point.";
+      return;
+    }
+
+    renderOffenceDiscoveryTrial();
+  } catch (err) {
+    console.error("Offence location trials failed:", err);
+
+    trialCard.textContent =
+      "Trials for this geographic point could not be loaded.";
+  }
+}
+
+function renderOffenceDiscoveryLocation() {
+  const locationsEl = document.getElementById(
+    "offence-discovery-locations-list",
+  );
+  const locationCard = document.getElementById(
+    "offence-discovery-location-card",
+  );
+  const positionEl = document.getElementById(
+    "offence-discovery-location-position",
+  );
+  const previousButton = document.getElementById(
+    "offence-discovery-location-previous",
+  );
+  const nextButton = document.getElementById(
+    "offence-discovery-location-next",
+  );
+  const trialPanel = document.getElementById(
+    "offence-discovery-trial-panel",
+  );
+
+  if (
+    !locationsEl ||
+    !locationCard ||
+    !positionEl ||
+    !previousButton ||
+    !nextButton ||
+    !trialPanel
+  ) {
+    return;
+  }
+
+  locationCard.innerHTML = "";
+
+  if (offenceDiscoveryLocations.length === 0) {
+    locationsEl.hidden = true;
+    trialPanel.hidden = true;
+    return;
+  }
+
+  if (offenceDiscoveryLocationIndex < 0) {
+    offenceDiscoveryLocationIndex = 0;
+  }
+
+  if (
+    offenceDiscoveryLocationIndex >=
+    offenceDiscoveryLocations.length
+  ) {
+    offenceDiscoveryLocationIndex =
+      offenceDiscoveryLocations.length - 1;
+  }
+
+  const location =
+    offenceDiscoveryLocations[offenceDiscoveryLocationIndex];
+  offenceDiscoverySelectedLocation = {
+    latitude: location.latitude,
+    longitude: location.longitude,
+  };
+
+  const labels =
+    Array.isArray(location.locationLabels) &&
+    location.locationLabels.length > 0
+      ? location.locationLabels
+      : ["Location label unavailable"];
+
+  const title = document.createElement("h4");
+  title.textContent = labels.join(" / ");
+
+  const trialCount = document.createElement("p");
+  trialCount.className = "offence-discovery-location-count";
+  trialCount.textContent =
+    location.trialCount === 1
+      ? "1 trial"
+      : `${location.trialCount} trials`;
+
+  const dateRange = document.createElement("p");
+  dateRange.className = "offence-discovery-location-dates";
+
+  if (
+    location.earliestTrial &&
+    location.latestTrial &&
+    location.earliestTrial !== location.latestTrial
+  ) {
+    dateRange.textContent =
+      `${location.earliestTrial} to ${location.latestTrial}`;
+  } else {
+    dateRange.textContent =
+      location.earliestTrial ||
+      location.latestTrial ||
+      "Trial date unavailable";
+  }
+
+  locationCard.appendChild(title);
+  locationCard.appendChild(trialCount);
+  locationCard.appendChild(dateRange);
+
+  positionEl.textContent =
+    `${offenceDiscoveryLocationIndex + 1} of ` +
+    `${offenceDiscoveryLocations.length}`;
+
+  previousButton.disabled =
+    offenceDiscoveryLocationIndex === 0;
+
+  nextButton.disabled =
+    offenceDiscoveryLocationIndex ===
+    offenceDiscoveryLocations.length - 1;
+
+  locationsEl.hidden = false;
+
+  loadOffenceDiscoveryTrials(location).catch(console.error);
+}
+
+function renderOffenceDiscoveryLocations(locations) {
+  offenceDiscoveryLocations = Array.isArray(locations)
+    ? locations
+    : [];
+
+  const selectedIndex =
+    offenceDiscoverySelectedLocation
+      ? offenceDiscoveryLocations.findIndex(
+          (location) =>
+            location.latitude ===
+              offenceDiscoverySelectedLocation.latitude &&
+            location.longitude ===
+              offenceDiscoverySelectedLocation.longitude,
+        )
+      : -1;
+
+  offenceDiscoveryLocationIndex =
+    selectedIndex >= 0 ? selectedIndex : 0;
+
+  offenceDiscoveryTrials = [];
+  offenceDiscoveryTrialIndex = 0;
+
+  renderOffenceDiscoveryLocation();
+}
+
+async function updateOffenceDiscovery() {
+  const statusEl = document.getElementById("offence-discovery-status");
+  const summaryEl = document.getElementById("offence-discovery-summary");
+  const locationsEl = document.getElementById(
+    "offence-discovery-locations-list",
+  );
+
+  if (!statusEl || !summaryEl || !locationsEl) {
+    return;
+  }
+
+  const group = getValidatedGroup();
+
+  summaryEl.hidden = true;
+  locationsEl.hidden = true;
+
+  offenceDiscoveryLocations = [];
+  offenceDiscoveryTrials = [];
+  offenceDiscoveryTrialIndex = 0;
+
+  const locationCard = document.getElementById(
+    "offence-discovery-location-card",
+  );
+  const trialPanel = document.getElementById(
+    "offence-discovery-trial-panel",
+  );
+  const trialCard = document.getElementById(
+    "offence-discovery-trial-card",
+  );
+
+  if (locationCard) {
+    locationCard.innerHTML = "";
+  }
+
+  if (trialCard) {
+    trialCard.innerHTML = "";
+  }
+
+  if (trialPanel) {
+    trialPanel.hidden = true;
+  }
+
+  if (group === null) {
+    statusEl.textContent =
+      "Select an offence to explore its geographic distribution.";
+    return;
+  }
+
+  if (group === "__INVALID__") {
+    statusEl.textContent =
+      "Select a recognised offence subcategory to explore its geographic distribution.";
+    return;
+  }
+
+  const gender = document.getElementById("gender")?.value || "all";
+  const composition =
+    document.getElementById("composition")?.value || "all";
+  const from = document.getElementById("from")?.value || "";
+  const to = document.getElementById("to")?.value || "";
+
+  if (!from || !to) {
+    statusEl.textContent =
+      "Select a complete date range to explore this offence.";
+    return;
+  }
+
+  const params = new URLSearchParams({
+    group,
+    from,
+    to,
+    gender,
+    composition,
+  });
+
+  statusEl.textContent = `Loading ${group} distribution…`;
+
+  try {
+    const res = await fetch(
+      `/api/trials/offence-distribution?${params.toString()}`,
+    );
+
+    if (!res.ok) {
+      throw new Error(
+        `Offence distribution lookup failed: ${res.status}`,
+      );
+    }
+
+    const payload = await res.json();
+    const summary = payload.summary;
+
+    document.getElementById("offence-discovery-total").textContent =
+      summary.totalTrials;
+
+    document.getElementById("offence-discovery-mapped").textContent =
+      summary.mappedTrials;
+
+    document.getElementById("offence-discovery-unmapped").textContent =
+      summary.unmappedTrials;
+
+    document.getElementById("offence-discovery-coverage").textContent =
+      `${summary.mappingCoveragePct}%`;
+
+    document.getElementById("offence-discovery-locations").textContent =
+      summary.mappedLocationCount;
+
+    statusEl.textContent =
+      summary.totalTrials > 0
+        ? `${group} across the active research filters.`
+        : `No ${group} trials match the active research filters.`;
+
+    summaryEl.hidden = false;
+    renderOffenceDiscoveryLocations(payload.locations);
+  } catch (err) {
+    console.error("Offence discovery failed:", err);
+
+    statusEl.textContent =
+      "Global offence discovery could not be loaded.";
+  }
+}
+
 async function loadOffenceCoverage() {
   const res = await fetch("/api/stats/offence-coverage");
 
@@ -6712,6 +7132,7 @@ async function render() {
   showNoDataOverlay(false);
   setChartLoading(true);
   updateCiStatus();
+  updateOffenceDiscovery().catch(console.error);
   try {
     const validatedGroup = getValidatedGroup();
     updateGroupInputState();
@@ -8614,7 +9035,58 @@ downloadSnapshotBtn.textContent =
       transcriptButton
     );
   });
+
   document
+  .getElementById("offence-discovery-location-previous")
+  ?.addEventListener("click", () => {
+    if (offenceDiscoveryLocationIndex <= 0) {
+      return;
+    }
+
+    offenceDiscoveryLocationIndex -= 1;
+    renderOffenceDiscoveryLocation();
+  });
+
+document
+  .getElementById("offence-discovery-location-next")
+  ?.addEventListener("click", () => {
+    if (
+      offenceDiscoveryLocationIndex >=
+      offenceDiscoveryLocations.length - 1
+    ) {
+      return;
+    }
+
+    offenceDiscoveryLocationIndex += 1;
+    renderOffenceDiscoveryLocation();
+  });
+
+document
+  .getElementById("offence-discovery-trial-previous")
+  ?.addEventListener("click", () => {
+    if (offenceDiscoveryTrialIndex <= 0) {
+      return;
+    }
+
+    offenceDiscoveryTrialIndex -= 1;
+    renderOffenceDiscoveryTrial();
+  });
+
+document
+  .getElementById("offence-discovery-trial-next")
+  ?.addEventListener("click", () => {
+    if (
+      offenceDiscoveryTrialIndex >=
+      offenceDiscoveryTrials.length - 1
+    ) {
+      return;
+    }
+
+    offenceDiscoveryTrialIndex += 1;
+    renderOffenceDiscoveryTrial();
+  });
+
+document
   .getElementById("unmapped-trials-previous")
   ?.addEventListener("click", () => {
     if (unmappedTrialIndex <= 0) {
