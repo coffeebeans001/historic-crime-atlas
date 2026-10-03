@@ -1056,6 +1056,31 @@ function renderOffenceDiscoveryTrial() {
   trialCard.appendChild(offenceEl);
   trialCard.appendChild(verdictEl);
 
+  if (trial.transcriptText) {
+  const transcriptButton = document.createElement("button");
+  transcriptButton.type = "button";
+  transcriptButton.className =
+    "offence-discovery-transcript-button";
+  transcriptButton.textContent = "View full transcript";
+
+  transcriptButton.addEventListener("click", () => {
+    openTranscriptModal(
+      {
+        id: trial.id,
+        trial_date: trial.trialDate,
+        defendant_name: trial.defendantName,
+        verdict: trial.verdict,
+        offence: trial.offence,
+        crime_location: trial.crimeLocation,
+        transcript_text: trial.transcriptText,
+      },
+      transcriptButton,
+    );
+  });
+
+  trialCard.appendChild(transcriptButton);
+}
+
   positionEl.textContent =
     `${offenceDiscoveryTrialIndex + 1} of ` +
     `${offenceDiscoveryTrials.length}`;
@@ -1233,9 +1258,61 @@ function renderOffenceDiscoveryLocation() {
       "Trial date unavailable";
   }
 
+  const viewOnMapButton = document.createElement("button");
+  viewOnMapButton.type = "button";
+  viewOnMapButton.className = "offence-discovery-view-map";
+  viewOnMapButton.textContent = "View on map";
+
+  viewOnMapButton.addEventListener("click", () => {
+    const lat = Number(location.latitude);
+    const lng = Number(location.longitude);
+
+    if (
+      !map ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng)
+    ) {
+      return;
+    }
+
+    const discoveryIcon = L.divIcon({
+      className: "offence-discovery-map-marker",
+      html: '<span class="offence-discovery-map-marker__diamond"></span>',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -14],
+   });
+
+  if (!offenceDiscoveryMapMarker) {
+    offenceDiscoveryMapMarker = L.marker([lat, lng], {
+      icon: discoveryIcon,
+      interactive: true,
+    }).addTo(map);
+  } else {
+    offenceDiscoveryMapMarker
+      .setLatLng([lat, lng])
+      .setIcon(discoveryIcon);
+  }
+
+  offenceDiscoveryMapMarkerGroup = getValidatedGroup();
+
+  offenceDiscoveryMapMarker
+    .bindPopup(
+      `${labels.join(" / ")} — ${
+        location.trialCount === 1
+          ? "1 trial"
+          : `${location.trialCount} trials`
+      }`,
+    )
+    .openPopup();
+
+  map.setView([lat, lng], 15);
+});
+
   locationCard.appendChild(title);
   locationCard.appendChild(trialCount);
   locationCard.appendChild(dateRange);
+  locationCard.appendChild(viewOnMapButton);
 
   positionEl.textContent =
     `${offenceDiscoveryLocationIndex + 1} of ` +
@@ -1278,6 +1355,15 @@ function renderOffenceDiscoveryLocations(locations) {
   renderOffenceDiscoveryLocation();
 }
 
+function clearOffenceDiscoveryMapMarker() {
+  if (offenceDiscoveryMapMarker && map) {
+    map.removeLayer(offenceDiscoveryMapMarker);
+  }
+
+  offenceDiscoveryMapMarker = null;
+  offenceDiscoveryMapMarkerGroup = null;
+}
+
 async function updateOffenceDiscovery() {
   const statusEl = document.getElementById("offence-discovery-status");
   const summaryEl = document.getElementById("offence-discovery-summary");
@@ -1290,6 +1376,13 @@ async function updateOffenceDiscovery() {
   }
 
   const group = getValidatedGroup();
+
+  if (
+  offenceDiscoveryMapMarker &&
+  offenceDiscoveryMapMarkerGroup !== group
+  ) {
+    clearOffenceDiscoveryMapMarker();
+  }
 
   summaryEl.hidden = true;
   locationsEl.hidden = true;
@@ -7328,6 +7421,8 @@ let markersLayer; // shared variable
 let centerMarker;
 let radiusCircle; // shows the search radius
 let markerById = new Map();
+let offenceDiscoveryMapMarker = null;
+let offenceDiscoveryMapMarkerGroup = null;
 let baseTiles;
 let mapHandlersBound = false; // ✅ ADD THIS
 let popupFadeTimer = null;
@@ -7644,10 +7739,19 @@ document.addEventListener("keydown", (event) => {
     map.addLayer(markersLayer);
   }
 
+  const researchCenterIcon = L.divIcon({
+    className: "research-center-marker",
+    html: '<span class="research-center-marker__dot"></span>',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12],
+  });
+
   if (!centerMarker) {
     centerMarker = L.marker([currentCenter.lat, currentCenter.lng], {
       draggable: true,
-    })
+      icon: researchCenterIcon,
+  })
       .addTo(map)
       .bindPopup("Search center (drag me)");
 

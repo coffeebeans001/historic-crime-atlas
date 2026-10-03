@@ -749,6 +749,7 @@ app.get("/api/trials/offence-location", async (req, res) => {
           t.offence_category,
           t.offence_subcategory,
           t.verdict,
+          t.transcript_text,
           t.crime_location,
           t.latitude,
           t.longitude
@@ -787,6 +788,7 @@ app.get("/api/trials/offence-location", async (req, res) => {
         offenceSubcategory: row.offence_subcategory,
         verdict: row.verdict,
         crimeLocation: row.crime_location,
+        transcriptText: row.transcript_text,
         latitude: Number(row.latitude),
         longitude: Number(row.longitude),
       })),

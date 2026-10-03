@@ -1054,3 +1054,53 @@
     grid-template-columns: 1fr;
   }
 }
+
+.research-center-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+}
+
+.research-center-marker__dot {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: #d97706;
+  box-shadow:
+    0 0 0 2px #92400e,
+    0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.offence-discovery-view-map {
+  width: fit-content;
+  margin-top: 0.5rem;
+  padding: 0.45rem 1rem;
+}
+
+.offence-discovery-map-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+}
+
+.offence-discovery-map-marker__diamond {
+  width: 18px;
+  height: 18px;
+  background: #2563eb;
+  border: 3px solid #ffffff;
+  box-shadow:
+    0 0 0 2px #1e3a8a,
+    0 2px 6px rgba(0, 0, 0, 0.35);
+  transform: rotate(45deg);
+}
+
+.offence-discovery-transcript-button {
+  width: fit-content;
+  margin-top: 0.5rem;
+  padding: 0.45rem 1rem;
+}
