@@ -270,10 +270,6 @@ app.get("/api/trials/:id/relationships", async (req, res) => {
   }
 });
 
-/* -----------------------
-   GET /api/trials/:id
-   Single trial detail
------------------------- */
 app.get("/api/trials/nearby", async (req, res) => {
   try {
     const lat = Number(req.query.lat);
@@ -749,7 +745,6 @@ app.get("/api/trials/offence-location", async (req, res) => {
           t.offence_category,
           t.offence_subcategory,
           t.verdict,
-          t.transcript_text,
           t.crime_location,
           t.latitude,
           t.longitude
@@ -788,7 +783,6 @@ app.get("/api/trials/offence-location", async (req, res) => {
         offenceSubcategory: row.offence_subcategory,
         verdict: row.verdict,
         crimeLocation: row.crime_location,
-        transcriptText: row.transcript_text,
         latitude: Number(row.latitude),
         longitude: Number(row.longitude),
       })),
@@ -937,6 +931,10 @@ app.get("/api/trials/series", async (req, res) => {
   }
 });
 
+/* -----------------------
+   GET /api/trials/:id
+   Single trial detail
+------------------------ */
 app.get("/api/trials/:id", async (req, res) => {
   try {
     const trialId = parseInt(req.params.id, 10);
@@ -957,6 +955,53 @@ app.get("/api/trials/:id", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* -----------------------
+   GET /api/trials/:id/transcript
+   Trial transcript endpoint
+------------------------ */
+app.get("/api/trials/:id/transcript", async (req, res) => {
+  try {
+    const trialId = Number.parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(trialId) || trialId <= 0) {
+      return res.status(400).json({
+        error: "Invalid trial ID",
+      });
+    }
+
+    const [rows] = await pool.query(
+      `
+        SELECT
+          id,
+          trial_date,
+          defendant_name,
+          verdict,
+          offence,
+          crime_location,
+          transcript_text
+        FROM trials
+        WHERE id = ?
+        LIMIT 1
+      `,
+      [trialId],
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({
+        error: "Trial not found",
+      });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to load trial transcript",
+    });
   }
 });
 

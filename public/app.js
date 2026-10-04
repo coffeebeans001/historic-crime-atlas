@@ -1056,30 +1056,43 @@ function renderOffenceDiscoveryTrial() {
   trialCard.appendChild(offenceEl);
   trialCard.appendChild(verdictEl);
 
-  if (trial.transcriptText) {
   const transcriptButton = document.createElement("button");
   transcriptButton.type = "button";
   transcriptButton.className =
     "offence-discovery-transcript-button";
   transcriptButton.textContent = "View full transcript";
 
-  transcriptButton.addEventListener("click", () => {
-    openTranscriptModal(
-      {
-        id: trial.id,
-        trial_date: trial.trialDate,
-        defendant_name: trial.defendantName,
-        verdict: trial.verdict,
-        offence: trial.offence,
-        crime_location: trial.crimeLocation,
-        transcript_text: trial.transcriptText,
-      },
-      transcriptButton,
-    );
+  transcriptButton.addEventListener("click", async () => {
+    try {
+      transcriptButton.disabled = true;
+
+      const response = await fetch(
+        `/api/trials/${trial.id}/transcript`,
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Transcript request failed: ${response.status}`,
+        );
+      }
+
+      const transcriptTrial = await response.json();
+
+      await openTranscriptModal(
+        transcriptTrial,
+        transcriptButton,
+      );
+    } catch (error) {
+      console.error(
+        "Could not load trial transcript:",
+        error,
+      );
+    } finally {
+      transcriptButton.disabled = false;
+    }
   });
 
   trialCard.appendChild(transcriptButton);
-}
 
   positionEl.textContent =
     `${offenceDiscoveryTrialIndex + 1} of ` +
@@ -1294,7 +1307,8 @@ function renderOffenceDiscoveryLocation() {
       .setIcon(discoveryIcon);
   }
 
-  offenceDiscoveryMapMarkerGroup = getValidatedGroup();
+  offenceDiscoveryMapMarkerSignature =
+    getOffenceDiscoveryFilterSignature();
 
   offenceDiscoveryMapMarker
     .bindPopup(
@@ -1355,13 +1369,33 @@ function renderOffenceDiscoveryLocations(locations) {
   renderOffenceDiscoveryLocation();
 }
 
+function getOffenceDiscoveryFilterSignature() {
+  const group = getValidatedGroup();
+  const gender =
+    document.getElementById("gender")?.value || "all";
+  const composition =
+    document.getElementById("composition")?.value || "all";
+  const from =
+    document.getElementById("from")?.value || "";
+  const to =
+    document.getElementById("to")?.value || "";
+
+  return JSON.stringify({
+    group,
+    from,
+    to,
+    gender,
+    composition,
+  });
+}
+
 function clearOffenceDiscoveryMapMarker() {
   if (offenceDiscoveryMapMarker && map) {
     map.removeLayer(offenceDiscoveryMapMarker);
   }
 
   offenceDiscoveryMapMarker = null;
-  offenceDiscoveryMapMarkerGroup = null;
+  offenceDiscoveryMapMarkerSignature = null;
 }
 
 async function updateOffenceDiscovery() {
@@ -1376,10 +1410,13 @@ async function updateOffenceDiscovery() {
   }
 
   const group = getValidatedGroup();
+  const currentFilterSignature =
+    getOffenceDiscoveryFilterSignature();
 
   if (
-  offenceDiscoveryMapMarker &&
-  offenceDiscoveryMapMarkerGroup !== group
+    offenceDiscoveryMapMarker &&
+    offenceDiscoveryMapMarkerSignature !==
+      currentFilterSignature
   ) {
     clearOffenceDiscoveryMapMarker();
   }
@@ -7422,7 +7459,7 @@ let centerMarker;
 let radiusCircle; // shows the search radius
 let markerById = new Map();
 let offenceDiscoveryMapMarker = null;
-let offenceDiscoveryMapMarkerGroup = null;
+let offenceDiscoveryMapMarkerSignature = null;
 let baseTiles;
 let mapHandlersBound = false; // ✅ ADD THIS
 let popupFadeTimer = null;
