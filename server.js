@@ -17,7 +17,10 @@ function wilsonInterval(guilty, n, z = 1.96) {
   const denom = 1 + z2 / n;
   const center = (p + z2 / (2 * n)) / denom;
   const margin = (z / denom) * Math.sqrt((p * (1 - p)) / n + z2 / (4 * n * n));
-  return { low: 100 * (center - margin), high: 100 * (center + margin) };
+  return {
+    low: Math.max(0, 100 * (center - margin)),
+    high: Math.min(100, 100 * (center + margin)),
+  };
 }
 
 /* -----------------------
@@ -800,6 +803,14 @@ app.get("/api/trials/series", async (req, res) => {
   try {
     const { group, gender, composition, from, to } = req.query;
 
+    const z = Number(req.query.z ?? 1.96);
+
+    if (Number.isNaN(z) || z <= 0 || z > 10) {
+      return res.status(400).json({
+        error: "Invalid z value",
+      });
+    }
+
     const where = [];
     const params = [];
 
@@ -867,7 +878,20 @@ app.get("/api/trials/series", async (req, res) => {
     SELECT
       YEAR(t.trial_date) AS year,
       COUNT(*) AS total,
-      SUM(CASE WHEN LOWER(t.verdict) = 'guilty' THEN 1 ELSE 0 END) AS guilty
+      SUM(
+        CASE
+          WHEN LOWER(t.verdict) IN ('guilty', 'not guilty')
+          THEN 1
+          ELSE 0
+        END
+      ) AS known_verdicts,
+      SUM(
+        CASE
+          WHEN LOWER(t.verdict) = 'guilty'
+          THEN 1
+          ELSE 0
+        END
+      ) AS guilty
     FROM trials t
     ${whereSql}
     GROUP BY year
@@ -883,42 +907,36 @@ app.get("/api/trials/series", async (req, res) => {
             : g.charAt(0).toUpperCase() + g.slice(1),
         data: rows.map((r) => {
           const total = Number(r.total) || 0;
+          const knownVerdicts = Number(r.known_verdicts) || 0;
           const guilty = Number(r.guilty) || 0;
 
-          if (!total) {
+          if (!knownVerdicts) {
             return {
               x: r.year,
-              y: 0,
+              y: null,
               n: 0,
-              low: 0,
-              high: 0,
+              total,
+              low: null,
+              high: null,
             };
           }
 
-          const p = guilty / total;
-          const z = 1.96;
-          const margin = z * Math.sqrt((p * (1 - p)) / total);
-
+          const p = guilty / knownVerdicts;
           const yPct = p * 100;
-          const lowPct = Math.max(0, (p - margin) * 100);
-          const highPct = Math.min(100, (p + margin) * 100);
 
-          const MIN_CI_GAP = 1;
-
-          let lowAdj = lowPct;
-          let highAdj = highPct;
-
-          if (lowPct === highPct) {
-            lowAdj = Math.max(0, lowPct - MIN_CI_GAP);
-            highAdj = Math.min(100, highPct + MIN_CI_GAP);
-          }
+          const ci = wilsonInterval(
+            guilty,
+            knownVerdicts,
+            z,
+          );
 
           return {
             x: r.year,
             y: yPct,
-            n: total,
-            low: lowAdj,
-            high: highAdj,
+            n: knownVerdicts,
+            total,
+            low: ci.low,
+            high: ci.high,
           };
         }),
       });

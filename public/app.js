@@ -33,50 +33,6 @@ function setCiAlpha(alpha) {
   });
 }
 
-// TODO: Confirm whether CI animation is still invoked before removing.
-function animateCi(show, durationMs = 250) {
-  if (!chart) return;
-
-  const band = chart.data.datasets.find((ds) => ds.label.includes("CI band"));
-
-  let startAlpha = show ? 0 : DEFAULT_CI_ALPHA;
-  if (
-    band &&
-    typeof band.backgroundColor === "string" &&
-    band.backgroundColor.startsWith("rgba(")
-  ) {
-    const m = band.backgroundColor.match(
-      /rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*([0-9.]+)\s*\)/,
-    );
-    if (m) startAlpha = Number(m[1]);
-  }
-
-  const endAlpha = show ? DEFAULT_CI_ALPHA : 0;
-  const start = performance.now();
-
-  function tick(now) {
-    const t = Math.min((now - start) / durationMs, 1);
-    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-    const alpha = startAlpha + (endAlpha - startAlpha) * eased;
-
-    chart.data.datasets.forEach((ds) => {
-      if (isCiDataset(ds)) ds.hidden = false;
-    });
-    setCiAlpha(alpha);
-
-    if (t === 1) {
-      chart.data.datasets.forEach((ds) => {
-        if (isCiDataset(ds)) ds.hidden = !show;
-      });
-    }
-
-    chart.update("none");
-    if (t < 1) requestAnimationFrame(tick);
-  }
-
-  requestAnimationFrame(tick);
-}
-
 function getValidatedGroup() {
   const groupInput = document.getElementById("group");
   const groupList = document.getElementById("groupOptions");
@@ -195,11 +151,17 @@ function buildUrl() {
 
 async function loadSeries() {
   const group = getValidatedGroup();
-  const gender = document.getElementById("gender")?.value || "all";
-  const composition = document.getElementById("composition")?.value || "all";
+  const gender =
+    document.getElementById("gender")?.value || "all";
+  const composition =
+    document.getElementById("composition")?.value || "all";
   const from = document.getElementById("from")?.value || "";
   const to = document.getElementById("to")?.value || "";
-  const radius = Number(document.getElementById("radius")?.value) || 2000;
+  const radius =
+    Number(document.getElementById("radius")?.value) || 2000;
+  const z = Number(
+  document.getElementById("confidence")?.value || 1.96,
+);
 
   const params = new URLSearchParams({
     gender,
@@ -209,6 +171,7 @@ async function loadSeries() {
     lat: String(currentCenter.lat),
     lng: String(currentCenter.lng),
     radius: String(radius),
+    z: String(z),
   });
 
   // ✅ only include group if valid
@@ -690,6 +653,8 @@ function ensureChart() {
               const n = raw.n;
               const low = raw.low;
               const high = raw.high;
+              const selectedConfidence =
+                document.getElementById("confidence")?.selectedOptions?.[0]?.text || "95%";
 
               const lines = [];
 
@@ -704,8 +669,8 @@ function ensureChart() {
 
               if (low != null && high != null) {
                 lines.push(
-                  `95% CI: ${Number(low).toFixed(1)}–${Number(high).toFixed(1)}%`,
-                );
+                `${selectedConfidence} CI: ${Number(low).toFixed(1)}–${Number(high).toFixed(1)}%`,
+               );
               }
 
               if (n != null) {
