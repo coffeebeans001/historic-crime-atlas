@@ -157,6 +157,7 @@ async function loadSeries() {
     document.getElementById("composition")?.value || "all";
   const from = document.getElementById("from")?.value || "";
   const to = document.getElementById("to")?.value || "";
+  const bucket = document.getElementById("bucket")?.value || "year";
   const radius =
     Number(document.getElementById("radius")?.value) || 2000;
   const z = Number(
@@ -172,6 +173,7 @@ async function loadSeries() {
     lng: String(currentCenter.lng),
     radius: String(radius),
     z: String(z),
+    bucket,
   });
 
   // ✅ only include group if valid
@@ -247,10 +249,7 @@ const LOW_N_THRESHOLD = 5;
 function buildDatasets(seriesArr, bucket) {
   const datasets = [];
   const largestGapYear = getLargestGenderGapYear(seriesArr);
-  const getBucketX = (x) => {
-    const year = Number(x);
-    return bucket === "decade" ? Math.floor(year / 10) * 10 : year;
-  };
+  const getBucketX = (x) => Number(x);
 
   (seriesArr || [])
     .filter((series) => series && Array.isArray(series.data))
@@ -308,6 +307,7 @@ function buildDatasets(seriesArr, bucket) {
       // 3) main raw line
       datasets.push({
         label: series.label,
+        clip: false,
         data: cleanPoints.map((p) => ({
           x: getBucketX(p.x),
           y: p.y,
@@ -563,12 +563,6 @@ function ensureChart() {
       // ✅ KEEP THESE INSIDE options
       scales: {
         x: {
-          type: "linear",
-          ticks: {
-            padding: 8,
-          },
-        },
-        x: {
       type: "linear",
 
       ticks: {
@@ -627,9 +621,14 @@ function ensureChart() {
 
         tooltip: {
           callbacks: {
-            title: (ctx) => {
-              const year = ctx[0]?.parsed?.x;
-              return `Year: ${year}`;
+           title: (ctx) => {
+             const period = ctx[0]?.parsed?.x;
+             const currentBucket =
+               document.getElementById("bucket")?.value || "year";
+
+              return currentBucket === "decade"
+                ? `Decade: ${period}s`
+                : `Year: ${period}`;
             },
 
             label: (ctx) => {

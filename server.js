@@ -803,6 +803,22 @@ app.get("/api/trials/series", async (req, res) => {
   try {
     const { group, gender, composition, from, to } = req.query;
 
+    const bucket = (req.query.bucket || "year")
+      .toString()
+      .trim()
+      .toLowerCase();
+
+    if (!["year", "decade"].includes(bucket)) {
+      return res.status(400).json({
+        error: "Invalid bucket value",
+      });
+    }
+
+    const bucketExpr =
+      bucket === "decade"
+        ? "FLOOR(YEAR(t.trial_date) / 10) * 10"
+        : "YEAR(t.trial_date)";
+
     const z = Number(req.query.z ?? 1.96);
 
     if (Number.isNaN(z) || z <= 0 || z > 10) {
@@ -876,7 +892,7 @@ app.get("/api/trials/series", async (req, res) => {
 
       const sql = `
     SELECT
-      YEAR(t.trial_date) AS year,
+      ${bucketExpr} AS period,
       COUNT(*) AS total,
       SUM(
         CASE
@@ -894,8 +910,8 @@ app.get("/api/trials/series", async (req, res) => {
       ) AS guilty
     FROM trials t
     ${whereSql}
-    GROUP BY year
-    ORDER BY year
+    GROUP BY period
+    ORDER BY period
   `;
 
       const [rows] = await pool.query(sql, paramsLoop);
@@ -912,7 +928,7 @@ app.get("/api/trials/series", async (req, res) => {
 
           if (!knownVerdicts) {
             return {
-              x: r.year,
+              x: Number(r.period),
               y: null,
               n: 0,
               total,
@@ -931,7 +947,7 @@ app.get("/api/trials/series", async (req, res) => {
           );
 
           return {
-            x: r.year,
+            x: Number(r.period),
             y: yPct,
             n: knownVerdicts,
             total,
