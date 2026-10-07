@@ -3515,6 +3515,13 @@ function stopTimelinePlayback() {
   timelineTimer = null;
   timelineIndex = 0;
   updateTimelineButtons(false);
+
+  if (chart && currentCenter) {
+    chart.options.plugins.subtitle.text =
+      `Map center: ${currentCenter.lat.toFixed(4)}, ${currentCenter.lng.toFixed(4)}`;
+
+    chart.update("none");
+  }
 }
 
 function startTimelinePlayback() {
