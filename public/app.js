@@ -7689,8 +7689,6 @@ function ensureMap() {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key !== "Escape") return;
-
   const transcriptModal = document.getElementById(
     "transcript-modal"
   );
@@ -7701,6 +7699,19 @@ document.addEventListener("keydown", (event) => {
   ) {
     return;
   }
+
+  if (event.key === "Tab") {
+    event.preventDefault();
+
+    const closeButton = transcriptModal.querySelector(
+      ".transcript-modal__close"
+    );
+
+    closeButton?.focus();
+    return;
+  }
+
+  if (event.key !== "Escape") return;
 
   if (
     transcriptModalReturnFocusElement
