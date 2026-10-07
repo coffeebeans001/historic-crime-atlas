@@ -567,11 +567,7 @@ function ensureChart() {
 
       ticks: {
   padding: 8,
-
-  stepSize:
-    bucket === "decade"
-      ? 20
-      : 1,
+  stepSize: 1,
 
   autoSkip: true,
   maxTicksLimit: 11,
@@ -7323,6 +7319,9 @@ async function render() {
     updateSampleWarning(payload.series);
     const bucket = document.getElementById("bucket")?.value || "year";
     chart.data.datasets = buildDatasets(payload.series, bucket);
+
+    chart.options.scales.x.ticks.stepSize =
+      bucket === "decade" ? 20 : 1;
 
     const showCi = document.getElementById("toggle-ci").checked;
 
