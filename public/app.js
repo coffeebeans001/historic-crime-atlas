@@ -126,29 +126,6 @@ function applyBestGroupMatchAndRender(groupInput) {
     .catch(console.error);
 }
 
-function buildUrl() {
-  const from = document.getElementById("from").value;
-  const to = document.getElementById("to").value;
-  const bucket = document.getElementById("bucket")?.value || "year";
-  const z = String(Number(document.getElementById("confidence").value || 1.96));
-  const params = new URLSearchParams({ bucket, from, to, format: "series", z });
-  const gender = document.getElementById("gender")?.value || "all";
-  params.set("gender", gender);
-  const composition =
-    document.getElementById("composition")?.value || "all";
-  params.set("composition", composition);
-
-  const group = getValidatedGroup();
-
-  if (group) {
-    params.set("group", group);
-  } else {
-    params.delete("group");
-  }
-
-  return `/api/stats/gender-party/over-time?${params.toString()}`;
-}
-
 async function loadSeries() {
   const group = getValidatedGroup();
   const gender =
@@ -9273,8 +9250,6 @@ document
     applyUnmappedTrialFilters();
   });
 
-
-  updateLastUpdatedLabel();
   updateLastUpdatedLabel();
 
   if (lockedChartYear != null) {
