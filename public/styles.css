@@ -19,6 +19,15 @@
         padding: 8px;
         font-size: 14px;
       }
+
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
+      }
+
       canvas {
         max-width: 100%;
       }
@@ -64,6 +73,11 @@
 
       #nearby-results .nearby-item:hover {
         background: rgba(0, 0, 0, 0.06);
+      }
+
+      #nearby-results .nearby-item:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
       }
 
       #nearby-results .nearby-item.is-active {
