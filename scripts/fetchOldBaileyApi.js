@@ -45,6 +45,8 @@ import writeTrialRelationships, { checkRelationshipBackfillReadiness, } from "..
 
 import { readTrialRelationships, checkTrialRelationshipIntegrity, } from "../src/import/readTrialRelationships.js";
 
+import { fetchOldBaileyPages } from "../src/import/fetchOldBaileyPages.js";
+
 import { pool } from "../db.js";
 
 const DEFAULT_QUERY = "robbery";
@@ -159,57 +161,30 @@ async function fetchOldBaileyRecords() {
       );
     }
 
-      const queryRecords = [];
+      const { records: selectedQueryRecords, totalResults: queryTotal } =
+        await fetchOldBaileyPages({
+          query: currentQuery,
+          startOffset,
+          recordCount: recordsPerQuery,
+          pageSize,
 
-      for (
-            let from = startOffset;
-            from < startOffset + recordsPerQuery;
-            from += pageSize
-          ) {
-        const baseUrl =
-  "https://www.dhi.ac.uk/api/data/oldbailey_record";
+          onPage: ({ from, pageData, pageRecords }) => {
+            if (from === 0) {
+              console.log("Hits metadata:", {
+                query: currentQuery,
+                total: pageData.hits?.total ?? 0,
+                maxScore: pageData.hits?.max_score,
+                returned: pageRecords.length,
+              });
+            }
 
-        const pageUrl = allTrialsMode
-          ? `${baseUrl}?from=${from}`
-          : `${baseUrl}?text=${encodeURIComponent(currentQuery)}&from=${from}`;
+            console.log(
+              `Fetched page starting at ${from}: ${pageRecords.length} records`
+            );
+          },
+        });
 
-        const response = await fetch(pageUrl);
-
-        if (!response.ok) {
-          throw new Error(
-            `Request failed: ${response.status} ${response.statusText}`
-          );
-        }
-
-        const pageData = await response.json();
-
-        if (from === 0) {
-          const queryTotal =
-            pageData.hits?.total ?? 0;
-
-          totalResults += queryTotal;
-
-          console.log("Hits metadata:", {
-            query: currentQuery,
-            total: queryTotal,
-            maxScore: pageData.hits?.max_score,
-            returned:
-              pageData.hits?.hits?.length ?? 0,
-          });
-        }
-
-        const pageRecords =
-          pageData.hits?.hits ?? [];
-
-        console.log(
-          `Fetched page starting at ${from}: ${pageRecords.length} records`
-        );
-
-        queryRecords.push(...pageRecords);
-      }
-
-      const selectedQueryRecords =
-        queryRecords.slice(0, recordsPerQuery);
+      totalResults += queryTotal;
 
       if (allTrialsMode) {
         console.log(

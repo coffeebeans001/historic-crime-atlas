@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
   "dev": "node server.js",
-  "import:data": "node scripts/import-data.js"
+  "import:data": "node scripts/import-data.js",
+  "test": "node --test tests/parseOldBaileyXml.test.js tests/validateParsedXmlRelationships.test.js tests/fetchOldBaileyJson.test.js tests/fetchOldBaileyRecordById.test.js tests/fetchOldBaileyPages.test.js"
 },
   "dependencies": {
     "csv-parse": "^7.0.1",

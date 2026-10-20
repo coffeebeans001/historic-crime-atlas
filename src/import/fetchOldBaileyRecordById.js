@@ -1,3 +1,5 @@
+import { fetchOldBaileyJson } from "./fetchOldBaileyJson.js";
+
 const SINGLE_RECORD_ENDPOINT =
   "https://www.dhi.ac.uk/api/data/oldbailey_record_single";
 
@@ -12,16 +14,7 @@ export async function fetchOldBaileyRecordById(idkey) {
     `${SINGLE_RECORD_ENDPOINT}` +
     `?idkey=${encodeURIComponent(recordId)}`;
 
-  const response = await fetch(apiUrl);
-
-  if (!response.ok) {
-    throw new Error(
-      `Single-record request failed for ${recordId}: ` +
-        `${response.status} ${response.statusText}`
-    );
-  }
-
-  const data = await response.json();
+  const data = await fetchOldBaileyJson(apiUrl);
   const hits = data?.hits?.hits ?? [];
 
   return {
