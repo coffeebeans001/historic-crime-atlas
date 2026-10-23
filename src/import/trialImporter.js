@@ -162,6 +162,7 @@ export async function importTrialWithTransaction(
   allowMissingDefendant = false,
   allowMissingJudge = false,
   allowMissingOffence = false,
+  connectionPool = pool,
 } = {}
 ) {
  if (
@@ -179,7 +180,7 @@ export async function importTrialWithTransaction(
 }
 
   const connection =
-    await pool.getConnection();
+    await connectionPool.getConnection();
 
   try {
     await connection.beginTransaction();
@@ -222,13 +223,23 @@ export async function importTrialWithTransaction(
     };
   } catch (error) {
     try {
-      await connection.rollback();
-    } catch (rollbackError) {
-      console.error(
-        "Trial rollback failed:",
-        rollbackError.message
-      );
-    }
+    await connection.rollback();
+  } catch (rollbackError) {
+    console.error(
+      "Trial rollback failed:",
+      rollbackError.message
+    );
+
+    return {
+      rowNumber: item.rowNumber,
+      record: item.record,
+      status: "FAILED",
+      errors: [
+        error.message,
+        `Transaction rollback failed: ${rollbackError.message}`,
+      ],
+    };
+  }
 
     /*
      * MySQL error 1062 means the unique source_case_id
@@ -238,14 +249,41 @@ export async function importTrialWithTransaction(
       error.errno === 1062 ||
       error.code === "ER_DUP_ENTRY"
     ) {
-      return {
-        rowNumber: item.rowNumber,
-        record: item.record,
-        status: "DATABASE_DUPLICATE",
-        errors: [
-          "The source case ID already exists.",
-        ],
-      };
+    let existingTrial = null;
+
+      try {
+        existingTrial = await findExistingTrial(
+          connection,
+          item.record.source_case_id
+        );
+      } catch (lookupError) {
+        console.error(
+          "Duplicate verification failed:",
+          lookupError.message
+        );
+
+        return {
+          rowNumber: item.rowNumber,
+          record: item.record,
+          status: "FAILED",
+          errors: [
+            error.message,
+            `Duplicate verification failed: ${lookupError.message}`,
+          ],
+        };
+      }
+
+      if (existingTrial) {
+        return {
+          rowNumber: item.rowNumber,
+          record: item.record,
+          status: "DATABASE_DUPLICATE",
+          existingTrialId: existingTrial.id,
+          errors: [
+            "The source case ID already exists.",
+          ],
+        };
+      }
     }
 
     return {
@@ -276,6 +314,7 @@ export async function importResolvedTrials(
     allowMissingDefendant = false,
     allowMissingJudge = false,
     allowMissingOffence = false,
+    onTrialResult = null,
   } = {}
 ) {
   const results = [];
@@ -293,6 +332,9 @@ export async function importResolvedTrials(
   );
 
     results.push(result);
+    if (onTrialResult) {
+      await onTrialResult(result);
+    }
   }
 
   return results;

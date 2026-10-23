@@ -31,6 +31,21 @@ import { resolveTrialRelations } from "../src/import/relationResolver.js";
 
 import { importResolvedTrials } from "../src/import/trialImporter.js";
 
+import { selectTrialsForRecovery } from "../src/import/importRecovery.js";
+
+import { validateImportRecoveryArgs } from "../src/import/validateImportRecoveryArgs.js";
+
+import {
+  saveImportCheckpoint,
+  loadImportCheckpoint,
+  createImportCheckpointIdentity,
+  validateImportCheckpointIdentity,
+  validateImportCheckpointBatch,
+  validateImportCheckpointStructure,
+  recordImportTrialResult,
+  completeImportCheckpoint,
+} from "../src/import/importCheckpoint.js";
+
 import { summariseLocationEnrichment, } from "../src/import/summariseLocationEnrichment.js";
 
 import { findTrialBySourceCaseId, } from "../src/import/databaseDuplicateChecker.js";
@@ -46,6 +61,8 @@ import writeTrialRelationships, { checkRelationshipBackfillReadiness, } from "..
 import { readTrialRelationships, checkTrialRelationshipIntegrity, } from "../src/import/readTrialRelationships.js";
 
 import { fetchOldBaileyPages } from "../src/import/fetchOldBaileyPages.js";
+
+import { randomUUID } from "node:crypto";
 
 import { pool } from "../db.js";
 
@@ -84,6 +101,13 @@ function getArgumentValue(argumentName, fallbackValue) {
 
 const insertTrials =
   process.argv.includes("--insert-trials");
+
+const resumeImport = process.argv.includes("--resume");
+
+validateImportRecoveryArgs({
+  insertTrials,
+  resumeImport,
+});
 
 const backfillTrialText =
   process.argv.includes("--backfill-trial-text"); 
@@ -141,14 +165,83 @@ async function fetchOldBaileyRecords() {
     let totalResults = 0;
 
     const queriesToFetch = allTrialsMode
-  ? [null]
-  : MULTI_OFFENCE_MODE
-    ? MULTI_OFFENCE_QUERIES
-    : [query];
+      ? [null]
+      : MULTI_OFFENCE_MODE
+        ? MULTI_OFFENCE_QUERIES
+        : [query];
 
     const recordsPerQuery = MULTI_OFFENCE_MODE
       ? MULTI_OFFENCE_SIZE
       : batchSize;
+
+    const checkpointPath =
+      "data/import-checkpoints/old-bailey-import.json";
+    const checkpointArchiveDirectory =
+      "data/import-checkpoints/archive";  
+    const checkpointIdentity = createImportCheckpointIdentity({
+      mode: allTrialsMode
+        ? "all-trials"
+        : MULTI_OFFENCE_MODE
+          ? "multi-offence"
+          : "single-query",
+      queries: queriesToFetch,
+      startOffset,
+      recordCount: recordsPerQuery,
+      insertTrials,
+    });
+
+    let importCheckpoint = {
+      identity: checkpointIdentity,
+      status: "IN_PROGRESS",
+      batchSourceCaseIds: null,
+      processedTrials: [],
+    };
+
+    if (insertTrials) {
+    const existingCheckpoint = await loadImportCheckpoint(
+      checkpointPath
+    );
+
+    if (existingCheckpoint) {
+      validateImportCheckpointStructure(existingCheckpoint);
+    }
+
+    if (existingCheckpoint && existingCheckpoint.status === "COMPLETED") {
+      throw new Error(
+        "Import checkpoint is already COMPLETED. " +
+        "Archive it before starting another import."
+      );
+    }
+
+    if (resumeImport && !existingCheckpoint) {
+      throw new Error(
+        "Cannot resume import: no checkpoint file exists."
+      );
+    }
+
+    if (existingCheckpoint && !resumeImport) {
+      throw new Error(
+        "An import checkpoint already exists. " +
+        "Review it before starting another import."
+      );
+    }
+
+    if (existingCheckpoint && resumeImport) {
+      validateImportCheckpointIdentity(
+        existingCheckpoint.identity,
+        checkpointIdentity
+      );
+
+      importCheckpoint = existingCheckpoint;
+    }
+
+    if (!existingCheckpoint) {
+      await saveImportCheckpoint(
+        checkpointPath,
+        importCheckpoint
+      );
+    }
+  }
 
     for (const currentQuery of queriesToFetch) {
       if (allTrialsMode) {
@@ -1488,16 +1581,144 @@ console.log(
 
 let trialImportResults = [];
 
+const trialsMissingSourceId =
+  resolvedRelationshipRecords.filter((item) => {
+    const sourceCaseId = item.record?.source_case_id;
+
+    return (
+      typeof sourceCaseId !== "string" ||
+      sourceCaseId.trim() === ""
+    );
+  });
+
+if (insertTrials) {
+  validateImportSourceCaseIds(resolvedRelationshipRecords);
+}
+
+const expectedSourceCaseIds = resolvedRelationshipRecords
+  .map((item) => item.record?.source_case_id)
+  .filter(
+    (sourceCaseId) =>
+      typeof sourceCaseId === "string" &&
+      sourceCaseId.trim() !== ""
+  ); 
+  
+const uniqueExpectedSourceCaseIds = [
+  ...new Set(expectedSourceCaseIds),
+];  
+
+if (
+  insertTrials &&
+  expectedSourceCaseIds.length !==
+    uniqueExpectedSourceCaseIds.length
+) {
+  throw new Error(
+    "Import blocked: duplicate source case IDs found in the batch"
+  );
+}
+
+if (
+  insertTrials &&
+  !resumeImport &&
+  importCheckpoint.batchSourceCaseIds === null
+) {
+  validateImportCheckpointBatch(
+    uniqueExpectedSourceCaseIds,
+    uniqueExpectedSourceCaseIds
+  );
+
+  const updatedCheckpoint = {
+    ...importCheckpoint,
+    batchSourceCaseIds: uniqueExpectedSourceCaseIds,
+  };
+
+  await saveImportCheckpoint(
+    checkpointPath,
+    updatedCheckpoint
+  );
+
+  importCheckpoint = updatedCheckpoint;
+}
+
+if (insertTrials && resumeImport) {
+  const savedBatchSourceCaseIds =
+    importCheckpoint.batchSourceCaseIds;
+
+  if (savedBatchSourceCaseIds == null) {
+    if (importCheckpoint.processedTrials.length > 0) {
+      throw new Error(
+        "Import recovery blocked: checkpoint has processed trials but no recorded batch identity"
+      );
+    }
+
+    validateImportCheckpointBatch(
+      uniqueExpectedSourceCaseIds,
+      uniqueExpectedSourceCaseIds
+    );
+
+    const updatedCheckpoint = {
+      ...importCheckpoint,
+      batchSourceCaseIds: uniqueExpectedSourceCaseIds,
+    };
+
+    await saveImportCheckpoint(
+      checkpointPath,
+      updatedCheckpoint
+    );
+
+    importCheckpoint = updatedCheckpoint;
+  } else {
+    validateImportCheckpointBatch(
+      savedBatchSourceCaseIds,
+      uniqueExpectedSourceCaseIds
+    );
+  }
+}
+
+  const trialsEligibleForImport = resumeImport
+    ? selectTrialsForRecovery(
+        resolvedRelationshipRecords,
+        importCheckpoint
+      )
+    : resolvedRelationshipRecords.filter((item) => {
+        const sourceCaseId = item.record?.source_case_id;
+
+        return (
+          typeof sourceCaseId === "string" &&
+          sourceCaseId.trim() !== ""
+        );
+      });
+
+  const trialsSkippedDuringRecovery = resumeImport
+  ? resolvedRelationshipRecords.filter(
+      (item) => !trialsEligibleForImport.includes(item)
+    )
+  : [];
+
 if (insertTrials) {
   trialImportResults = await importResolvedTrials(
-  resolvedRelationshipRecords,
-    {
+  trialsEligibleForImport,
+  {
       allowMissingDefendant: true,
       allowMissingJudge: true,
       allowMissingOffence: true,
+
+      onTrialResult: async (result) => {
+        const updatedCheckpoint = recordImportTrialResult(
+          importCheckpoint,
+          result
+        );
+
+        await saveImportCheckpoint(
+          checkpointPath,
+          updatedCheckpoint
+        );
+
+        importCheckpoint = updatedCheckpoint;
+      },
     }
   );
-}  
+}
 
 const insertedTrials = trialImportResults.filter(
   (result) => result.status === "INSERTED"
@@ -2178,6 +2399,14 @@ console.log(
   `Insert enabled: ${insertTrials ? "Yes" : "No"}`
 );
 
+console.log(
+  `Excluded (missing source ID): ${trialsMissingSourceId.length}`
+);
+
+console.log(
+  `Skipped (already processed): ${trialsSkippedDuringRecovery.length}`
+);
+
 console.log(`Inserted: ${insertedTrials.length}`);
 
 console.log(
@@ -2517,9 +2746,51 @@ const reportPath = await writeApiReviewReport({
 
 console.log("\nAPI review report created:");
 console.log(reportPath);
+if (insertTrials && trialsMissingSourceId.length > 0) {
+  throw new Error(
+    `Checkpoint completion blocked: ${trialsMissingSourceId.length} trial(s) missing source IDs`
+  );
+}
+
+if (insertTrials) {
+  const completedCheckpoint = completeImportCheckpoint(
+    importCheckpoint,
+    uniqueExpectedSourceCaseIds
+  );
+
+  await saveImportCheckpoint(
+    checkpointPath,
+    completedCheckpoint
+  );
+
+  importCheckpoint = completedCheckpoint;
+
+  console.log("\nImport checkpoint marked as COMPLETED");
+
+  const archiveTimestamp = new Date()
+    .toISOString()
+    .replace(/[:.]/g, "-");
+
+  const archiveFilename =
+    `old-bailey-import-${archiveTimestamp}-${randomUUID()}.json`;
+
+  const archivePath =
+    `${checkpointArchiveDirectory}/${archiveFilename}`;
+
+    console.log("\nCheckpoint archive destination:");
+    console.log(archivePath);
+
+    await archiveImportCheckpoint(
+      checkpointPath,
+      archivePath
+    );
+
+    console.log("\nCompleted checkpoint archived successfully");
+  }
 
   } catch (error) {
-    console.error(error.message);
+    console.error("Old Bailey import failed:", error);
+    process.exitCode = 1;
   }
 }
 

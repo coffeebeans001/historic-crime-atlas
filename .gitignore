@@ -7,6 +7,7 @@ yarn-error.log*
 # Data import files and generated reports
 data/imports/*.csv
 data/import-reports/*
+data/import-checkpoints/*
 !data/imports/.gitkeep
-!data/imports/old-bailey-sample.csv
 !data/import-reports/.gitkeep
+!data/import-checkpoints/.gitkeep
