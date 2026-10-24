@@ -19,6 +19,46 @@ import {
   importResolvedTrials,
 } from "../src/import/trialImporter.js";
 
+test("recovery rejects a completed checkpoint", () => {
+  const sourceCaseIds = [
+    "TEST-COMPLETED-001",
+    "TEST-COMPLETED-002",
+  ];
+
+  const resolvedRelationshipRecords = sourceCaseIds.map(
+    (sourceCaseId, index) => ({
+      rowNumber: index + 1,
+      record: {
+        source_case_id: sourceCaseId,
+      },
+    })
+  );
+
+  const checkpoint = {
+    status: "COMPLETED",
+    batchSourceCaseIds: sourceCaseIds,
+    processedTrials: [
+      {
+        source_case_id: "TEST-COMPLETED-001",
+        status: "INSERTED",
+      },
+      {
+        source_case_id: "TEST-COMPLETED-002",
+        status: "FAILED",
+      },
+    ],
+  };
+
+  assert.throws(
+    () =>
+      selectTrialsForRecovery(
+        resolvedRelationshipRecords,
+        checkpoint
+      ),
+    /Import recovery blocked: checkpoint is already completed/
+  );
+});
+
 test("recovery selects only unfinished trials", () => {
   const sourceCaseIds = [
     "TEST-RECOVERY-001",

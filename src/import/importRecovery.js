@@ -16,6 +16,13 @@ export function selectTrialsForRecovery(
   }
 
   validateRecoveryCheckpoint(checkpoint);
+
+  if (checkpoint.status === "COMPLETED") {
+    throw new Error(
+      "Import recovery blocked: checkpoint is already completed"
+   );
+  }
+
   validateImportSourceCaseIds(resolvedRelationshipRecords);
 
 const recoveredBatchSourceCaseIds =
