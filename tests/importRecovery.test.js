@@ -778,3 +778,124 @@ assert.equal(finalCheckpoint.processedTrials.length, 3);
   });
  }
 });
+
+test("repeated recovery avoids duplicate trial insertions", async () => {
+  const sourceCaseIds = [
+    "TEST-REPEAT-001",
+    "TEST-REPEAT-002",
+  ];
+
+  const resolvedRelationshipRecords = sourceCaseIds.map(
+    (sourceCaseId, index) => ({
+      rowNumber: index + 1,
+      record: {
+        source_case_id: sourceCaseId,
+        trial_date: "1700-01-01",
+        defendant_name: `Test Defendant ${index + 1}`,
+        offence: "Test offence",
+        verdict: "Guilty",
+        source_url: `https://example.com/${sourceCaseId}`,
+      },
+      defendant: null,
+      judge: null,
+      offence: null,
+      missingReferences: [],
+    })
+  );
+
+  assert.equal(resolvedRelationshipRecords.length, 2);
+  const simulatedDatabase = createSimulatedTrialDatabase();
+
+  const importOptions = {
+    allowMissingDefendant: true,
+    allowMissingJudge: true,
+    allowMissingOffence: true,
+    connectionPool: simulatedDatabase.connectionPool,
+    };
+
+    let checkpoint = {
+      status: "IN_PROGRESS",
+      batchSourceCaseIds: sourceCaseIds,
+      processedTrials: [
+        {
+        source_case_id: "TEST-REPEAT-002",
+        status: "FAILED",
+        },
+     ],
+    };
+
+    assert.equal(simulatedDatabase.committedTrials.size, 0);
+    assert.equal(checkpoint.processedTrials.length, 1);
+
+    const initialResults = await importResolvedTrials(
+      [resolvedRelationshipRecords[0]],
+      importOptions
+    );
+
+    assert.equal(initialResults.length, 1);
+    assert.equal(initialResults[0].status, "INSERTED");
+
+    checkpoint = recordImportTrialResult(
+      checkpoint,
+      initialResults[0]
+    );
+
+    assert.equal(simulatedDatabase.committedTrials.size, 1);
+    assert.equal(simulatedDatabase.getInsertCount(), 1);
+
+    assert.equal(checkpoint.processedTrials.length, 2);
+
+    const firstRecoverySelection = selectTrialsForRecovery(
+      resolvedRelationshipRecords,
+      checkpoint
+    );
+
+    assert.deepEqual(
+    firstRecoverySelection.map(
+        (item) => item.record.source_case_id
+    ),
+    ["TEST-REPEAT-002"]
+    );
+
+    const firstRecoveryResults = await importResolvedTrials(
+    firstRecoverySelection,
+    importOptions
+    );
+
+    assert.equal(firstRecoveryResults.length, 1);
+    assert.equal(firstRecoveryResults[0].status, "INSERTED");
+
+    checkpoint = recordImportTrialResult(
+    checkpoint,
+    firstRecoveryResults[0]
+    );
+
+    assert.equal(simulatedDatabase.committedTrials.size, 2);
+    assert.equal(simulatedDatabase.getInsertCount(), 2);
+
+    assert.equal(checkpoint.processedTrials.length, 2);
+
+    assert.deepEqual(
+    checkpoint.processedTrials.map((trial) => trial.status),
+    ["INSERTED", "INSERTED"]
+    );
+
+    const secondRecoverySelection = selectTrialsForRecovery(
+    resolvedRelationshipRecords,
+    checkpoint
+    );
+
+    assert.deepEqual(secondRecoverySelection, []);
+
+    const secondRecoveryResults = await importResolvedTrials(
+    secondRecoverySelection,
+    importOptions
+    );
+
+    assert.deepEqual(secondRecoveryResults, []);
+
+    assert.equal(simulatedDatabase.committedTrials.size, 2);
+    assert.equal(simulatedDatabase.getInsertCount(), 2);
+
+    assert.equal(checkpoint.processedTrials.length, 2);
+});
