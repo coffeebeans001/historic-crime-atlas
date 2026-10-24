@@ -386,7 +386,9 @@ test("recovery selects unfinished trials from a saved checkpoint", async () => {
   }
 });
 
-function createSimulatedTrialDatabase() {
+function createSimulatedTrialDatabase({
+  failAfterCommit = false,
+} = {}) {
   const committedTrials = new Map();
   let nextTrialId = 101;
   let insertCount = 0;
@@ -435,18 +437,24 @@ function createSimulatedTrialDatabase() {
           throw new Error("Unexpected SQL query");
         },
 
-        async commit() {
-          if (pendingTrial) {
-            committedTrials.set(
-              pendingTrial.source_case_id,
-              pendingTrial
-            );
-          }
+async commit() {
+  if (pendingTrial) {
+    committedTrials.set(
+      pendingTrial.source_case_id,
+      pendingTrial
+    );
+  }
 
-          pendingTrial = null;
-        },
+  pendingTrial = null;
 
-        async rollback() {
+  if (failAfterCommit) {
+    throw new Error(
+      "Simulated connection failure after commit"
+    );
+  }
+},
+
+async rollback() {
           pendingTrial = null;
         },
 
@@ -461,6 +469,77 @@ function createSimulatedTrialDatabase() {
     getInsertCount: () => insertCount,
   };
 }
+
+test("recovery avoids duplicate insertion after uncertain commit", async () => {
+  const sourceCaseId = "TEST-UNCERTAIN-COMMIT-001";
+
+  const trial = {
+    rowNumber: 1,
+    record: {
+      source_case_id: sourceCaseId,
+    },
+    defendant: null,
+    judge: null,
+    offence: null,
+    missingReferences: [],
+  };
+
+  const database = createSimulatedTrialDatabase({
+    failAfterCommit: true,
+  });
+
+  const importOptions = {
+    connectionPool: database.connectionPool,
+    allowMissingDefendant: true,
+    allowMissingJudge: true,
+    allowMissingOffence: true,
+  };
+
+  const firstResults = await importResolvedTrials(
+    [trial],
+    importOptions
+  );
+
+  assert.equal(firstResults[0].status, "FAILED");
+  assert.equal(database.committedTrials.size, 1);
+  assert.equal(database.getInsertCount(), 1);
+
+  const checkpoint = {
+    status: "IN_PROGRESS",
+    batchSourceCaseIds: [sourceCaseId],
+    processedTrials: [
+      {
+        source_case_id: sourceCaseId,
+        status: "FAILED",
+      },
+    ],
+  };
+
+  const selectedTrials = selectTrialsForRecovery(
+    [trial],
+    checkpoint
+  );
+
+  assert.equal(selectedTrials.length, 1);
+
+  const recoveryResults = await importResolvedTrials(
+    selectedTrials,
+    importOptions
+  );
+
+  assert.equal(
+    recoveryResults[0].status,
+    "DATABASE_DUPLICATE"
+  );
+
+  assert.equal(
+    recoveryResults[0].existingTrialId,
+    101
+  );
+
+  assert.equal(database.committedTrials.size, 1);
+  assert.equal(database.getInsertCount(), 1);
+});
 
 test("interrupted import recovers without duplicate insertions", async () => {
   const sourceCaseIds = [
