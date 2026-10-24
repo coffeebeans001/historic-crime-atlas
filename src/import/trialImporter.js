@@ -315,6 +315,7 @@ export async function importResolvedTrials(
     allowMissingJudge = false,
     allowMissingOffence = false,
     onTrialResult = null,
+    connectionPool = pool,
   } = {}
 ) {
   const results = [];
@@ -328,6 +329,7 @@ export async function importResolvedTrials(
       allowMissingDefendant,
       allowMissingJudge,
       allowMissingOffence,
+      connectionPool,
     }
   );
 
