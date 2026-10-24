@@ -110,6 +110,59 @@ test("saveImportCheckpoint replaces an existing checkpoint", async () => {
   }
 });
 
+test("failed checkpoint save preserves the previous checkpoint", async () => {
+  const temporaryDirectory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "old-bailey-checkpoint-")
+  );
+
+  try {
+    const checkpointPath = path.join(
+      temporaryDirectory,
+      "checkpoint.json"
+    );
+
+    const originalCheckpoint = {
+      status: "IN_PROGRESS",
+      processedTrials: [
+        {
+          source_case_id: "TEST-SAVE-001",
+          status: "INSERTED",
+        },
+      ],
+    };
+
+    await saveImportCheckpoint(
+      checkpointPath,
+      originalCheckpoint
+    );
+
+    const temporaryPath = `${checkpointPath}.tmp`;
+
+    await fs.mkdir(temporaryPath);
+
+    await assert.rejects(
+      saveImportCheckpoint(checkpointPath, {
+        status: "IN_PROGRESS",
+        processedTrials: [],
+      })
+    );
+
+    const recoveredCheckpoint = await loadImportCheckpoint(
+      checkpointPath
+    );
+
+    assert.deepEqual(
+      recoveredCheckpoint,
+      originalCheckpoint
+    );
+  } finally {
+    await fs.rm(temporaryDirectory, {
+      recursive: true,
+      force: true,
+    });
+  }
+});
+
 test("loadImportCheckpoint reads a saved checkpoint", async () => {
   const temporaryDirectory = await fs.mkdtemp(
     path.join(os.tmpdir(), "old-bailey-checkpoint-")
