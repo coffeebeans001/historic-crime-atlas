@@ -1,4 +1,4 @@
-import test from "node:test";
+import test, { mock } from "node:test";
 import assert from "node:assert/strict";
 
 import { promises as fs } from "node:fs";
@@ -154,6 +154,79 @@ test("failed checkpoint save preserves the previous checkpoint", async () => {
     assert.deepEqual(
       recoveredCheckpoint,
       originalCheckpoint
+    );
+  } finally {
+    await fs.rm(temporaryDirectory, {
+      recursive: true,
+      force: true,
+    });
+  }
+});
+
+test("failed checkpoint rename preserves the previous checkpoint", async () => {
+  const temporaryDirectory = await fs.mkdtemp(
+    path.join(os.tmpdir(), "old-bailey-checkpoint-")
+  );
+
+  try {
+    const checkpointPath = path.join(
+      temporaryDirectory,
+      "checkpoint.json"
+    );
+
+    const originalCheckpoint = {
+      status: "IN_PROGRESS",
+      processedTrials: [
+        {
+          source_case_id: "TEST-RENAME-001",
+          status: "INSERTED",
+        },
+      ],
+    };
+
+    await saveImportCheckpoint(
+      checkpointPath,
+      originalCheckpoint
+    );
+
+    const renameError = new Error(
+      "Simulated checkpoint rename failure"
+    );
+
+    const renameMock = mock.method(
+      fs,
+      "rename",
+      async () => {
+        throw renameError;
+      }
+    );
+
+    try {
+      await assert.rejects(
+        saveImportCheckpoint(checkpointPath, {
+          status: "IN_PROGRESS",
+          processedTrials: [],
+        }),
+        /Simulated checkpoint rename failure/
+      );
+    } finally {
+      renameMock.mock.restore();
+    }
+
+    const recoveredCheckpoint = await loadImportCheckpoint(
+      checkpointPath
+    );
+
+    assert.deepEqual(
+      recoveredCheckpoint,
+      originalCheckpoint
+    );
+
+    const temporaryPath = `${checkpointPath}.tmp`;
+
+    await assert.rejects(
+      fs.access(temporaryPath),
+      { code: "ENOENT" }
     );
   } finally {
     await fs.rm(temporaryDirectory, {
