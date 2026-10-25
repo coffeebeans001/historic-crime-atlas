@@ -1523,6 +1523,21 @@ test("import source ID validation rejects whitespace-only IDs", () => {
   );
 });
 
+test("import source ID validation rejects IDs exceeding 100 characters", () => {
+  const records = [
+    {
+      record: {
+        source_case_id: "A".repeat(101),
+      },
+    },
+  ];
+
+  assert.throws(
+    () => validateImportSourceCaseIds(records),
+    /Import blocked before insertion: 1 trial\(s\) exceed the 100-character source ID limit/
+  );
+});
+
 test("import source ID validation rejects non-array input", () => {
   assert.throws(
     () => validateImportSourceCaseIds(null),

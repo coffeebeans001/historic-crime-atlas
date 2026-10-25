@@ -426,5 +426,20 @@ export function validateImportSourceCaseIds(records) {
     );
   }
 
+  const oversizedSourceIds = records.filter((item) => {
+    const sourceCaseId = item?.record?.source_case_id;
+
+    return (
+      typeof sourceCaseId === "string" &&
+      sourceCaseId.length > 100
+    );
+  });
+
+  if (oversizedSourceIds.length > 0) {
+    throw new Error(
+      `Import blocked before insertion: ${oversizedSourceIds.length} trial(s) exceed the 100-character source ID limit`
+    );
+  }
+
   return true;
 }
