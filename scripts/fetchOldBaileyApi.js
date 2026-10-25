@@ -1,5 +1,7 @@
 import { enrichOldBaileyRecord } from "../src/import/enrichOldBaileyRecord.js";
 
+import { isNonTrialRecord } from "../src/import/isNonTrialRecord.js";
+
 import { parseOldBaileyXml } from "../src/import/parseOldBaileyXml.js";
 
 import { transformOldBaileyRecord } from
@@ -2286,18 +2288,6 @@ console.log(
 );
 
 console.log("\n=================================================\n");
-
-function isNonTrialRecord(record) {
-  const title =
-    record?._source?.title?.toLowerCase() ?? "";
-
-  return (
-    title.startsWith("front matter") ||
-    title.startsWith("punishment summary") ||
-    title.startsWith("supplementary material") ||
-    title.startsWith("advertisements")
-  );
-}
 
 const transcriptsAt500 =
   transformedRecords.filter(
