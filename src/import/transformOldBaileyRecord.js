@@ -142,9 +142,9 @@ const locationSource =
       null;
 
 const locationPrecision =
-  parsedXmlData?.locationPrecision ??
-  reviewedLocation?.locationPrecision ??
-  null;
+  parsedXmlData?.crimeLocation != null
+    ? parsedXmlData?.locationPrecision ?? null
+    : reviewedLocation?.locationPrecision ?? null;
 
 const geocodeResult =
   geocodeHistoricalLocation({
