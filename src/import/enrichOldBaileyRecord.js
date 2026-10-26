@@ -17,6 +17,15 @@ export async function enrichOldBaileyRecord(
 
   const detailedRecord =
     result.records?.[0] ?? null;
+    
+  if (
+    detailedRecord &&
+    detailedRecord._source?.idkey !== idkey
+  ) {
+    throw new Error(
+      `Detailed record ID mismatch: requested ${idkey}, received ${detailedRecord._source?.idkey ?? "missing"}`
+    );
+  }
 
   const xml =
     detailedRecord?._source?.xml ?? "";
