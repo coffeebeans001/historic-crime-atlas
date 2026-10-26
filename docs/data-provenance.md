@@ -28,6 +28,20 @@ The following transformations occur:
    Purpose:
    Single trials are anecdotal. Grouped trials reveal historical patterns.
 
+   ### Historical Date Interpretation
+
+   The Old Bailey Proceedings Online records trial dates as the first day of the court session. Sessions could continue over several days, so the recorded date does not necessarily identify the exact day on which an individual trial occurred.
+
+   The archive treats 1 January as the beginning of the year, including for historical proceedings.
+
+   England and Wales used the Julian calendar until September 1752, when the Gregorian calendar was adopted. The British calendar omitted 3–13 September 1752 during this transition.
+
+   The import validation process includes provisional historical calendar checks for Julian leap years and the September 1752 transition.
+
+   The application does not currently perform automatic Julian-to-Gregorian date conversion.
+
+   The precise date-normalisation conventions used across all Old Bailey source records require further verification. Historical dates should therefore be interpreted as archive-associated session dates rather than independently verified individual hearing dates.
+
 2. Conviction Rate Calculation
    For each time bucket:
    conviction rate = guilty verdicts / total trials
