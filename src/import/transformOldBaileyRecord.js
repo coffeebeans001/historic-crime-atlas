@@ -2,30 +2,53 @@ import { geocodeHistoricalLocation } from "./geocodeHistoricalLocation.js";
 
 import { getReviewedHistoricalLocation, } from "./reviewedHistoricalLocations.js";
 
+import { isValidHistoricalDate } from "./historicalCalendar.js";
+
 function convertOldBaileyDate(dateText) {
-  if (!dateText) {
+  if (typeof dateText !== "string") {
     return null;
   }
 
-  const cleanedDate = dateText
-    .replace(/\.$/, "")
-    .replace(
-      /(\d+)(st|nd|rd|th)/i,
-      "$1"
-    )
-    .trim();
+  const months = {
+    january: 1,
+    february: 2,
+    march: 3,
+    april: 4,
+    may: 5,
+    june: 6,
+    july: 7,
+    august: 8,
+    september: 9,
+    october: 10,
+    november: 11,
+    december: 12,
+  };
 
-  const parsedDate = new Date(cleanedDate);
+  const match = dateText.trim().match(
+    /^(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]+)\s+(\d{4})\.?$/i
+  );
 
-  if (Number.isNaN(parsedDate.getTime())) {
+  if (!match) {
     return null;
   }
 
-  const year = parsedDate.getUTCFullYear();
-  const month = String(parsedDate.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(parsedDate.getUTCDate()).padStart(2, "0");
+  const day = Number(match[1]);
+  const month = months[match[2].toLowerCase()];
+  const year = Number(match[3]);
 
-  return `${year}-${month}-${day}`;
+  if (!month) {
+    return null;
+  }
+
+  const formattedDate = [
+    String(year).padStart(4, "0"),
+    String(month).padStart(2, "0"),
+    String(day).padStart(2, "0"),
+  ].join("-");
+
+  return isValidHistoricalDate(formattedDate)
+    ? formattedDate
+    : null;
 }
 
 function extractTitleParts(title) {

@@ -40,6 +40,7 @@ test("prioritises structured XML over title information", () => {
   assert.equal(result.defendant_name, "William Jones");
   assert.equal(result.offence, "Burglary");
   assert.equal(result.verdict, "Not Guilty");
+  assert.equal(result.trial_date, "1750-01-01");
 });
 
 test("uses reviewed historical locations when XML location is missing", () => {
@@ -87,4 +88,19 @@ test("does not mix XML locations with reviewed location precision", () => {
   assert.equal(result.location_source, "structured_xml");
 
   assert.equal(result.location_precision, null);
+});
+
+test("preserves Julian leap-day dates in historical titles", () => {
+  const record = {
+    _source: {
+      idkey: "test-julian-leap-day",
+      title: "Historical Trial. Robbery. 29th February 1700",
+      text: "Historical trial transcript.",
+      images: [],
+    },
+  };
+
+  const result = transformOldBaileyRecord(record, {});
+
+  assert.equal(result.trial_date, "1700-02-29");
 });

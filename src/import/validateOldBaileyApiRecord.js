@@ -1,3 +1,5 @@
+import { isValidHistoricalDate } from "./historicalCalendar.js";
+
 export function validateOldBaileyApiRecord(record) {
   const errors = [];
   const warnings = [];
@@ -25,52 +27,10 @@ export function validateOldBaileyApiRecord(record) {
     errors.push(
       `Trial date must use YYYY-MM-DD format: ${record.trial_date}`
     );
-  } else {
-    const [year, month, day] =
-      record.trial_date.split("-").map(Number);
-
-    const usesJulianCalendar =
-      year < 1752 ||
-      (year === 1752 && month < 9);
-
-    const isLeapYear = usesJulianCalendar
-      ? year % 4 === 0
-      : year % 4 === 0 &&
-        (year % 100 !== 0 || year % 400 === 0);
-
-    const daysInMonth = [
-      31,
-      isLeapYear ? 29 : 28,
-      31,
-      30,
-      31,
-      30,
-      31,
-      31,
-      30,
-      31,
-      30,
-      31,
-    ];
-
-    const isSkippedBritishDate =
-      year === 1752 &&
-      month === 9 &&
-      day >= 3 &&
-      day <= 13;
-
-    if (
-      year === 0 ||
-      month < 1 ||
-      month > 12 ||
-      day < 1 ||
-      day > (daysInMonth[month - 1] ?? 0) ||
-      isSkippedBritishDate
-    ) {
-      errors.push(
-        `Invalid trial date: ${record.trial_date}`
-      );
-    }
+  } else if (!isValidHistoricalDate(record.trial_date)) {
+    errors.push(
+      `Invalid trial date: ${record.trial_date}`
+    );
   }
 
   if (!record.source_url?.trim()) {

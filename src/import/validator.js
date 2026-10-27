@@ -1,3 +1,5 @@
+import { isValidHistoricalDate } from "./historicalCalendar.js";
+
 const ALLOWED_GENDERS = new Set([
   "Male",
   "Female",
@@ -28,27 +30,7 @@ function hasText(value) {
  * @returns {boolean}
  */
 function isValidDate(value) {
-  if (!hasText(value)) {
-    return false;
-  }
-
-  const dateMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-
-  if (!dateMatch) {
-    return false;
-  }
-
-  const year = Number(dateMatch[1]);
-  const month = Number(dateMatch[2]);
-  const day = Number(dateMatch[3]);
-
-  const date = new Date(Date.UTC(year, month - 1, day));
-
-  return (
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day
-  );
+  return isValidHistoricalDate(value);
 }
 
 /**
