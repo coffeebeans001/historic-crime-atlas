@@ -220,8 +220,9 @@ test("new trial is inserted and transaction is committed", async () => {
   const item = {
     rowNumber: 1,
     record: {
-      source_case_id: "TEST-INSERT-001",
-    },
+    source_case_id: "TEST-INSERT-001",
+    trial_date: "1674-04-29",
+  },
     defendant: { defendant_id: 1 },
     judge: { judge_id: 1 },
     offence: { offence_id: 1 },
@@ -291,6 +292,7 @@ test("failed trial insertion rolls back and releases connection", async () => {
     rowNumber: 1,
     record: {
       source_case_id: "TEST-FAILED-001",
+      trial_date: "1674-04-29",
     },
     defendant: { defendant_id: 1 },
     judge: { judge_id: 1 },
@@ -381,6 +383,7 @@ test("duplicate-key error is verified and classified as DATABASE_DUPLICATE", asy
     rowNumber: 1,
     record: {
       source_case_id: "TEST-RACE-001",
+      trial_date: "1674-04-29",
     },
     defendant: { defendant_id: 1 },
     judge: { judge_id: 1 },
@@ -465,6 +468,7 @@ test("failed duplicate verification returns FAILED", async () => {
     rowNumber: 1,
     record: {
       source_case_id: "TEST-VERIFY-FAILED-001",
+      trial_date: "1674-04-29",
     },
     defendant: { defendant_id: 1 },
     judge: { judge_id: 1 },
@@ -541,6 +545,7 @@ test("rollback failure still returns FAILED and releases connection", async () =
     rowNumber: 1,
     record: {
       source_case_id: "TEST-ROLLBACK-001",
+      trial_date: "1674-04-29",
     },
     defendant: { defendant_id: 1 },
     judge: { judge_id: 1 },
@@ -615,6 +620,7 @@ test("commit failure returns FAILED and attempts rollback", async () => {
     rowNumber: 1,
     record: {
       source_case_id: "TEST-COMMIT-001",
+      trial_date: "1674-04-29",
     },
     defendant: { defendant_id: 1 },
     judge: { judge_id: 1 },
@@ -704,6 +710,7 @@ test("duplicate-key rollback failure returns FAILED without verification", async
     rowNumber: 1,
     record: {
       source_case_id: "TEST-ROLLBACK-DUPLICATE-001",
+      trial_date: "1674-04-29",
     },
     defendant: { defendant_id: 1 },
     judge: { judge_id: 1 },
@@ -732,4 +739,68 @@ test("duplicate-key rollback failure returns FAILED without verification", async
     "rollback",
     "release",
   ]);
+});
+
+test("preserves Julian leap date in historical trial column", async () => {
+  let capturedSql = null;
+  let capturedParams = null;
+
+  const connection = {
+    async beginTransaction() {},
+
+    async execute(sql, params) {
+      if (/SELECT\s+id,\s+source_case_id\s+FROM\s+trials/i.test(sql)) {
+        return [[]];
+      }
+
+      if (/INSERT\s+INTO\s+trials/i.test(sql)) {
+        capturedSql = sql;
+        capturedParams = params;
+        return [{ insertId: 1700 }];
+      }
+
+      throw new Error("Unexpected SQL query");
+    },
+
+    async commit() {},
+    async rollback() {},
+    release() {},
+  };
+
+  const item = {
+    rowNumber: 1,
+    record: {
+      source_case_id: "TEST-JULIAN-1700-001",
+      trial_date: "1700-02-29",
+    },
+    defendant: { defendant_id: 1 },
+    judge: { judge_id: 1 },
+    offence: { offence_id: 1 },
+    missingReferences: [],
+  };
+
+  const result = await importTrialWithTransaction(item, {
+    connectionPool: {
+      async getConnection() {
+        return connection;
+      },
+    },
+  });
+
+  assert.equal(result.status, "INSERTED");
+  assert.equal(result.trialId, 1700);
+
+  assert.ok(capturedSql);
+
+  assert.equal(
+    (capturedSql.match(/\?/g) ?? []).length,
+    32
+  );
+
+  assert.equal(capturedParams.length, 32);
+
+  assert.equal(capturedParams[0], "TEST-JULIAN-1700-001");
+  assert.equal(capturedParams[1], null);
+  assert.equal(capturedParams[2], "1700-02-29");
+  assert.equal(capturedParams[3], null);
 });

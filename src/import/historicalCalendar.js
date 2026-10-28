@@ -67,3 +67,45 @@ export function isValidHistoricalDate(value) {
     !isSkippedBritishDate
   );
 }
+
+/**
+ * Returns a historical date only when it can be
+ * represented by MySQL's Gregorian DATE type.
+ *
+ * Historically valid Julian dates that are not
+ * Gregorian-valid are preserved separately as text.
+ *
+ * @param {unknown} value
+ * @returns {string|null}
+ */
+export function toMysqlCompatibleDate(value) {
+  if (!isValidHistoricalDate(value)) {
+    return null;
+  }
+
+  const [year, month, day] =
+    value.split("-").map(Number);
+
+  const isGregorianLeapYear =
+    year % 4 === 0 &&
+    (year % 100 !== 0 || year % 400 === 0);
+
+  const daysInMonth = [
+    31,
+    isGregorianLeapYear ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+
+  return day <= daysInMonth[month - 1]
+    ? value
+    : null;
+}

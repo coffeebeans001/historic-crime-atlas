@@ -1,5 +1,10 @@
 import { pool } from "../../db.js";
 
+import {
+  isValidHistoricalDate,
+  toMysqlCompatibleDate,
+} from "./historicalCalendar.js";
+
 /**
  * Checks for an existing trial using its source case ID.
  *
@@ -51,82 +56,98 @@ async function insertTrial(
   relations,
   importId
 ) {
+  const historicalTrialDate = record.trial_date;
+
+  if (!isValidHistoricalDate(historicalTrialDate)) {
+    throw new Error(
+      `Invalid historical trial date: ${historicalTrialDate}`
+    );
+  }
+
+  const mysqlTrialDate =
+    toMysqlCompatibleDate(historicalTrialDate);
   const [result] = await connection.execute(
     `
-      INSERT INTO trials (
-  source_case_id,
-  trial_date,
-  defendant_name,
-  defendant_gender,
-  offence,
-  offence_category,
-  offence_subcategory,
-  verdict,
-  source_url,
-  trial_location,
-  crime_location,
-  location_source,
-  location_precision,
-  latitude,
-  longitude,
-  geocode_source,
-  geocode_confidence,
-  location_text,
-  transcript_text,
-  judge_name,
-  case_summary,
-  trial_type,
-  defendant_age,
-  witness_count,
-  sentence_duration,
-  appeal_outcome,
-  defendant_id,
-  judge_id,
-  offence_id,
-  import_id
-)
-               VALUES (
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-  ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-)
+  
+  INSERT INTO trials (
+    source_case_id,
+    trial_date,
+    historical_trial_date,
+    historical_calendar,
+    defendant_name,
+    defendant_gender,
+    offence,
+    offence_category,
+    offence_subcategory,
+    verdict,
+    source_url,
+    trial_location,
+    crime_location,
+    location_source,
+    location_precision,
+    latitude,
+    longitude,
+    geocode_source,
+    geocode_confidence,
+    location_text,
+    transcript_text,
+    judge_name,
+    case_summary,
+    trial_type,
+    defendant_age,
+    witness_count,
+    sentence_duration,
+    appeal_outcome,
+    defendant_id,
+    judge_id,
+    offence_id,
+    import_id
+  )
+   VALUES (
+     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+     ?, ?
+   )
     `,
-    [
-      record.source_case_id,
-record.trial_date,
-record.defendant_name,
-record.defendant_gender ?? null,
-record.offence,
-record.offence_category ?? null,
-record.offence_subcategory ?? null,
-record.verdict,
-record.source_url,
-record.trial_location ?? null,
-record.crime_location ?? null,
-record.location_source ?? null,
-record.location_precision ?? null,
-record.latitude ?? null,
-record.longitude ?? null,
-record.geocode_source ?? null,
-record.geocode_confidence ?? null,
-record.location_text ?? null,
-record.transcript_text ?? null,
-record.judge_name ?? null,
-record.case_summary ?? null,
-record.trial_type ?? null,
-record.defendant_age ?? null,
-record.witness_count ?? null,
-record.sentence_duration ?? null,
-record.appeal_outcome ?? null,
-relations.defendant?.defendant_id ?? null,
-relations.judge?.judge_id ?? null,
-relations.offence?.offence_id ?? null,
-importId ?? null,
-    ]
-  );
+  [
+    record.source_case_id,
+    mysqlTrialDate,
+    historicalTrialDate,
+    null,
+    record.defendant_name,
+    record.defendant_gender ?? null,
+    record.offence,
+    record.offence_category ?? null,
+    record.offence_subcategory ?? null,
+    record.verdict,
+    record.source_url,
+    record.trial_location ?? null,
+    record.crime_location ?? null,
+    record.location_source ?? null,
+    record.location_precision ?? null,
+    record.latitude ?? null,
+    record.longitude ?? null,
+    record.geocode_source ?? null,
+    record.geocode_confidence ?? null,
+    record.location_text ?? null,
+    record.transcript_text ?? null,
+    record.judge_name ?? null,
+    record.case_summary ?? null,
+    record.trial_type ?? null,
+    record.defendant_age ?? null,
+    record.witness_count ?? null,
+    record.sentence_duration ?? null,
+    record.appeal_outcome ?? null,
+    relations.defendant?.defendant_id ?? null,
+    relations.judge?.judge_id ?? null,
+    relations.offence?.offence_id ?? null,
+    importId ?? null,
+  ]
+);
 
-  return result.insertId;
-}
+    return result.insertId;
+  }
 
 /**
  * Imports one resolved trial using its own transaction.

@@ -477,6 +477,7 @@ test("recovery avoids duplicate insertion after uncertain commit", async () => {
     rowNumber: 1,
     record: {
       source_case_id: sourceCaseId,
+      trial_date: "1674-04-29",
     },
     defendant: null,
     judge: null,
