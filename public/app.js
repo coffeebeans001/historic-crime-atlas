@@ -8005,7 +8005,11 @@ function renderNearbyList(rows, markerById) {
       const offencePreview = offence.length > 180 ? `${offence.slice(0, 180)}…`: offence;
       const who = r.defendant_name || "(unknown defendant)";
       const verdict = r.verdict || "(unknown verdict)";
-      const date = r.trial_date ? String(r.trial_date).slice(0, 10) : "";
+      const date = r.historical_trial_date
+        ? String(r.historical_trial_date).slice(0, 10)
+        : r.trial_date
+          ? String(r.trial_date).slice(0, 10)
+          : "";
       const where =
         r.crime_location ||
         r.trial_location ||
@@ -8081,9 +8085,11 @@ function renderNearestMatches(rows, radius) {
       const verdict =
         r.verdict ||
         "(unknown verdict)";
-      const date = r.trial_date
-        ? String(r.trial_date).slice(0, 10)
-        : "";
+      const date = r.historical_trial_date
+        ? String(r.historical_trial_date).slice(0, 10)
+        : r.trial_date
+          ? String(r.trial_date).slice(0, 10)
+          : "";
       const where =
         r.crime_location ||
         r.trial_location ||
@@ -8248,9 +8254,11 @@ async function fetchNearby() {
       const lat = Number(r.latitude);
       const lng = Number(r.longitude);
 
-      const date = r.trial_date
-        ? String(r.trial_date).slice(0, 10)
-        : "Unknown date";
+      const date = r.historical_trial_date
+        ? String(r.historical_trial_date).slice(0, 10)
+        : r.trial_date
+          ? String(r.trial_date).slice(0, 10)
+          : "Unknown date";
       const offence =
         r.offence_name ||
         r.offence ||
@@ -8352,8 +8360,11 @@ const safeOffencePreview =
       const marker = L.marker([lat, lng]);
       marker.caseData = r;
        // Popup for click/pin
-      marker.year = r.trial_date
-        ? Number(String(r.trial_date).slice(0, 4))
+      const markerDate =
+        r.historical_trial_date || r.trial_date;
+
+      marker.year = markerDate
+        ? Number(String(markerDate).slice(0, 4))
         : null;
       marker.bindPopup(popupHTML, {
         className: "crime-popup",

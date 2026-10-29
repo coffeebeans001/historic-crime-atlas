@@ -308,9 +308,11 @@ app.get("/api/trials/nearby", async (req, res) => {
 
     // Haversine distance in meters
     const sql = `
-  SELECT
+    SELECT
     t.id,
     t.trial_date,
+    t.historical_trial_date,
+    t.historical_calendar,
     t.verdict,
     t.trial_location,
     t.crime_location,
@@ -332,8 +334,11 @@ app.get("/api/trials/nearby", async (req, res) => {
   FROM trials t
   WHERE
     t.latitude IS NOT NULL
-    AND t.longitude IS NOT NULL
-    AND t.trial_date BETWEEN ? AND ?
+      AND t.longitude IS NOT NULL
+      AND COALESCE(
+        t.historical_trial_date,
+        DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+      ) BETWEEN ? AND ?
     ${gender !== "all" ? "AND LOWER(t.defendant_gender) = LOWER(?)" : ""}
     ${
       composition === "single"
@@ -350,12 +355,12 @@ app.get("/api/trials/nearby", async (req, res) => {
             ) > 1`
           : ""
     }
-    ${year ? "AND YEAR(t.trial_date) = ?" : ""}
+    ${year ? "AND LEFT(COALESCE(t.historical_trial_date, DATE_FORMAT(t.trial_date, '%Y-%m-%d')), 4) = ?" : ""}
     ${group ? "AND t.offence_subcategory = ?" : ""}
-  HAVING distance_m <= ?
-  ORDER BY distance_m ASC
-  LIMIT ?;
-`;
+      HAVING distance_m <= ?
+      ORDER BY distance_m ASC
+      LIMIT ?;
+    `;
 
     const params = [
       lat,
@@ -364,7 +369,7 @@ app.get("/api/trials/nearby", async (req, res) => {
       from,
       to,
       ...(gender !== "all" ? [gender] : []),
-      ...(year ? [Number(year)] : []),
+      ...(year ? [year] : []),
       ...(group ? [group] : []),
       radius,
       limit,
@@ -415,9 +420,11 @@ app.get("/api/trials/nearest", async (req, res) => {
     }
 
     const sql = `
-      SELECT
+        SELECT
         t.id,
         t.trial_date,
+        t.historical_trial_date,
+        t.historical_calendar,
         t.verdict,
         t.trial_location,
         t.crime_location,
@@ -440,7 +447,10 @@ app.get("/api/trials/nearest", async (req, res) => {
       WHERE
         t.latitude IS NOT NULL
         AND t.longitude IS NOT NULL
-        AND t.trial_date BETWEEN ? AND ?
+        AND COALESCE(
+          t.historical_trial_date,
+          DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+        ) BETWEEN ? AND ?
         ${gender !== "all" ? "AND LOWER(t.defendant_gender) = LOWER(?)" : ""}
         ${
           composition === "single"
@@ -457,7 +467,7 @@ app.get("/api/trials/nearest", async (req, res) => {
                 ) > 1`
               : ""
         }
-        ${year ? "AND YEAR(t.trial_date) = ?" : ""}
+        ${year ? "AND LEFT(COALESCE(t.historical_trial_date, DATE_FORMAT(t.trial_date, '%Y-%m-%d')), 4) = ?" : ""}
         ${group ? "AND t.offence_subcategory = ?" : ""}
       ORDER BY distance_m ASC
       LIMIT ?;
@@ -470,7 +480,7 @@ app.get("/api/trials/nearest", async (req, res) => {
       from,
       to,
       ...(gender !== "all" ? [gender] : []),
-      ...(year ? [Number(year)] : []),
+      ...(year ? [year] : []),
       ...(group ? [group] : []),
       limit,
     ];
