@@ -6527,9 +6527,11 @@ function renderUnmappedTrials() {
   const trial =
   filteredUnmappedTrials[unmappedTrialIndex];
 
-  const date = trial.trial_date
-    ? String(trial.trial_date).slice(0, 10)
-    : "Unknown";
+  const date = trial.historical_trial_date
+    ? String(trial.historical_trial_date).slice(0, 10)
+    : trial.trial_date
+      ? String(trial.trial_date).slice(0, 10)
+      : "Unknown";
 
   const defendant =
     trial.defendant_name || "Unknown";
@@ -6674,10 +6676,11 @@ async function openTranscriptModal(
     punishmentsSection.hidden = true;
   }
 
-  transcriptDate.textContent =
-    trial.trial_date
-      ? String(trial.trial_date).slice(0, 10)
-      : "Unknown";
+  transcriptDate.textContent = String(
+    trial.historical_trial_date ||
+    trial.trial_date ||
+    "Unknown"
+  ).slice(0, 10);
 
   transcriptDefendant.textContent =
     trial.defendant_name || "Unknown";
@@ -7014,11 +7017,15 @@ function populateUnmappedYearFilter() {
   const years = [
     ...new Set(
       unmappedTrials
-        .map((trial) =>
-          trial.trial_date
-            ? String(trial.trial_date).slice(0, 4)
-            : null
-        )
+        .map((trial) => {
+          const date =
+            trial.historical_trial_date ||
+            trial.trial_date;
+
+          return date
+            ? String(date).slice(0, 4)
+            : null;
+        })
         .filter(Boolean)
     ),
   ].sort();
@@ -7057,14 +7064,17 @@ function populateUnmappedMonthFilter() {
   const monthNumbers = [
     ...new Set(
       unmappedTrials
-        .filter((trial) => {
-          if (!trial.trial_date) {
-            return false;
-          }
+       .filter((trial) => {
+         const date =
+           trial.historical_trial_date ||
+           trial.trial_date;
 
-          const year =
-            String(trial.trial_date).slice(0, 4);
+         if (!date) {
+           return false;
+        }
 
+        const year =
+          String(date).slice(0, 4);
           const yearMatches =
             !selectedYear ||
             year === selectedYear;
@@ -7075,9 +7085,13 @@ function populateUnmappedMonthFilter() {
 
           return yearMatches && offenceMatches;
         })
-        .map((trial) =>
-          String(trial.trial_date).slice(5, 7)
-        )
+        .map((trial) => {
+          const date =
+            trial.historical_trial_date ||
+            trial.trial_date;
+
+          return String(date).slice(5, 7);
+        })
         .filter(Boolean)
     ),
   ].sort();
@@ -7129,10 +7143,11 @@ function applyUnmappedTrialFilters() {
 
   filteredUnmappedTrials =
   unmappedTrials.filter((trial) => {
-    const date =
-      trial.trial_date
-        ? String(trial.trial_date)
-        : "";
+    const date = String(
+      trial.historical_trial_date ||
+      trial.trial_date ||
+      ""
+    ).slice(0, 10);
 
     const trialYear =
       date ? date.slice(0, 4) : "";

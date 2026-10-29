@@ -42,6 +42,8 @@ app.get("/api/trials/unmapped", async (req, res) => {
         id,
         source_case_id,
         trial_date,
+        historical_trial_date,
+        historical_calendar,
         defendant_name,
         offence,
         offence_category,
@@ -54,8 +56,10 @@ app.get("/api/trials/unmapped", async (req, res) => {
       FROM trials
       WHERE latitude IS NULL
          OR longitude IS NULL
-      ORDER BY trial_date ASC, id ASC
-    `);
+      ORDER BY
+        COALESCE(historical_trial_date, DATE_FORMAT(trial_date, '%Y-%m-%d')) ASC,
+        id ASC
+      `);
 
     res.json({
       count: rows.length,
@@ -2005,6 +2009,7 @@ app.get("/api/offence-groups", async (_req, res) => {
 /* -----------------------
    Server start
 ------------------------ */
+// TEMPORARY DIAGNOSTIC — remove after verification
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => {
   console.log(`API running on http://localhost:${port}`);
