@@ -176,7 +176,9 @@ app.get("/api/trials", async (req, res) => {
       params.push(verdict);
     }
     if (from && to) {
-      where.push("trial_date BETWEEN ? AND ?");
+      where.push(
+        "COALESCE(historical_trial_date, DATE_FORMAT(trial_date, '%Y-%m-%d')) BETWEEN ? AND ?"
+      );
       params.push(from, to);
     }
     if (judge) {
@@ -205,10 +207,12 @@ app.get("/api/trials", async (req, res) => {
 
     const [rows] = await pool.query(
       `SELECT *
-       FROM trial_summary
-       ${whereSql}
-       ORDER BY trial_date DESC
-       LIMIT ? OFFSET ?`,
+      FROM trial_summary
+      ${whereSql}
+      ORDER BY
+        COALESCE(historical_trial_date, DATE_FORMAT(trial_date, '%Y-%m-%d')) DESC,
+        trial_id DESC
+      LIMIT ? OFFSET ?`,
       [...params, limit, offset],
     );
 
