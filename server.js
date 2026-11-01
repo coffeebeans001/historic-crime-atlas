@@ -531,7 +531,10 @@ app.get("/api/trials/offence-distribution", async (req, res) => {
 
     const where = [
       "t.offence_subcategory = ?",
-      "t.trial_date BETWEEN ? AND ?",
+      `COALESCE(
+        t.historical_trial_date,
+        DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+      ) BETWEEN ? AND ?`,
     ];
 
     const params = [group, from, to];
@@ -562,8 +565,16 @@ app.get("/api/trials/offence-distribution", async (req, res) => {
     }
 
     if (year) {
-      where.push("YEAR(t.trial_date) = ?");
-      params.push(Number(year));
+      where.push(`
+        LEFT(
+          COALESCE(
+            t.historical_trial_date,
+            DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+          ),
+          4
+        ) = ?
+      `);
+      params.push(year);
     }
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
@@ -611,8 +622,18 @@ app.get("/api/trials/offence-distribution", async (req, res) => {
             ORDER BY t.crime_location
             SEPARATOR ' | '
           ) AS location_labels,
-          DATE_FORMAT(MIN(t.trial_date), '%Y-%m-%d') AS earliest_trial,
-          DATE_FORMAT(MAX(t.trial_date), '%Y-%m-%d') AS latest_trial
+          MIN(
+            COALESCE(
+              t.historical_trial_date,
+              DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+            )
+          ) AS earliest_trial,
+          MAX(
+            COALESCE(
+              t.historical_trial_date,
+              DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+            )
+          ) AS latest_trial
         FROM trials t
         ${whereSql}
           AND t.latitude IS NOT NULL
