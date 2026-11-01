@@ -1089,7 +1089,12 @@ app.get("/api/judges/:judgeId/trials", async (req, res) => {
        FROM trial_summary ts
        JOIN trials t ON t.id = ts.trial_id
        WHERE t.judge_id = ?
-       ORDER BY ts.trial_date DESC
+       ORDER BY
+         COALESCE(
+           ts.historical_trial_date,
+           DATE_FORMAT(ts.trial_date, '%Y-%m-%d')
+         ) DESC,
+         ts.trial_id DESC
        LIMIT ? OFFSET ?`,
       [judgeId, limit, offset],
     );
