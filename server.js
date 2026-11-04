@@ -1546,6 +1546,13 @@ app.get("/api/stats/gender", async (req, res) => {
     const group =
       (req.query.group ?? "").toString().trim();
 
+    const historicalDateExpr = `
+      COALESCE(
+        t.historical_trial_date,
+        DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+      )
+    `;
+
     const where = [
       "t.defendant_gender IS NOT NULL"
     ];
@@ -1554,7 +1561,7 @@ app.get("/api/stats/gender", async (req, res) => {
 
     if (from && to) {
       where.push(
-        "t.trial_date BETWEEN ? AND ?"
+        `${historicalDateExpr} BETWEEN ? AND ?`
       );
 
       params.push(from, to);
@@ -1572,31 +1579,31 @@ app.get("/api/stats/gender", async (req, res) => {
       `WHERE ${where.join(" AND ")}`;
 
     const [rows] = await pool.query(
-  `SELECT
-     t.defendant_gender AS gender,
-     COUNT(*) AS total_trials,
-     SUM(
-       CASE
-         WHEN t.verdict = 'Guilty'
-         THEN 1
-         ELSE 0
-       END
-     ) AS guilty_trials,
-     SUM(
-       CASE
-         WHEN t.verdict = 'Not Guilty'
-         THEN 1
-         ELSE 0
-       END
-     ) AS not_guilty_trials
-   FROM trials t
-   ${whereSql}
-   GROUP BY t.defendant_gender
-   ORDER BY
-     total_trials DESC,
-     t.defendant_gender ASC`,
-  params
-);
+      `SELECT
+        t.defendant_gender AS gender,
+        COUNT(*) AS total_trials,
+        SUM(
+          CASE
+            WHEN t.verdict = 'Guilty'
+            THEN 1
+            ELSE 0
+          END
+        ) AS guilty_trials,
+        SUM(
+          CASE
+            WHEN t.verdict = 'Not Guilty'
+            THEN 1
+            ELSE 0
+          END
+        ) AS not_guilty_trials
+      FROM trials t
+      ${whereSql}
+      GROUP BY t.defendant_gender
+      ORDER BY
+        total_trials DESC,
+        t.defendant_gender ASC`,
+      params
+    );
 
     res.json({
       from: from && to ? from : null,
