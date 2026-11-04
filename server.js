@@ -862,10 +862,22 @@ app.get("/api/trials/series", async (req, res) => {
       });
     }
 
+    const historicalYearExpr = `
+      CAST(
+        LEFT(
+          COALESCE(
+            t.historical_trial_date,
+            DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+          ),
+          4
+        ) AS UNSIGNED
+      )
+    `;
+
     const bucketExpr =
       bucket === "decade"
-        ? "FLOOR(YEAR(t.trial_date) / 10) * 10"
-        : "YEAR(t.trial_date)";
+        ? `FLOOR(${historicalYearExpr} / 10) * 10`
+        : historicalYearExpr;
 
     const z = Number(req.query.z ?? 1.96);
 
@@ -878,13 +890,20 @@ app.get("/api/trials/series", async (req, res) => {
     const where = [];
     const params = [];
 
+    const historicalDateExpr = `
+      COALESCE(
+        t.historical_trial_date,
+        DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+      )
+    `;
+
     if (from) {
-      where.push("t.trial_date >= ?");
+      where.push(`${historicalDateExpr} >= ?`);
       params.push(from);
     }
 
     if (to) {
-      where.push("t.trial_date <= ?");
+      where.push(`${historicalDateExpr} <= ?`);
       params.push(to);
     }
 
