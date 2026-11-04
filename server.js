@@ -735,7 +735,10 @@ app.get("/api/trials/offence-location", async (req, res) => {
 
     const where = [
       "t.offence_subcategory = ?",
-      "t.trial_date BETWEEN ? AND ?",
+      `COALESCE(
+        t.historical_trial_date,
+        DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+      ) BETWEEN ? AND ?`,
       "t.latitude = ?",
       "t.longitude = ?",
     ];
@@ -780,7 +783,10 @@ app.get("/api/trials/offence-location", async (req, res) => {
         SELECT
           t.id,
           t.source_case_id,
-          DATE_FORMAT(t.trial_date, '%Y-%m-%d') AS trial_date,
+          COALESCE(
+            t.historical_trial_date,
+            DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+          ) AS trial_date,
           t.defendant_name,
           t.defendant_gender,
           t.offence,
@@ -793,7 +799,10 @@ app.get("/api/trials/offence-location", async (req, res) => {
         FROM trials t
         WHERE ${where.join(" AND ")}
         ORDER BY
-          t.trial_date ASC,
+          COALESCE(
+            t.historical_trial_date,
+            DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+          ) ASC,
           t.id ASC
       `,
       params,
