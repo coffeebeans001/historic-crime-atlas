@@ -1077,7 +1077,10 @@ app.get("/api/trials/:id/transcript", async (req, res) => {
       `
         SELECT
           id,
-          trial_date,
+          COALESCE(
+            historical_trial_date,
+            DATE_FORMAT(trial_date, '%Y-%m-%d')
+          ) AS trial_date,
           defendant_name,
           verdict,
           offence,
