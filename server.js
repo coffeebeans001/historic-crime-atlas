@@ -1461,29 +1461,48 @@ app.get("/api/stats/offences/over-time", async (req, res) => {
       });
     }
 
+    const historicalYearExpr = `
+  CAST(
+    LEFT(
+      COALESCE(
+        t.historical_trial_date,
+        DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+      ),
+      4
+    ) AS UNSIGNED
+  )
+`;
+
     const bucketExpr =
       bucket === "decade"
-        ? "FLOOR(YEAR(t.trial_date) / 10) * 10"
-        : "YEAR(t.trial_date)";
+        ? `FLOOR(${historicalYearExpr} / 10) * 10`
+        : historicalYearExpr;
 
-    const where = ["t.trial_date BETWEEN ? AND ?"];
+    const historicalDateExpr = `
+      COALESCE(
+        t.historical_trial_date,
+        DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+      )
+    `;
+
+    const where = [`${historicalDateExpr} BETWEEN ? AND ?`];
     const params = [from, to];
 
     // Optional filters (either offenceId or offence text)
     if (offenceIdRaw) {
-  return res.status(400).json({
-    error:
-      "offenceId filtering is not supported for structured offence data",
-  });
-}
+      return res.status(400).json({
+        error:
+          "offenceId filtering is not supported for structured offence data",
+      });
+    }
 
-if (offenceText) {
-  where.push(
-    "LOWER(t.offence_subcategory) = LOWER(?)"
-  );
+    if (offenceText) {
+      where.push(
+        "LOWER(t.offence_subcategory) = LOWER(?)"
+      );
 
-  params.push(offenceText);
-}
+      params.push(offenceText);
+    }
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
 
