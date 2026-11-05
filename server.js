@@ -1620,6 +1620,23 @@ app.get("/api/stats/gender", async (req, res) => {
 
 // GET /api/stats/party-type?from=1740-01-01&to=1800-12-31&group=Robbery
 app.get("/api/stats/party-type", async (req, res) => {
+  const bucket = (req.query.bucket ?? "year").toString().trim().toLowerCase();
+
+  const historicalDateExpr = `
+    COALESCE(
+      t.historical_trial_date,
+      DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+    )
+  `;
+
+  const historicalYearExpr = `
+    CAST(LEFT(${historicalDateExpr}, 4) AS UNSIGNED)
+  `;
+
+  const bucketExpr =
+    bucket === "decade"
+      ? `FLOOR(${historicalYearExpr} / 10) * 10`
+      : historicalYearExpr;
   try {
     const from = (req.query.from ?? "").toString().trim();
     const to = (req.query.to ?? "").toString().trim();
@@ -1629,60 +1646,64 @@ app.get("/api/stats/party-type", async (req, res) => {
     const params = [];
 
     if (from && to) {
-      where.push("t.trial_date BETWEEN ? AND ?");
+      where.push(`${historicalDateExpr} BETWEEN ? AND ?`);
       params.push(from, to);
     }
 
     if (group) {
-  where.push("t.offence_subcategory = ?");
-  params.push(group);
-}
+      where.push("t.offence_subcategory = ?");
+      params.push(group);
+    }
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
 
     const [rows] = await pool.query(
       `SELECT
-     ${bucketExpr} AS period,
-     d.party_type AS party_type,
-     COUNT(*) AS total_trials,
-     SUM(CASE WHEN t.verdict IN ('Guilty','Not Guilty') THEN 1 ELSE 0 END) AS known_verdicts,
-     SUM(CASE WHEN t.verdict = 'Guilty' THEN 1 ELSE 0 END) AS guilty_trials,
-     SUM(CASE WHEN t.verdict = 'Not Guilty' THEN 1 ELSE 0 END) AS not_guilty_trials,
-     ROUND(
-       100 * SUM(CASE WHEN t.verdict = 'Guilty' THEN 1 ELSE 0 END)
-       / NULLIF(SUM(CASE WHEN t.verdict IN ('Guilty','Not Guilty') THEN 1 ELSE 0 END), 0),
-       2
-     ) AS guilty_rate
-   FROM trials t
-   JOIN defendants d ON d.defendant_id = t.defendant_id
-   ${whereSql}
-   GROUP BY period, d.party_type
-   ORDER BY period ASC, d.party_type ASC`,
+    ${bucketExpr} AS period,
+    d.party_type AS party_type,
+    COUNT(*) AS total_trials,
+    SUM(CASE WHEN t.verdict IN ('Guilty','Not Guilty') THEN 1 ELSE 0 END) AS known_verdicts,
+    SUM(CASE WHEN t.verdict = 'Guilty' THEN 1 ELSE 0 END) AS guilty_trials,
+    SUM(CASE WHEN t.verdict = 'Not Guilty' THEN 1 ELSE 0 END) AS not_guilty_trials,
+    ROUND(
+      100 * SUM(CASE WHEN t.verdict = 'Guilty' THEN 1 ELSE 0 END)
+      / NULLIF(SUM(CASE WHEN t.verdict IN ('Guilty','Not Guilty') THEN 1 ELSE 0 END), 0),
+      2
+    ) AS guilty_rate
+  FROM trials t
+  JOIN (
+    SELECT
+      trial_id,
+      CASE
+        WHEN COUNT(*) = 1 THEN 'Single defendant'
+        ELSE 'Multiple defendants'
+      END AS party_type
+    FROM trial_defendant_nodes
+    GROUP BY trial_id
+  ) d ON d.trial_id = t.id
+  ${whereSql}
+  GROUP BY period, d.party_type
+  ORDER BY period ASC, d.party_type ASC`,
       params,
     );
 
     const format = (req.query.format ?? "").toString().trim().toLowerCase();
 
     if (format === "series") {
-      // series keyed by party_type: [{ party_type, points: [{x,y,low,high,n}, ...] }]
+      // Series keyed by party_type: [{ party_type, points: [{x,y,n}, ...] }]
       const seriesMap = new Map();
 
       for (const r of rows) {
         const key = r.party_type;
-        if (!seriesMap.has(key)) seriesMap.set(key, []);
+
+        if (!seriesMap.has(key)) {
+          seriesMap.set(key, []);
+        }
 
         seriesMap.get(key).push({
           x: Number(r.period), // year/decade
           y: r.guilty_rate === null ? null : Number(r.guilty_rate),
-          low:
-            r.guilty_rate_wilson_low === null
-              ? null
-              : Number(r.guilty_rate_wilson_low),
-          high:
-            r.guilty_rate_wilson_high === null
-              ? null
-              : Number(r.guilty_rate_wilson_high),
-          n: Number(r.known_verdicts), // confidence count
+          n: Number(r.known_verdicts), // number of known verdicts
         });
       }
 
@@ -1691,20 +1712,17 @@ app.get("/api/stats/party-type", async (req, res) => {
         from,
         to,
         group: group || null,
-        z,
         series: Array.from(seriesMap, ([party_type, points]) => ({
           party_type,
           points,
         })),
       });
     }
-
     res.json({
       bucket,
       from,
       to,
       group: group || null,
-      z,
       total: rows.length,
       data: rows,
     });
