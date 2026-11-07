@@ -1732,6 +1732,123 @@ app.get("/api/stats/party-type", async (req, res) => {
   }
 });
 
+
+// GET /api/stats/offence-gender?from=1740-01-01&to=1800-12-31&group=burglary
+app.get("/api/stats/offence-gender", async (req, res) => {
+  try {
+    const from = (req.query.from ?? "").toString().trim();
+    const to = (req.query.to ?? "").toString().trim();
+    const group = (req.query.group ?? "").toString().trim();
+
+    if ((from && !to) || (!from && to)) {
+      return res.status(400).json({
+        error: "Both from and to dates are required",
+      });
+    }
+
+    const historicalDateExpr = `
+      COALESCE(
+        t.historical_trial_date,
+        DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+      )
+    `;
+
+    const where = [];
+    const params = [];
+
+    if (from && to) {
+      where.push(`${historicalDateExpr} BETWEEN ? AND ?`);
+      params.push(from, to);
+    }
+
+    if (group) {
+      where.push("o.subcategory = ?");
+      params.push(group);
+    }
+
+    const whereSql = where.length
+      ? `WHERE ${where.join(" AND ")}`
+      : "";
+
+    const [rows] = await pool.query(
+      `
+      SELECT
+        o.category AS offence_category,
+        o.subcategory AS offence_subcategory,
+        COALESCE(
+          NULLIF(TRIM(d.gender), ''),
+          'unknown'
+        ) AS defendant_gender,
+        COUNT(DISTINCT d.id) AS total_defendants
+      FROM criminal_charges cc
+      JOIN trials t
+        ON t.id = cc.trial_id
+      JOIN trial_defendant_nodes d
+        ON d.trial_id = cc.trial_id
+        AND d.source_node_id = cc.defendant_source_node_id
+      JOIN trial_offence_nodes o
+        ON o.trial_id = cc.trial_id
+        AND o.source_node_id = cc.offence_source_node_id
+      ${whereSql}
+      GROUP BY
+        o.category,
+        o.subcategory,
+        COALESCE(
+          NULLIF(TRIM(d.gender), ''),
+          'unknown'
+        )
+      ORDER BY
+        o.category,
+        o.subcategory,
+        total_defendants DESC
+      `,
+      params
+    );
+
+    const [genderTotals] = await pool.query(
+      `
+      SELECT
+        COALESCE(
+          NULLIF(TRIM(d.gender), ''),
+          'unknown'
+        ) AS defendant_gender,
+        COUNT(DISTINCT d.id) AS total_defendants
+      FROM criminal_charges cc
+      JOIN trials t
+        ON t.id = cc.trial_id
+      JOIN trial_defendant_nodes d
+        ON d.trial_id = cc.trial_id
+        AND d.source_node_id = cc.defendant_source_node_id
+      JOIN trial_offence_nodes o
+        ON o.trial_id = cc.trial_id
+        AND o.source_node_id = cc.offence_source_node_id
+      ${whereSql}
+      GROUP BY
+        COALESCE(
+          NULLIF(TRIM(d.gender), ''),
+          'unknown'
+        )
+      ORDER BY total_defendants DESC
+      `,
+      params
+    );
+
+    res.json({
+      from: from || null,
+      to: to || null,
+      group: group || null,
+      total: rows.length,
+      data: rows,
+      gender_totals: genderTotals,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});
+
 // GET /api/stats/gender-party?from=1740-01-01&to=1800-12-31&group=Robbery&z=1.96
 app.get("/api/stats/gender-party", async (req, res) => {
   try {

@@ -44,7 +44,7 @@
     <script defer src="/app.js"></script>
   </head>
   <body>
-    
+
     <h1>Robbery trend (guilty rate %)</h1>
 
     <div class="row">
@@ -64,7 +64,7 @@
           <option value="year" selected>year</option>
           <option value="decade">decade</option>
         </select>
-      </label>   
+      </label>
 
       <div class="offence-search-controls">
   <input
@@ -114,7 +114,7 @@
       Copy status
     </button>
     <small id="session-status" class="muted"></small>
-    
+
     <button id="clear-lock-btn" type="button" hidden>Clear locked year</button>
     <button id="play-timeline-btn" type="button">▶ Play timeline</button>
 
@@ -144,7 +144,52 @@
 
     <small id="chart-data-status" class="muted"></small>
 
-    <section
+
+<section
+  id="offence-gender-section"
+  class="offence-gender-section"
+  aria-labelledby="offence-gender-heading"
+>
+  <h2 id="offence-gender-heading">
+    Offence × Gender Statistics
+  </h2>
+
+
+  <p class="muted">
+    Explore recorded defendant gender across historical
+    offences and selected date ranges. Counts represent
+    distinct defendant nodes associated with the selected
+    offences, not convictions or necessarily unique
+    historical individuals.
+  </p>
+
+
+  <p id="offence-gender-context" class="muted">
+    Awaiting research filters...
+  </p>
+
+  <div class="chart-container offence-gender-chart-container">
+    <canvas id="offence-gender-chart"></canvas>
+  </div>
+
+  <button
+    type="button"
+    id="download-offence-gender-pdf-btn"
+  >
+    Download Offence × Gender PDF
+  </button>
+
+  <p
+    id="offence-gender-status"
+    class="muted"
+    role="status"
+    aria-live="polite"
+  >
+    Statistics will appear when data is loaded.
+  </p>
+</section>
+
+<section
   id="offence-coverage"
   class="offence-coverage"
   aria-labelledby="offence-coverage-heading"
@@ -222,7 +267,8 @@
 
     <small id="map-export-status" class="muted"></small>
 
-    
+
+
   <div class="pdf-export-controls">
   <button id="download-snapshot-pdf-btn" type="button">
     Export multi-page PDF
@@ -236,6 +282,16 @@
     />
     Include research map
   </label>
+
+
+<label for="include-offence-gender-pdf" class="pdf-map-option">
+  <input
+    id="include-offence-gender-pdf"
+    type="checkbox"
+  />
+  Include Offence × Gender chart
+</label>
+
 </div>
       <button id="copy-snapshot-url-btn" type="button">Copy snapshot URL</button>
      <button id="copy-research-id-btn" type="button">
@@ -263,7 +319,7 @@
       <small id="research-note-status" class="muted"></small>
       <small id="research-note-count" class="muted">0/240</small>
       <button id="clear-research-note-btn" type="button">Clear note</button>
-     
+
 
     <div class="export-theme-control">
       <label for="export-theme">Export theme</label>

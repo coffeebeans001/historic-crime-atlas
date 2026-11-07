@@ -1,4 +1,6 @@
 let chart; // single chart reference
+let offenceGenderChart = null; // Offence × Gender statistics chart
+let offenceGenderRequestId = 0; // Tracks the latest statistics request
 const LOW_SAMPLE_THRESHOLD = 5;
 const DEFAULT_CI_ALPHA = 0.18;
 const LINE_TENSION = 0.2;
@@ -448,6 +450,207 @@ function clearChartYearLock() {
   fetchNearby().catch(console.error);
 }
 
+
+function ensureOffenceGenderChart() {
+  if (offenceGenderChart) return;
+
+  const canvas = document.getElementById("offence-gender-chart");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+
+  offenceGenderChart = new Chart(ctx, {
+    type: "bar",
+
+    data: {
+      labels: ["Male", "Female", "Indeterminate"],
+      datasets: [
+        {
+          label: "Defendant nodes",
+          data: [0, 0, 0],
+          backgroundColor: [
+            "#3978C6",
+            "#D68B53",
+            "#9299A3",
+          ],
+          borderRadius: 6,
+          borderSkipped: false,
+        },
+      ],
+    },
+
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) =>
+              `Defendant nodes: ${context.parsed.x}`,
+          },
+        },
+      },
+
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0,
+          },
+          title: {
+            display: true,
+            text: "Distinct defendant nodes",
+          },
+        },
+        y: {
+          grid: {
+            display: false,
+          },
+        },
+      },
+    },
+  });
+}
+
+
+async function fetchOffenceGenderStats() {
+  const requestId = ++offenceGenderRequestId;
+  const statusEl = document.getElementById("offence-gender-status");
+  const contextEl = document.getElementById("offence-gender-context");
+
+  const group = getValidatedGroup();
+  const from = document.getElementById("from")?.value || "";
+  const to = document.getElementById("to")?.value || "";
+
+  if (group === "__INVALID__") {
+    if (statusEl) {
+      statusEl.textContent = "Select a valid offence to view statistics.";
+    }
+    return;
+  }
+
+  if ((from && !to) || (!from && to)) {
+    if (statusEl) {
+      statusEl.textContent = "Enter both dates or leave both dates empty.";
+    }
+    return;
+  }
+
+  const params = new URLSearchParams();
+
+  if (group) params.set("group", group);
+  if (from && to) {
+    params.set("from", from);
+    params.set("to", to);
+  }
+
+  if (statusEl) {
+    statusEl.textContent = "Loading offence and gender statistics...";
+  }
+
+  try {
+    const response = await fetch(
+      `/api/stats/offence-gender?${params.toString()}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Statistics request failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (requestId !== offenceGenderRequestId) {
+      return;
+    }
+
+    ensureOffenceGenderChart();
+
+    if (!offenceGenderChart) return;
+
+    const counts = {
+      male: 0,
+      female: 0,
+      indeterminate: 0,
+      unknown: 0,
+    };
+
+    for (const row of result.gender_totals || []) {
+      const gender = String(row.defendant_gender || "unknown")
+        .trim()
+        .toLowerCase();
+
+      const count = Number(row.total_defendants) || 0;
+
+      if (Object.hasOwn(counts, gender)) {
+        counts[gender] += count;
+      } else {
+        counts.unknown += count;
+      }
+    }
+
+    offenceGenderChart.data.labels = [
+      "Male",
+      "Female",
+      "Indeterminate",
+      "Unknown",
+    ];
+
+    offenceGenderChart.data.datasets[0].data = [
+      counts.male,
+      counts.female,
+      counts.indeterminate,
+      counts.unknown,
+    ];
+
+    offenceGenderChart.data.datasets[0].backgroundColor = [
+      "#3978C6",
+      "#D68B53",
+      "#9299A3",
+      "#A78BCA",
+    ];
+
+    offenceGenderChart.update();
+
+    if (contextEl) {
+      const offenceLabel =
+        document.getElementById("group")?.value?.trim() ||
+        "All offences";
+
+      const dateLabel =
+        from && to ? `${from} to ${to}` : "Full dataset";
+
+      contextEl.textContent = `${offenceLabel} | ${dateLabel}`;
+    }
+
+    if (statusEl) {
+      const total = Object.values(counts).reduce(
+        (sum, count) => sum + count,
+        0
+      );
+
+    statusEl.textContent = total
+      ? `Displaying ${total} distinct defendant nodes.`
+      : "No matching defendant statistics found.";
+
+    }
+  } catch (error) {
+    if (requestId !== offenceGenderRequestId) {
+      return;
+    }
+    console.error("Offence × Gender statistics error:", error);
+
+    if (statusEl) {
+      statusEl.textContent =
+        "Unable to load offence and gender statistics.";
+    }
+  }
+}
+
 function ensureChart() {
   if (chart) return;
 
@@ -506,7 +709,7 @@ function ensureChart() {
           clearChartYearLock();
           updateLastUpdatedLabel();
           writeUrlState();
-          
+
           return;
         }
 
@@ -797,7 +1000,7 @@ function writeUrlState({ push = false } = {}) {
 }
 
 function applyStateToUI(state) {
-  
+
   // Chart controls
   const fromEl = document.getElementById("from");
   const toEl = document.getElementById("to");
@@ -2117,7 +2320,7 @@ function drawChip(ctx, text, x, y, options = {}) {
   const chartCanvas = document.getElementById("chart");
   if (!chartCanvas) return;
 
- 
+
 
   const exportTheme = document.getElementById("export-theme")?.value || "light";
   const theme =
@@ -2150,7 +2353,7 @@ function drawChip(ctx, text, x, y, options = {}) {
   const sectionHeadingFont = "bold 18px Arial";
   const subHeadingFont = "bold 15px Arial";
   const bodyFont = "14px Arial";
-  const smallMetaFont = "11px Arial";      
+  const smallMetaFont = "11px Arial";
 
   const offenceFilter =
     document.getElementById("group")?.value?.trim() || "All offences";
@@ -2211,7 +2414,7 @@ function drawChip(ctx, text, x, y, options = {}) {
     bg: exportTheme === "dark" ? "#0f172a" : "#ecfeff",
     color: exportTheme === "dark" ? "#67e8f9" : "#155e75",
   };
-  
+
 
   const noteLength =
   document.getElementById("research-note")?.value?.trim().length || 0;
@@ -2391,7 +2594,7 @@ const chartPeriodChip =
           lastExportChip,
           lockedYearChip,
           playbackChip,
-          
+
           confidenceChip,
           noteChip,
           chartPeriodChip,
@@ -2423,7 +2626,7 @@ const chartPeriodChip =
           lastExportChip,
           lockedYearChip,
           playbackChip,
-          
+
           confidenceChip,
           noteChip,
           chartPeriodChip,
@@ -2658,8 +2861,8 @@ y += 20;
 
   const sessionStatus =
    document.getElementById("session-status")?.textContent?.trim() || "";
-  
-  
+
+
   // summary
   const {
   analysisSummary,
@@ -2849,7 +3052,7 @@ const sourceReference =
   drawSnapshotDivider(ctx, exportCanvas, padding, y - 10, theme);
   y += 8;
 
- 
+
 y += 26;
 
 ctx.fillStyle = theme.textSecondary;
@@ -2916,10 +3119,10 @@ const stateId = btoa(currentUrl)
   .slice(0, 8);
 
 const generationTime =
-  localStorage.getItem("lastSnapshotGenerationTime");  
+  localStorage.getItem("lastSnapshotGenerationTime");
 
 const snapshotSize =
-  `${exportCanvas.width} × ${exportCanvas.height}px`;  
+  `${exportCanvas.width} × ${exportCanvas.height}px`;
 
 const researchId = getResearchId();
 
@@ -2992,7 +3195,7 @@ y += 48;
   ctx.fillStyle = theme.urlText;
   ctx.font = "13px Arial";
 
-  
+
   const maxUrlWidth = width - padding * 2;
   const urlLines = wrapCanvasText(ctx, currentUrl, maxUrlWidth);
 
@@ -3192,7 +3395,7 @@ async function downloadResearchSnapshot() {
   updateSessionStatus();
   updateResearchIdStatus();
   updateLastExportStatus();
-  
+
 
   const exportTime = new Date().toLocaleTimeString([], {
     hour: "2-digit",
@@ -3209,9 +3412,9 @@ async function downloadResearchSnapshot() {
 
   const exportCanvas =
   await buildResearchSnapshotCanvas();
-  
+
   if (!exportCanvas) return;
- 
+
 
   exportCanvas.toBlob((blob) => {
     if (!blob) {
@@ -3222,9 +3425,9 @@ async function downloadResearchSnapshot() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-   
+
     link.download =
-      `${safeTitle}-${researchId}-${versionSlug}-${exportFileTime}.png`;    
+      `${safeTitle}-${researchId}-${versionSlug}-${exportFileTime}.png`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -3414,7 +3617,7 @@ const stats = buildSnapshotStats();
   `Range: ${rangeText}`,
   `Bucket: ${bucket}`,
   `Analysis scope: ${analysisScope}`,
-];  
+];
 
 const radiusValue =
   document.getElementById("radius")?.value || "2000";
@@ -3810,7 +4013,7 @@ function updateSessionStatus() {
 
 function getCurrentResearchId() {
   writeUrlState();
- 
+
 
   const currentUrl = window.location.href;
 
@@ -4450,7 +4653,7 @@ function buildHistoricalCommentary(
     );
   }
 
-  
+
 
   return commentary;
 }
@@ -4601,7 +4804,7 @@ async function buildResearchMapSnapshot(
     );
   }
 
-  
+
   const snapshotWidth = 1400;
   const outerPadding = 70;
   const headerHeight = 190;
@@ -4987,7 +5190,7 @@ const exportFilename = [
 
     downloadLink.href = mapImageUrl;
     downloadLink.download = `${researchId}-${exportFilename}.png`;
-    
+
     document.body.appendChild(downloadLink);
     downloadLink.click();
     downloadLink.remove();
@@ -5010,6 +5213,269 @@ const exportFilename = [
 // ======================================================
 // PDF Export
 // ======================================================
+
+async function downloadOffenceGenderPdf() {
+  if (!offenceGenderChart) {
+    throw new Error(
+      "Offence × Gender chart is not available.",
+    );
+  }
+
+  if (!window.jspdf?.jsPDF) {
+    throw new Error(
+      "The PDF library is not available.",
+    );
+  }
+
+  const { jsPDF } = window.jspdf;
+
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "pt",
+    format: "a4",
+  });
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const marginX = 40;
+  const availableWidth = pageWidth - marginX * 2;
+
+  // Research heading
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(18);
+  pdf.text(
+    "Offence x Gender Statistics",
+    marginX,
+    50,
+  );
+
+  const selectedOffence =
+    getSelectedOptionText("group", "All offences");
+
+  const selectedFrom =
+    document.getElementById("from")?.value;
+
+  const selectedTo =
+    document.getElementById("to")?.value;
+
+  const researchPeriod =
+    `${selectedFrom || "Earliest available"} to ` +
+    `${selectedTo || "Latest available"}`;
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+
+  pdf.text(
+    `Offence: ${selectedOffence}`,
+    marginX,
+    70,
+  );
+
+  pdf.text(
+    `Research period: ${researchPeriod}`,
+    marginX,
+    85,
+  );
+
+  // Chart image
+  offenceGenderChart.update("none");
+
+  const chartImage =
+    offenceGenderChart.toBase64Image("image/png", 1);
+
+  const chartCanvas = offenceGenderChart.canvas;
+  const chartRatio =
+    chartCanvas.width / chartCanvas.height;
+
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  const chartY = 120;
+  const reservedBottomSpace = 280;
+
+  const maxChartHeight =
+    pageHeight - chartY - reservedBottomSpace;
+
+  const imageHeight = Math.min(
+    availableWidth / chartRatio,
+    maxChartHeight,
+  );
+
+  const imageWidth = imageHeight * chartRatio;
+  const imageX = (pageWidth - imageWidth) / 2;
+
+  pdf.addImage(
+    chartImage,
+    "PNG",
+    imageX,
+    chartY,
+    imageWidth,
+    imageHeight,
+  );
+
+  const genderLabels =
+    offenceGenderChart.data.labels || [];
+
+  const genderCounts =
+    offenceGenderChart.data.datasets[0]?.data || [];
+
+  const genderStatistics = genderLabels.map(
+    (label, index) => ({
+      label,
+      count: Number(genderCounts[index] || 0),
+    }),
+  );
+
+  const totalDefendantNodes = genderStatistics.reduce(
+    (total, item) => total + item.count,
+    0,
+  );
+
+  // Position the summary beneath the chart
+  const summaryY = chartY + imageHeight + 25;
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(12);
+
+  pdf.text(
+    "Defendant-node breakdown",
+    marginX,
+    summaryY,
+  );
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+
+  let rowY = summaryY + 22;
+
+  for (const item of genderStatistics) {
+    pdf.text(
+      `${item.label}: ${item.count}`,
+      marginX,
+      rowY,
+    );
+
+    rowY += 17;
+  }
+
+  pdf.setFont("helvetica", "bold");
+
+  pdf.text(
+    `Total defendant nodes: ${totalDefendantNodes}`,
+    marginX,
+    rowY + 8,
+  );
+
+  const methodologyY = rowY + 38;
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(11);
+
+  pdf.text(
+    "Research methodology",
+    marginX,
+    methodologyY,
+  );
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+
+  const methodologyText =
+    "Gender counts represent distinct defendant nodes " +
+    "associated with the selected offences and research " +
+    "period. These counts do not necessarily represent " +
+    "unique historical individuals or convictions. " +
+    "Gender classifications reflect the available " +
+    "historical trial records.";
+
+  const methodologyLines = pdf.splitTextToSize(
+    methodologyText,
+    availableWidth,
+  );
+
+  pdf.text(
+    methodologyLines,
+    marginX,
+    methodologyY + 18,
+  );
+
+  // Download PDF
+  const pdfExportCount = getNextPdfExportCount();
+
+  const pdfResearchId =
+    `${getResearchId()}-PDF-${String(pdfExportCount).padStart(4, "0")}`;
+
+  const offence =
+    getSelectedOptionText("group", "all offences");
+
+  const fromDate =
+    document.getElementById("from")?.value;
+
+  const toDate =
+    document.getElementById("to")?.value;
+
+  const filenameRange =
+    fromDate && toDate
+      ? `${formatFilenameDate(fromDate)}-to-${formatFilenameDate(toDate)}`
+      : fromDate
+        ? `from-${formatFilenameDate(fromDate)}`
+        : toDate
+          ? `up-to-${formatFilenameDate(toDate)}`
+          : "full-dataset";
+
+  const exportFilename = [
+    "offence-gender",
+    offence,
+    filenameRange,
+  ]
+    .map((part) => slugifyFilenamePart(part))
+    .filter(Boolean)
+    .join("-");
+
+
+  const footerY = pageHeight - 35;
+
+  pdf.setDrawColor(190, 190, 190);
+  pdf.setLineWidth(0.5);
+
+  pdf.line(
+    marginX,
+    footerY - 15,
+    pageWidth - marginX,
+    footerY - 15,
+  );
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.setTextColor(100, 100, 100);
+
+  pdf.text(
+    "Historic Crime Atlas | Old Bailey Research",
+    marginX,
+    footerY,
+  );
+
+  pdf.text(
+    `Export #${String(pdfExportCount).padStart(4, "0")}`,
+    pageWidth / 2,
+    footerY,
+    { align: "center" },
+  );
+
+  pdf.text(
+    "Page 1 of 1",
+    pageWidth - marginX,
+    footerY,
+    { align: "right" },
+  );
+
+  pdf.save(
+    `${pdfResearchId}-${exportFilename}.pdf`,
+  );
+
+  console.log(
+    "Standalone Offence × Gender PDF initialised.",
+  );
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -5020,19 +5486,25 @@ async function downloadResearchSnapshotPdf() {
   });
 
   let mapPageNumber = null;
+  let offenceGenderPageNumber = null;
+
 
   const includeMapInPdf =
-  document.getElementById("include-map-pdf")?.checked
-  ?? true;
+    document.getElementById("include-map-pdf")?.checked
+    ?? true;
+
+  const includeOffenceGenderInPdf =
+    document.getElementById("include-offence-gender-pdf")?.checked
+    ?? false;
 
   const exportDateTime = getExportDateTime().display;
   const researchId = getResearchId();
   const reportVersion = exportDateTime;
-  
-// Chip colours  
+
+// Chip colours
 const offenceChipColour = [32, 76, 151];   // Blue
 const genderChipColour = [106, 76, 147];   // Purple
-const rangeChipColour = [40, 167, 69];     // Green  
+const rangeChipColour = [40, 167, 69];     // Green
 
 const mainDataset =
   chart?.data?.datasets?.find(
@@ -5044,9 +5516,9 @@ const points =
 
 
 
-const historicalInsights = buildHistoricalInsights(points);  
+const historicalInsights = buildHistoricalInsights(points);
 
-const statisticalSummary = buildStatisticalSummary(points);  
+const statisticalSummary = buildStatisticalSummary(points);
 const dataQualitySummary = buildDataQualitySummary(points);
 const confidenceScore = dataQualitySummary.totalPeriods > 0
   ? Math.round(
@@ -5162,7 +5634,7 @@ if (dateFrom && dateTo) {
 }
 
 const sourceReference =
-  `${offenceFilter} | ${sourceGender} | ${rangeText}`;   
+  `${offenceFilter} | ${sourceGender} | ${rangeText}`;
 
 const reportSummary = noDataVisible
   ? `This report records a no-data export for ${sourceGender.toLowerCase()} ${offenceFilter.toLowerCase()} cases within ${rangeText.toLowerCase()}. The selected Old Bailey dataset filters did not return chart data.`
@@ -5273,7 +5745,7 @@ pdf.text(
 
 y += keyFindingLines.length * 14 + 24;
 
-pdf.setTextColor(...COLOUR_BLACK);  
+pdf.setTextColor(...COLOUR_BLACK);
 
 // Report Summary section
 pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
@@ -5771,7 +6243,7 @@ pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setTextColor(...COLOUR_BLACK);
 
 y = barY + 10;
-  
+
 }
 
 if (historicalInsights) {
@@ -6114,7 +6586,7 @@ for (const line of metadataLines) {
 
   metaY += wrappedLines.length * 14 + 8;
 }
-  
+
 
 const { file: exportFileTime } = getExportDateTime();
 
@@ -6144,7 +6616,7 @@ const exportFilename = [
   .join("-");
 
 const safePdfName =
-  `${getResearchId()}-${exportFilename}`;
+  `${getResearchId()}-PDF-${String(pdfExportCount).padStart(4, "0")}-${exportFilename}`;
 
 // ======================================
 // Research Map Snapshot PDF page
@@ -6260,7 +6732,212 @@ pdf.text(
       error,
     );
   }
-}  
+}
+
+ // ======================================
+ // Offence × Gender Statistics PDF appendix
+ // ======================================
+
+if (includeOffenceGenderInPdf && offenceGenderChart) {
+  try {
+    const chartImage = offenceGenderChart.toBase64Image(
+      "image/png",
+      1,
+    );
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const marginX = 40;
+    const availableWidth = pageWidth - marginX * 2;
+
+    const chartCanvas = offenceGenderChart.canvas;
+    const chartRatio =
+      chartCanvas.width / chartCanvas.height;
+
+    const genderLabels =
+      offenceGenderChart.data.labels || [];
+
+    const genderCounts =
+      offenceGenderChart.data.datasets[0]?.data || [];
+
+    const genderStatistics = genderLabels.map(
+      (label, index) => ({
+        label,
+        count: Number(genderCounts[index] || 0),
+      }),
+    );
+
+    const totalDefendantNodes = genderStatistics.reduce(
+      (total, item) => total + item.count,
+      0,
+    );
+
+    const imageWidth = availableWidth;
+    const imageHeight = imageWidth / chartRatio;
+
+    const appendixLetter = mapPageNumber === null ? "A" : "B";
+
+    pdf.addPage();
+
+    offenceGenderPageNumber = pdf.getNumberOfPages();
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+    pdf.setFontSize(18);
+    pdf.setTextColor(...COLOUR_PRIMARY);
+
+    pdf.text(
+      `Appendix ${appendixLetter} - Offence x Gender Statistics`,
+      marginX,
+      50,
+    );
+
+    const selectedOffence =
+      getSelectedOptionText("group", "All offences");
+
+    const selectedFrom =
+      document.getElementById("from")?.value;
+
+    const selectedTo =
+      document.getElementById("to")?.value;
+
+    const researchPeriod =
+      `${selectedFrom || "Earliest available"} to ` +
+      `${selectedTo || "Latest available"}`;
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
+    pdf.setFontSize(10);
+    pdf.setTextColor(...COLOUR_TEXT);
+
+    pdf.text(
+      `Offence: ${selectedOffence}`,
+      marginX,
+      72,
+    );
+
+    pdf.text(
+      `Research period: ${researchPeriod}`,
+      marginX,
+      87,
+    );
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
+    pdf.setFontSize(10);
+    pdf.setTextColor(...COLOUR_TEXT);
+
+    const descriptionLines = pdf.splitTextToSize(
+      "This chart presents recorded defendant gender for the selected offence and date range. Counts represent distinct defendant nodes associated with the selected offences, not convictions or necessarily unique historical individuals.",
+      availableWidth,
+    );
+
+    pdf.text(descriptionLines, marginX, 110);
+
+    const chartY = 110 + descriptionLines.length * 13 + 20;
+
+    const summarySpace = 230;
+    const footerSpace = 45;
+
+    const maxChartHeight =
+      pageHeight - chartY - summarySpace - footerSpace;
+
+    const finalImageHeight = Math.min(
+      imageHeight,
+      maxChartHeight,
+    );
+
+    const finalImageWidth =
+      finalImageHeight * chartRatio;
+
+    const imageX =
+      (pageWidth - finalImageWidth) / 2;
+
+    pdf.addImage(
+      chartImage,
+      "PNG",
+      imageX,
+      chartY,
+      finalImageWidth,
+      finalImageHeight,
+    );
+
+    const summaryY = chartY + finalImageHeight + 20;
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOUR_PRIMARY);
+
+    pdf.text(
+      "Defendant-node breakdown",
+      marginX,
+      summaryY,
+    );
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
+    pdf.setFontSize(10);
+    pdf.setTextColor(...COLOUR_TEXT);
+
+    let rowY = summaryY + 20;
+
+    for (const item of genderStatistics) {
+      pdf.text(
+        `${item.label}: ${item.count}`,
+        marginX,
+        rowY,
+      );
+
+      rowY += 16;
+    }
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+
+    pdf.text(
+      `Total defendant nodes: ${totalDefendantNodes}`,
+      marginX,
+      rowY + 6,
+    );
+
+  const methodologyY = rowY + 36;
+
+  pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+  pdf.setFontSize(11);
+  pdf.setTextColor(...COLOUR_PRIMARY);
+
+  pdf.text(
+    "Research methodology",
+    marginX,
+    methodologyY,
+  );
+
+  pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
+  pdf.setFontSize(9);
+  pdf.setTextColor(...COLOUR_TEXT);
+
+  const methodologyText =
+    "Gender counts represent distinct defendant nodes " +
+    "associated with the selected offences and research " +
+    "period. These counts do not necessarily represent " +
+    "unique historical individuals or convictions. " +
+    "Gender classifications reflect the available " +
+    "historical trial records.";
+
+  const methodologyLines = pdf.splitTextToSize(
+    methodologyText,
+    availableWidth,
+  );
+
+  pdf.text(
+    methodologyLines,
+    marginX,
+    methodologyY + 18,
+  );
+
+  } catch (error) {
+    console.error(
+      "PDF Offence x Gender appendix could not be created:",
+      error,
+    );
+  }
+}
 
 const totalPages =
   pdf.internal.getNumberOfPages();
@@ -6268,7 +6945,11 @@ const totalPages =
 for (let i = 1; i <= totalPages; i++) {
   pdf.setPage(i);
 
-  if (i === mapPageNumber) {
+if (
+  i === mapPageNumber ||
+  i === offenceGenderPageNumber
+) {
+
     pdf.setFont(
       FONT_FAMILY,
       FONT_STYLE_NORMAL,
@@ -6306,13 +6987,13 @@ for (let i = 1; i <= totalPages; i++) {
     totalPages,
     exportDateTime,
   );
-}
+ }
 
-pdf.save(`${safePdfName}.pdf`);
+ pdf.save(`${safePdfName}.pdf`);
 
-console.info(
-  `PDF exported: ${safePdfName}.pdf`,
-);
+ console.info(
+   `PDF exported: ${safePdfName}.pdf`,
+ );
 }
 
 function slugifyFilenamePart(value, separator = "-") {
@@ -7218,6 +7899,7 @@ function populateUnmappedOffenceFilter() {
 async function render() {
   ensureChart();
 
+  fetchOffenceGenderStats().catch(console.error);
   showNoDataOverlay(false);
   setChartLoading(true);
   updateCiStatus();
@@ -7591,7 +8273,7 @@ function ensureMap() {
           return;
         }
 
-        
+
 
         // Show full offence / show less
         if (offenceToggle) {
@@ -8046,7 +8728,7 @@ function renderNearbyList(rows, markerById) {
       pinMarker(marker);
 
       markersLayer.zoomToShowLayer(marker, () => {
-        
+
         marker.openPopup();
       });
 
@@ -8281,13 +8963,13 @@ async function fetchNearby() {
           : offence;
 
       const hasLongOffence =
-        offence.length > 220;  
+        offence.length > 220;
 
       const safeFullOffence =
   escapeHtmlAttribute(offence);
 
 const safeOffencePreview =
-  escapeHtmlAttribute(offencePreview);  
+  escapeHtmlAttribute(offencePreview);
 
       const popupHTML = `
   <div style="
@@ -8708,7 +9390,6 @@ if (copyLinkBtn) {
   });
 } // closes copyLinkBtn block
 
-
 const downloadMapButton =
   document.getElementById("download-map-btn");
 
@@ -8720,6 +9401,25 @@ if (downloadMapButton) {
     },
   );
 }
+
+const downloadOffenceGenderPdfBtn =
+  document.getElementById(
+    "download-offence-gender-pdf-btn",
+  );
+
+downloadOffenceGenderPdfBtn?.addEventListener(
+  "click",
+  async () => {
+    try {
+      await downloadOffenceGenderPdf();
+    } catch (error) {
+      console.error(
+        "Standalone Offence × Gender PDF failed:",
+        error,
+      );
+    }
+  },
+);
 
 const downloadSnapshotPdfBtn =
   document.getElementById(
@@ -8755,7 +9455,7 @@ downloadSnapshotPdfBtn?.addEventListener(
     }
   },
 );
-  
+
 
       const researchNoteEl = document.getElementById("research-note");
       const researchNoteStatus = document.getElementById(
@@ -8883,7 +9583,7 @@ const researchIdText =
   document.getElementById("research-id-status")?.textContent ||
   `Research ID: ${getCurrentResearchId()}`;
 
- await navigator.clipboard.writeText(researchIdText);    
+ await navigator.clipboard.writeText(researchIdText);
 
 copyResearchIdBtn.textContent = "Copied ✓";
   } catch (err) {
@@ -9066,7 +9766,7 @@ refreshResearchIdBtn?.addEventListener("click", () => {
           }
         });
       });
-   
+
 
   const downloadSnapshotBtn = document.getElementById("download-snapshot-btn");
 
@@ -9251,7 +9951,7 @@ document
     }
 
     unmappedTrialIndex += 1;
-    
+
     renderUnmappedTrials();
   });
 
