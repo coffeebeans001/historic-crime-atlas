@@ -4628,32 +4628,37 @@ function buildHistoricalCommentary(
   }
 
   const commentary = [];
-
-  commentary.push(
-    `Observation: The selected data suggests an average conviction rate of ${statisticalSummary.average.toFixed(1)}% across the selected period.`,
-  );
+    commentary.push(
+      `Observation: The selected data suggests an average conviction rate of ${statisticalSummary.average.toFixed(1)}% across the selected period.`,
+    );
 
   if (historicalInsights) {
     commentary.push(
       `Evidence: The highest observed conviction rate was ${historicalInsights.highestPoint.y.toFixed(1)}% in ${historicalInsights.highestPoint.x}, compared with the lowest observed rate of ${historicalInsights.lowestPoint.y.toFixed(1)}% in ${historicalInsights.lowestPoint.x}.`,
     );
 
+  if (historicalInsights.largestChange) {
     commentary.push(
       `Evidence: The largest recorded period change was ${historicalInsights.largestChange.change.toFixed(1)} percentage points from ${historicalInsights.largestChange.from} to ${historicalInsights.largestChange.to}.`,
     );
-  }
 
+  if (historicalInsights.largestChange.change !== 0) {
     commentary.push(
-      `Interpretation: Taken together, these findings suggest that conviction outcomes were not evenly distributed across the selected period.`,
-  );
-
-  if (trendInterpretation) {
-    commentary.push(
-      `Caution: The trend is described as ${trendInterpretation.trend.toLowerCase()}, and should be interpreted alongside data quality and period coverage.`,
+      "Interpretation: The observed conviction rates varied across the comparable periods.",
     );
   }
+} else {
+  commentary.push(
+    "Caution: Insufficient comparable periods were available to calculate a largest period change.",
+  );
+ }
+}
 
-
+if (trendInterpretation) {
+  commentary.push(
+    `Caution: The trend is described as ${trendInterpretation.trend.toLowerCase()}, and should be interpreted alongside data quality and period coverage.`,
+  );
+}
 
   return commentary;
 }
@@ -5384,7 +5389,11 @@ async function downloadOffenceGenderPdf() {
     "period. These counts do not necessarily represent " +
     "unique historical individuals or convictions. " +
     "Gender classifications reflect the available " +
-    "historical trial records.";
+    "historical trial records. Gender statistics include " +
+    "qualifying defendant nodes from both mapped and " +
+    "unmapped trials. Map results include only trials " +
+    "with usable geographical coordinates. Defendant-node " +
+    "counts should not be interpreted as trial counts.";
 
   const methodologyLines = pdf.splitTextToSize(
     methodologyText,
@@ -6282,8 +6291,12 @@ const insightCards = [
   },
   {
     label: "Largest period change",
-    value: `${historicalInsights.largestChange.change.toFixed(1)} pts`,
-    detail: `${historicalInsights.largestChange.from} to ${historicalInsights.largestChange.to}`,
+    value: historicalInsights.largestChange
+      ? `${historicalInsights.largestChange.change.toFixed(1)} pts`
+      : "N/A",
+    detail: historicalInsights.largestChange
+      ? `${historicalInsights.largestChange.from} to ${historicalInsights.largestChange.to}`
+      : "Insufficient comparable periods",
   },
 ];
 
@@ -6918,7 +6931,11 @@ if (includeOffenceGenderInPdf && offenceGenderChart) {
     "period. These counts do not necessarily represent " +
     "unique historical individuals or convictions. " +
     "Gender classifications reflect the available " +
-    "historical trial records.";
+    "historical trial records. Gender statistics include " +
+    "qualifying defendant nodes from both mapped and " +
+    "unmapped trials. Map results include only trials " +
+    "with usable geographical coordinates. Defendant-node " +
+    "counts should not be interpreted as trial counts.";
 
   const methodologyLines = pdf.splitTextToSize(
     methodologyText,
@@ -9455,7 +9472,6 @@ downloadSnapshotPdfBtn?.addEventListener(
     }
   },
 );
-
 
       const researchNoteEl = document.getElementById("research-note");
       const researchNoteStatus = document.getElementById(
