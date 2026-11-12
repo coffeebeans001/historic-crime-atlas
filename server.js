@@ -1849,6 +1849,171 @@ app.get("/api/stats/offence-gender", async (req, res) => {
   }
 });
 
+// GET /api/stats/offence-verdict
+app.get("/api/stats/offence-verdict", async (req, res) => {
+  try {
+    const from = (req.query.from ?? "").toString().trim();
+    const to = (req.query.to ?? "").toString().trim();
+    const group = (req.query.group ?? "").toString().trim();
+
+    if ((from && !to) || (!from && to)) {
+      return res.status(400).json({
+        error: "Both from and to dates are required",
+      });
+    }
+
+    const historicalDateExpr = `
+      COALESCE(
+        t.historical_trial_date,
+        DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+      )
+    `;
+
+    const where = [];
+    const params = [];
+
+    if (from && to) {
+      where.push(`${historicalDateExpr} BETWEEN ? AND ?`);
+      params.push(from, to);
+    }
+
+    if (group) {
+      where.push("o.subcategory = ?");
+      params.push(group);
+    }
+
+    const whereSql = where.length
+      ? `WHERE ${where.join(" AND ")}`
+      : "";
+
+    const [rows] = await pool.query(
+      `
+      SELECT
+        o.category AS offence_category,
+        o.subcategory AS offence_subcategory,
+
+        COUNT(*) AS total_charges,
+
+        SUM(
+          CASE
+            WHEN v.category IN ('guilty', 'notGuilty')
+            THEN 1 ELSE 0
+          END
+        ) AS known_verdicts,
+
+        SUM(
+          CASE
+            WHEN v.category = 'guilty'
+            THEN 1 ELSE 0
+          END
+        ) AS guilty_charges,
+
+        SUM(
+          CASE
+            WHEN v.category = 'notGuilty'
+            THEN 1 ELSE 0
+          END
+        ) AS not_guilty_charges,
+
+        SUM(
+          CASE
+            WHEN v.category NOT IN ('guilty', 'notGuilty')
+              OR v.category IS NULL
+            THEN 1 ELSE 0
+          END
+        ) AS unknown_verdicts,
+
+        ROUND(
+          100 * SUM(
+            CASE
+              WHEN v.category = 'guilty'
+              THEN 1 ELSE 0
+            END
+          )
+          / NULLIF(
+            SUM(
+              CASE
+                WHEN v.category IN ('guilty', 'notGuilty')
+                THEN 1 ELSE 0
+              END
+            ),
+            0
+          ),
+          2
+        ) AS guilty_rate,
+
+        ROUND(
+          100 * SUM(
+            CASE
+              WHEN v.category IN ('guilty', 'notGuilty')
+              THEN 1 ELSE 0
+            END
+          ) / NULLIF(COUNT(*), 0),
+          2
+        ) AS verdict_coverage
+
+      FROM criminal_charges cc
+
+      JOIN trials t
+        ON t.id = cc.trial_id
+
+      JOIN trial_offence_nodes o
+        ON o.trial_id = cc.trial_id
+        AND o.source_node_id = cc.offence_source_node_id
+
+      LEFT JOIN trial_verdict_nodes v
+        ON v.trial_id = cc.trial_id
+        AND v.source_node_id = cc.verdict_source_node_id
+
+      ${whereSql}
+
+      GROUP BY
+        o.category,
+        o.subcategory
+
+      ORDER BY
+        o.category,
+        o.subcategory
+      `,
+      params
+    );
+
+    const formattedRows = rows.map((row) => ({
+      offence_category: row.offence_category,
+      offence_subcategory: row.offence_subcategory,
+
+      total_charges: Number(row.total_charges),
+      known_verdicts: Number(row.known_verdicts),
+      guilty_charges: Number(row.guilty_charges),
+      not_guilty_charges: Number(row.not_guilty_charges),
+      unknown_verdicts: Number(row.unknown_verdicts),
+
+      guilty_rate:
+        row.guilty_rate === null
+          ? null
+          : Number(row.guilty_rate),
+
+      verdict_coverage:
+        row.verdict_coverage === null
+          ? null
+          : Number(row.verdict_coverage),
+     }));
+
+      res.json({
+        from: from || null,
+        to: to || null,
+        group: group || null,
+        total: formattedRows.length,
+        data: formattedRows,
+      });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});
+
 // GET /api/stats/gender-party?from=1740-01-01&to=1800-12-31&group=Robbery&z=1.96
 app.get("/api/stats/gender-party", async (req, res) => {
   try {

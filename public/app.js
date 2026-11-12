@@ -1,6 +1,8 @@
 let chart; // single chart reference
 let offenceGenderChart = null; // Offence × Gender statistics chart
 let offenceGenderRequestId = 0; // Tracks the latest statistics request
+let offenceVerdictChart = null; // Offence × Verdict statistics chart
+let offenceVerdictRequestId = 0; // Tracks the latest verdict statistics request
 const LOW_SAMPLE_THRESHOLD = 5;
 const DEFAULT_CI_ALPHA = 0.18;
 const LINE_TENSION = 0.2;
@@ -517,6 +519,71 @@ function ensureOffenceGenderChart() {
   });
 }
 
+function ensureOffenceVerdictChart() {
+  if (offenceVerdictChart) return;
+
+  const canvas = document.getElementById("offence-verdict-chart");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+
+  offenceVerdictChart = new Chart(ctx, {
+    type: "bar",
+
+    data: {
+      labels: ["Guilty", "Not guilty", "Unknown / other"],
+      datasets: [
+        {
+          label: "Criminal charges",
+          data: [0, 0, 0],
+          backgroundColor: [
+            "#3978C6",
+            "#D68B53",
+            "#9299A3",
+          ],
+          borderRadius: 6,
+          borderSkipped: false,
+        },
+      ],
+    },
+
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) =>
+              `Criminal charges: ${context.parsed.x}`,
+          },
+        },
+      },
+
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0,
+          },
+          title: {
+            display: true,
+            text: "Criminal charges",
+          },
+        },
+        y: {
+          grid: {
+            display: false,
+          },
+        },
+      },
+    },
+  });
+}
 
 async function fetchOffenceGenderStats() {
   const requestId = ++offenceGenderRequestId;
@@ -647,6 +714,131 @@ async function fetchOffenceGenderStats() {
     if (statusEl) {
       statusEl.textContent =
         "Unable to load offence and gender statistics.";
+    }
+  }
+}
+
+async function fetchOffenceVerdictStats() {
+  const requestId = ++offenceVerdictRequestId;
+
+  const statusEl = document.getElementById(
+    "offence-verdict-status"
+  );
+
+  const contextEl = document.getElementById(
+    "offence-verdict-context"
+  );
+
+  const group = getValidatedGroup();
+  const from = document.getElementById("from")?.value || "";
+  const to = document.getElementById("to")?.value || "";
+
+  if (group === "__INVALID__") {
+    if (statusEl) {
+      statusEl.textContent =
+        "Select a valid offence to view statistics.";
+    }
+    return;
+  }
+
+  if ((from && !to) || (!from && to)) {
+    if (statusEl) {
+      statusEl.textContent =
+        "Enter both dates or leave both dates empty.";
+    }
+    return;
+  }
+
+  const params = new URLSearchParams();
+
+  if (group) params.set("group", group);
+
+  if (from && to) {
+    params.set("from", from);
+    params.set("to", to);
+  }
+
+  if (statusEl) {
+    statusEl.textContent =
+      "Loading offence and verdict statistics...";
+  }
+
+  try {
+    const response = await fetch(
+      `/api/stats/offence-verdict?${params.toString()}`
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Statistics request failed: ${response.status}`
+      );
+    }
+
+    const result = await response.json();
+
+    if (requestId !== offenceVerdictRequestId) {
+      return;
+    }
+
+    ensureOffenceVerdictChart();
+
+    if (!offenceVerdictChart) return;
+
+    const totals = {
+      guilty: 0,
+      notGuilty: 0,
+      unknown: 0,
+    };
+
+    for (const row of result.data || []) {
+      totals.guilty += row.guilty_charges;
+      totals.notGuilty += row.not_guilty_charges;
+      totals.unknown += row.unknown_verdicts;
+    }
+
+    offenceVerdictChart.data.datasets[0].data = [
+      totals.guilty,
+      totals.notGuilty,
+      totals.unknown,
+    ];
+
+    offenceVerdictChart.update();
+
+    if (contextEl) {
+      const offenceLabel =
+        document.getElementById("group")?.value?.trim() ||
+        "All offences";
+
+      const dateLabel =
+        from && to ? `${from} to ${to}` : "Full dataset";
+
+      contextEl.textContent =
+        `${offenceLabel} | ${dateLabel}`;
+    }
+
+    if (statusEl) {
+      const totalCharges =
+        totals.guilty +
+        totals.notGuilty +
+        totals.unknown;
+
+      statusEl.textContent = totalCharges
+        ? `Displaying ${totalCharges} criminal charges.`
+        : "No matching offence and verdict statistics found.";
+    }
+  } catch (error) {
+    if (requestId !== offenceVerdictRequestId) {
+      return;
+    }
+
+    console.error(
+      "Offence × Verdict statistics error:",
+      error
+    );
+
+    if (statusEl) {
+      statusEl.textContent =
+        "Unable to load offence and verdict statistics.";
     }
   }
 }
@@ -4135,11 +4327,17 @@ function ensurePdfPageSpace(
 }
 
 function buildStatisticalSummary(points) {
-  if (!points?.length) {
+  const values = (points || [])
+    .map((p) => p?.y)
+    .filter(
+      (value) =>
+        typeof value === "number" &&
+        Number.isFinite(value)
+    );
+
+  if (!values.length) {
     return null;
   }
-
-  const values = points.map((p) => p.y);
 
   const average =
     values.reduce((a, b) => a + b, 0) / values.length;
@@ -5485,6 +5683,338 @@ async function downloadOffenceGenderPdf() {
   );
 }
 
+async function downloadOffenceVerdictPdf() {
+  if (!offenceVerdictChart) {
+    throw new Error(
+      "Offence × Verdict chart is not available.",
+    );
+  }
+
+  if (!window.jspdf?.jsPDF) {
+    throw new Error(
+      "The PDF library is not available.",
+    );
+  }
+
+  const { jsPDF } = window.jspdf;
+
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "pt",
+    format: "a4",
+  });
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  const marginX = 40;
+  const availableWidth = pageWidth - marginX * 2;
+
+    // Research heading
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(18);
+
+  pdf.text(
+    "Offence x Verdict Statistics",
+    marginX,
+    50,
+  );
+
+  // Selected research filters
+  const selectedOffence =
+    getSelectedOptionText("group", "All offences");
+
+  const selectedFrom =
+    document.getElementById("from")?.value;
+
+  const selectedTo =
+    document.getElementById("to")?.value;
+
+  const researchPeriod =
+    `${selectedFrom || "Earliest available"} to ` +
+    `${selectedTo || "Latest available"}`;
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+
+  pdf.text(
+    `Offence: ${selectedOffence}`,
+    marginX,
+    70,
+  );
+
+  pdf.text(
+    `Research period: ${researchPeriod}`,
+    marginX,
+    85,
+  );
+    // Embed the Offence × Verdict chart
+  offenceVerdictChart.update("none");
+
+  const chartImage =
+    offenceVerdictChart.toBase64Image("image/png", 1);
+
+  const chartCanvas = offenceVerdictChart.canvas;
+
+  const chartRatio =
+    chartCanvas.width / chartCanvas.height;
+
+  const chartY = 120;
+  const reservedBottomSpace = 280;
+
+  const maxChartHeight =
+    pageHeight - chartY - reservedBottomSpace;
+
+  const imageHeight = Math.min(
+    availableWidth / chartRatio,
+    maxChartHeight,
+  );
+
+  const imageWidth = imageHeight * chartRatio;
+
+  const imageX =
+    (pageWidth - imageWidth) / 2;
+
+  pdf.addImage(
+    chartImage,
+    "PNG",
+    imageX,
+    chartY,
+    imageWidth,
+    imageHeight,
+  );
+    // Extract the displayed verdict statistics
+  const verdictLabels =
+    offenceVerdictChart.data.labels || [];
+
+  const verdictCounts =
+    offenceVerdictChart.data.datasets[0]?.data || [];
+
+  const verdictStatistics = verdictLabels.map(
+    (label, index) => ({
+      label,
+      count: Number(verdictCounts[index] || 0),
+    }),
+  );
+
+  const totalCriminalCharges = verdictStatistics.reduce(
+    (total, item) => total + item.count,
+    0,
+  );
+
+  const guiltyCharges =
+    verdictStatistics.find(
+      (item) => item.label === "Guilty",
+    )?.count ?? 0;
+
+  const notGuiltyCharges =
+    verdictStatistics.find(
+      (item) => item.label === "Not guilty",
+    )?.count ?? 0;
+
+  const unknownCharges =
+    verdictStatistics.find(
+      (item) => item.label === "Unknown / other",
+    )?.count ?? 0;
+
+  const knownVerdicts =
+    guiltyCharges + notGuiltyCharges;
+
+  const guiltyRate =
+    knownVerdicts > 0
+      ? (guiltyCharges / knownVerdicts) * 100
+      : null;
+
+  const verdictCoverage =
+    totalCriminalCharges > 0
+      ? (knownVerdicts / totalCriminalCharges) * 100
+      : null;
+    // Position the statistical summary beneath the chart
+  const summaryY = chartY + imageHeight + 25;
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(12);
+
+  pdf.text(
+    "Criminal-charge verdict breakdown",
+    marginX,
+    summaryY,
+  );
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(10);
+
+  let rowY = summaryY + 22;
+
+  for (const item of verdictStatistics) {
+    pdf.text(
+      `${item.label}: ${item.count}`,
+      marginX,
+      rowY,
+    );
+
+    rowY += 17;
+  }
+
+  pdf.setFont("helvetica", "bold");
+
+  pdf.text(
+    `Total criminal charges: ${totalCriminalCharges}`,
+    marginX,
+    rowY + 8,
+  );
+
+  rowY += 30;
+
+  pdf.setFont("helvetica", "normal");
+
+  pdf.text(
+    `Known verdicts: ${knownVerdicts}`,
+    marginX,
+    rowY,
+  );
+
+  rowY += 17;
+
+  pdf.text(
+    `Guilty rate: ${
+      guiltyRate === null
+        ? "N/A"
+        : `${guiltyRate.toFixed(2)}%`
+    }`,
+    marginX,
+    rowY,
+  );
+
+  rowY += 17;
+
+  pdf.text(
+    `Verdict coverage: ${
+      verdictCoverage === null
+        ? "N/A"
+        : `${verdictCoverage.toFixed(2)}%`
+    }`,
+    marginX,
+    rowY,
+  );
+    // Research methodology
+  const methodologyY = rowY + 35;
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(11);
+
+  pdf.text(
+    "Research methodology",
+    marginX,
+    methodologyY,
+  );
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(9);
+
+  const methodologyText =
+    "Statistics count criminal-charge records, not " +
+    "distinct defendants or individual trials. " +
+    "Verdict outcomes follow explicitly linked " +
+    "criminal-charge and verdict relationships in " +
+    "the historical source data. Guilty rates use " +
+    "only charges with known guilty or not-guilty " +
+    "outcomes. Charges without these outcomes are " +
+    "reported separately as unknown/other. " +
+    "Verdict coverage represents the proportion of " +
+    "charges with known verdict outcomes. " +
+    "Unlinked verdict nodes are not assigned to " +
+    "criminal charges. Statistics include qualifying " +
+    "records from both mapped and unmapped trials.";
+
+  const methodologyLines = pdf.splitTextToSize(
+    methodologyText,
+    availableWidth,
+  );
+
+  pdf.text(
+    methodologyLines,
+    marginX,
+    methodologyY + 18,
+  );
+    // Prepare the PDF research ID and export filename
+  const pdfExportCount = getNextPdfExportCount();
+
+  const pdfResearchId =
+    `${getResearchId()}-PDF-${String(pdfExportCount).padStart(4, "0")}`;
+
+  const offence =
+    getSelectedOptionText("group", "all offences");
+
+  const fromDate =
+    document.getElementById("from")?.value;
+
+  const toDate =
+    document.getElementById("to")?.value;
+
+  const filenameRange =
+    fromDate && toDate
+      ? `${formatFilenameDate(fromDate)}-to-${formatFilenameDate(toDate)}`
+      : fromDate
+        ? `from-${formatFilenameDate(fromDate)}`
+        : toDate
+          ? `up-to-${formatFilenameDate(toDate)}`
+          : "full-dataset";
+
+  const exportFilename = [
+    "offence-verdict",
+    offence,
+    filenameRange,
+  ]
+    .map((part) => slugifyFilenamePart(part))
+    .filter(Boolean)
+    .join("-");
+    // PDF footer
+  const footerY = pageHeight - 35;
+
+  pdf.setDrawColor(190, 190, 190);
+  pdf.setLineWidth(0.5);
+
+  pdf.line(
+    marginX,
+    footerY - 15,
+    pageWidth - marginX,
+    footerY - 15,
+  );
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.setTextColor(100, 100, 100);
+
+  pdf.text(
+    "Historic Crime Atlas | Old Bailey Research",
+    marginX,
+    footerY,
+  );
+
+  pdf.text(
+    `Export #${String(pdfExportCount).padStart(4, "0")}`,
+    pageWidth / 2,
+    footerY,
+    { align: "center" },
+  );
+
+  pdf.text(
+    "Page 1 of 1",
+    pageWidth - marginX,
+    footerY,
+    { align: "right" },
+  );
+    // Download the completed research PDF
+  pdf.save(
+    `${pdfResearchId}-${exportFilename}.pdf`,
+  );
+
+  console.log(
+    "Standalone Offence × Verdict PDF generated.",
+  );
+}
+
 async function downloadResearchSnapshotPdf() {
   const { jsPDF } = window.jspdf;
 
@@ -5496,6 +6026,9 @@ async function downloadResearchSnapshotPdf() {
 
   let mapPageNumber = null;
   let offenceGenderPageNumber = null;
+  let offenceVerdictPageNumber = null;
+
+  let appendixCount = 0;
 
 
   const includeMapInPdf =
@@ -5504,6 +6037,10 @@ async function downloadResearchSnapshotPdf() {
 
   const includeOffenceGenderInPdf =
     document.getElementById("include-offence-gender-pdf")?.checked
+    ?? false;
+
+  const includeOffenceVerdictInPdf =
+    document.getElementById("include-offence-verdict-pdf")?.checked
     ?? false;
 
   const exportDateTime = getExportDateTime().display;
@@ -5566,9 +6103,17 @@ const noDataVisible =
     .getElementById("chart-no-data")
     ?.classList.contains("hidden");
 
-const keyFinding = noDataVisible
-  ? "No chart data is available for the selected filters."
-  : `Across the selected period, the average conviction rate is ${statisticalSummary.average.toFixed(1)}%.`;
+const averageConvictionRate =
+  statisticalSummary?.average;
+
+const hasAverageConvictionRate =
+  typeof averageConvictionRate === "number" &&
+  Number.isFinite(averageConvictionRate);
+
+const keyFinding =
+  noDataVisible || !hasAverageConvictionRate
+    ? "No average conviction rate is available for the selected filters."
+    : `Across the selected period, the average conviction rate is ${averageConvictionRate.toFixed(1)}%.`;
 
 const offenceFilter =
   document.getElementById("group")?.value?.trim() || "All offences";
@@ -5699,20 +6244,25 @@ pdf.text(
 
 y += 22;
 
-  const chartCanvas = document.getElementById("chart");
+const chartCanvas = document.getElementById("chart");
 
-if (chartCanvas && !noDataVisible) {
-  const chartImage = chartCanvas.toDataURL("image/png", 1.0);
+  if (chartCanvas && !noDataVisible) {
+  // Stop any active Chart.js animation before PDF capture.
+  chart.stop();
 
-  pdf.addImage(
-    chartImage,
-    "PNG",
-    40,
-    120,
-    515,
-    260,
-  );
+  // Force a non-animated redraw using the current dataset.
+  chart.update("none");
 
+const chartImage = chartCanvas.toDataURL("image/png", 1.0);
+
+pdf.addImage(
+  chartImage,
+  "PNG",
+  40,
+  120,
+  515,
+  260,
+);
 
 } else {
   y = drawNoDataCallout(
@@ -5838,26 +6388,37 @@ pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
 pdf.setFontSize(FONT_SIZE_BODY);
 pdf.setTextColor(...COLOUR_TEXT);
 
-pdf.text(
-  `${historicalInsights.highestPoint.y.toFixed(1)}% (${historicalInsights.highestPoint.x})`,
-  50,
-  y + 47,
-);
+const highestPoint = historicalInsights?.highestPoint;
+const lowestPoint = historicalInsights?.lowestPoint;
+const average = statisticalSummary?.average;
+
+const highestText =
+  Number.isFinite(highestPoint?.y) &&
+  highestPoint?.x != null
+    ? `${highestPoint.y.toFixed(1)}% (${highestPoint.x})`
+    : "N/A";
+
+const lowestText =
+  Number.isFinite(lowestPoint?.y) &&
+  lowestPoint?.x != null
+    ? `${lowestPoint.y.toFixed(1)}% (${lowestPoint.x})`
+    : "N/A";
+
+const averageText =
+  Number.isFinite(average)
+    ? `${average.toFixed(1)}%`
+    : "N/A";
+
+pdf.text(highestText, 50, y + 47);
+pdf.text(lowestText, 190, y + 47);
+pdf.text(averageText, 330, y + 47);
 
 pdf.text(
-  `${historicalInsights.lowestPoint.y.toFixed(1)}% (${historicalInsights.lowestPoint.x})`,
-  190,
-  y + 47,
-);
-
-pdf.text(
-  `${statisticalSummary.average.toFixed(1)}%`,
-  330,
-  y + 47,
-);
-
-pdf.text(
-  `${confidenceScore}%`,
+  Number.isFinite(Number(confidenceScore)) &&
+    confidenceScore != null &&
+    confidenceScore !== ""
+    ? `${confidenceScore}%`
+    : "N/A",
   450,
   y + 47,
 );
@@ -6327,14 +6888,13 @@ pdf.setTextColor(...COLOUR_BLACK);
   y += 10;
 }
 
-const trendLines = pdf.splitTextToSize(
-  trendInterpretation.interpretation,
-  470,
-);
-
-const trendBoxHeight = 70 + trendLines.length * 14;
-
 if (trendInterpretation) {
+  const trendLines = pdf.splitTextToSize(
+    trendInterpretation.interpretation,
+    470,
+  );
+
+  const trendBoxHeight = 70 + trendLines.length * 14;
   y = ensurePdfPageSpace(
   pdf,
   y,
@@ -6667,14 +7227,22 @@ if (
         1.0,
       );
 
-    pdf.addPage();
 
-    pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+pdf.addPage();
+
+mapPageNumber = pdf.getNumberOfPages();
+
+const mapAppendixLetter =
+  String.fromCharCode(65 + appendixCount);
+
+appendixCount++;
+
+pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
 pdf.setFontSize(18);
 pdf.setTextColor(...COLOUR_PRIMARY);
 
 pdf.text(
-  "Appendix A — Research Map",
+  `Appendix ${mapAppendixLetter} — Research Map`,
   40,
   50,
 );
@@ -6789,7 +7357,10 @@ if (includeOffenceGenderInPdf && offenceGenderChart) {
     const imageWidth = availableWidth;
     const imageHeight = imageWidth / chartRatio;
 
-    const appendixLetter = mapPageNumber === null ? "A" : "B";
+    const appendixLetter =
+      String.fromCharCode(65 + appendixCount);
+
+    appendixCount++;
 
     pdf.addPage();
 
@@ -6956,16 +7527,263 @@ if (includeOffenceGenderInPdf && offenceGenderChart) {
   }
 }
 
-const totalPages =
-  pdf.internal.getNumberOfPages();
+// ======================================
+// Offence × Verdict Statistics PDF appendix
+// ======================================
+if (includeOffenceVerdictInPdf && offenceVerdictChart) {
+  try {
+    offenceVerdictChart.update("none");
 
-for (let i = 1; i <= totalPages; i++) {
-  pdf.setPage(i);
+    const chartImage = offenceVerdictChart.toBase64Image(
+      "image/png",
+      1,
+    );
 
-if (
-  i === mapPageNumber ||
-  i === offenceGenderPageNumber
-) {
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const marginX = 40;
+    const availableWidth = pageWidth - marginX * 2;
+
+    const chartCanvas = offenceVerdictChart.canvas;
+    const chartRatio =
+      chartCanvas.width / chartCanvas.height;
+
+    const appendixLetter =
+      String.fromCharCode(65 + appendixCount);
+
+    pdf.addPage();
+
+    offenceVerdictPageNumber = pdf.getNumberOfPages();
+    appendixCount++;
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+    pdf.setFontSize(18);
+    pdf.setTextColor(...COLOUR_PRIMARY);
+
+    pdf.text(
+      `Appendix ${appendixLetter} - Offence x Verdict Statistics`,
+      marginX,
+      50,
+    );
+
+    const selectedOffence =
+      getSelectedOptionText("group", "All offences");
+
+    const selectedFrom =
+      document.getElementById("from")?.value;
+
+    const selectedTo =
+      document.getElementById("to")?.value;
+
+    const researchPeriod =
+      `${selectedFrom || "Earliest available"} to ` +
+      `${selectedTo || "Latest available"}`;
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
+    pdf.setFontSize(10);
+    pdf.setTextColor(...COLOUR_TEXT);
+
+    pdf.text(
+      `Offence: ${selectedOffence}`,
+      marginX,
+      72,
+    );
+
+    pdf.text(
+      `Research period: ${researchPeriod}`,
+      marginX,
+      87,
+    );
+
+    const descriptionLines = pdf.splitTextToSize(
+      "This chart presents guilty, not-guilty and unknown " +
+      "verdict outcomes for criminal charges associated " +
+      "with the selected offence and research period. " +
+      "Counts represent criminal charges, not trials " +
+      "or unique historical defendants.",
+      availableWidth,
+    );
+
+    pdf.text(
+      descriptionLines,
+      marginX,
+      110,
+    );
+
+    const chartY =
+      110 + descriptionLines.length * 13 + 20;
+
+    const imageWidth = availableWidth;
+    const imageHeight = imageWidth / chartRatio;
+
+    const summarySpace = 230;
+    const footerSpace = 45;
+
+    const maxChartHeight =
+      pageHeight - chartY - summarySpace - footerSpace;
+
+    const finalImageHeight = Math.min(
+      imageHeight,
+      maxChartHeight,
+    );
+
+    const finalImageWidth =
+      finalImageHeight * chartRatio;
+
+    const imageX =
+      (pageWidth - finalImageWidth) / 2;
+
+    pdf.addImage(
+      chartImage,
+      "PNG",
+      imageX,
+      chartY,
+      finalImageWidth,
+      finalImageHeight,
+    );
+
+    const summaryY =
+      chartY + finalImageHeight + 20;
+    const verdictLabels =
+      offenceVerdictChart.data.labels || [];
+
+    const verdictCounts =
+      offenceVerdictChart.data.datasets[0]?.data || [];
+
+    const verdictStatistics = verdictLabels.map(
+      (label, index) => ({
+        label,
+        count: Number(verdictCounts[index] ?? 0),
+      }),
+    );
+
+    const guiltyCharges =
+      verdictStatistics.find(
+        (item) => item.label === "Guilty"
+      )?.count ?? 0;
+
+    const notGuiltyCharges =
+      verdictStatistics.find(
+        (item) => item.label === "Not guilty"
+      )?.count ?? 0;
+
+    const unknownCharges =
+      verdictStatistics.find(
+        (item) => item.label === "Unknown / other"
+      )?.count ?? 0;
+
+    const knownVerdicts =
+      guiltyCharges + notGuiltyCharges;
+
+    const totalCharges =
+      knownVerdicts + unknownCharges;
+
+    const guiltyRate =
+      knownVerdicts > 0
+        ? (guiltyCharges / knownVerdicts) * 100
+        : null;
+
+    const verdictCoverage =
+      totalCharges > 0
+        ? (knownVerdicts / totalCharges) * 100
+        : null;
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOUR_PRIMARY);
+
+    pdf.text(
+      "Criminal-charge verdict breakdown",
+      marginX,
+      summaryY,
+    );
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
+    pdf.setFontSize(10);
+    pdf.setTextColor(...COLOUR_TEXT);
+
+    const summaryRows = [
+      `Guilty charges: ${guiltyCharges}`,
+      `Not-guilty charges: ${notGuiltyCharges}`,
+      `Unknown / other charges: ${unknownCharges}`,
+      `Total criminal charges: ${totalCharges}`,
+      `Known verdicts: ${knownVerdicts}`,
+      `Guilty rate: ${
+        guiltyRate === null
+          ? "N/A"
+          : `${guiltyRate.toFixed(2)}%`
+      }`,
+      `Verdict coverage: ${
+        verdictCoverage === null
+          ? "N/A"
+          : `${verdictCoverage.toFixed(2)}%`
+      }`,
+    ];
+
+    let rowY = summaryY + 20;
+
+    for (const row of summaryRows) {
+      pdf.text(row, marginX, rowY);
+      rowY += 16;
+    }
+
+    const methodologyY = rowY + 12;
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_BOLD);
+    pdf.setFontSize(11);
+    pdf.setTextColor(...COLOUR_PRIMARY);
+
+    pdf.text(
+      "Research methodology",
+      marginX,
+      methodologyY,
+    );
+
+    pdf.setFont(FONT_FAMILY, FONT_STYLE_NORMAL);
+    pdf.setFontSize(9);
+    pdf.setTextColor(...COLOUR_TEXT);
+
+    const methodologyText =
+      "Verdict statistics are calculated at criminal-charge level " +
+      "using explicitly linked offence and verdict records. " +
+      "Guilty and not-guilty counts include only charges with " +
+      "resolved verdict links. Charges without a resolved guilty " +
+      "or not-guilty verdict are classified as unknown / other. " +
+      "Unlinked verdict nodes are not assigned to criminal charges. " +
+      "Guilty rate uses known verdicts as its denominator, while " +
+      "verdict coverage uses all criminal charges. Results include " +
+      "both mapped and unmapped trials.";
+
+    const methodologyLines = pdf.splitTextToSize(
+      methodologyText,
+      availableWidth,
+    );
+
+    pdf.text(
+      methodologyLines,
+      marginX,
+      methodologyY + 18,
+    );
+      } catch (error) {
+        console.error(
+          "PDF Offence x Verdict appendix could not be created:",
+          error,
+        );
+      }
+    }
+
+    const totalPages =
+      pdf.internal.getNumberOfPages();
+
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+
+    if (
+      i === mapPageNumber ||
+      i === offenceGenderPageNumber ||
+      i === offenceVerdictPageNumber
+    ) {
 
     pdf.setFont(
       FONT_FAMILY,
@@ -7913,10 +8731,28 @@ function populateUnmappedOffenceFilter() {
   `;
 }
 
+function updateResearchTrendHeading() {
+  const heading = document.getElementById(
+    "research-trend-heading"
+  );
+
+  if (!heading) return;
+
+  const selectedOffence = getSelectedOptionText(
+    "group",
+    "All offences"
+  );
+
+  heading.textContent =
+    `${selectedOffence} trend (guilty rate %)`;
+}
+
 async function render() {
+  updateResearchTrendHeading();
   ensureChart();
 
   fetchOffenceGenderStats().catch(console.error);
+  fetchOffenceVerdictStats().catch(console.error);
   showNoDataOverlay(false);
   setChartLoading(true);
   updateCiStatus();
@@ -9434,6 +10270,29 @@ downloadOffenceGenderPdfBtn?.addEventListener(
         "Standalone Offence × Gender PDF failed:",
         error,
       );
+    }
+  },
+);
+
+const downloadOffenceVerdictPdfBtn =
+  document.getElementById(
+    "download-offence-verdict-pdf-btn",
+  );
+
+downloadOffenceVerdictPdfBtn?.addEventListener(
+  "click",
+  async () => {
+    downloadOffenceVerdictPdfBtn.disabled = true;
+
+    try {
+      await downloadOffenceVerdictPdf();
+    } catch (error) {
+      console.error(
+        "Standalone Offence × Verdict PDF failed:",
+        error,
+      );
+    } finally {
+      downloadOffenceVerdictPdfBtn.disabled = false;
     }
   },
 );

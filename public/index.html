@@ -45,7 +45,7 @@
   </head>
   <body>
 
-    <h1>Robbery trend (guilty rate %)</h1>
+    <h1 id="research-trend-heading">Conviction rate by year (guilty rate %)</h1>
 
     <div class="row">
       <label>
@@ -193,6 +193,59 @@
 </section>
 
 <section
+  id="offence-verdict-section"
+  aria-labelledby="offence-verdict-heading"
+>
+  <h2 id="offence-verdict-heading">
+    Offence × Verdict Statistics
+  </h2>
+
+  <p class="muted">
+    Explore recorded guilty and not-guilty outcomes
+    across historical offences and selected date ranges.
+
+    Counts represent criminal-charge records rather
+    than distinct defendants or individual trials.
+
+    <strong>Research coverage:</strong>
+    Statistics use explicitly linked criminal-charge
+    and verdict relationships from both mapped and
+    unmapped trials.
+
+    Charges without a standard guilty or not-guilty
+    outcome are displayed separately as unknown/other.
+
+    Guilty rates are calculated using only charges
+    with known guilty or not-guilty outcomes.
+    Unlinked verdict nodes are not assigned to charges.
+  </p>
+
+  <p id="offence-verdict-context" class="muted">
+    Awaiting research filters...
+  </p>
+
+  <div class="chart-container offence-gender-chart-container">
+    <canvas id="offence-verdict-chart"></canvas>
+  </div>
+
+  <button
+    type="button"
+    id="download-offence-verdict-pdf-btn"
+  >
+    Download Offence × Verdict PDF
+  </button>
+
+  <p
+    id="offence-verdict-status"
+    class="muted"
+    role="status"
+    aria-live="polite"
+  >
+    Statistics will appear when data is loaded.
+  </p>
+</section>
+
+<section
   id="offence-coverage"
   class="offence-coverage"
   aria-labelledby="offence-coverage-heading"
@@ -286,13 +339,20 @@
     Include research map
   </label>
 
-
 <label for="include-offence-gender-pdf" class="pdf-map-option">
   <input
     id="include-offence-gender-pdf"
     type="checkbox"
   />
   Include Offence × Gender chart
+</label>
+
+<label for="include-offence-verdict-pdf" class="pdf-map-option">
+  <input
+    id="include-offence-verdict-pdf"
+    type="checkbox"
+  />
+  Include Offence × Verdict chart
 </label>
 
 </div>
