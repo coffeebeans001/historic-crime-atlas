@@ -26,20 +26,20 @@ export function createApiReviewRecords({
       enrichedRecord?.parsedXmlData ?? null;
 
     const verdictNodes =
-  parsedXmlData?.verdicts ?? [];
+      parsedXmlData?.verdicts ?? [];
 
-const criminalCharges =
-  parsedXmlData?.criminalCharges ?? [];
+    const criminalCharges =
+      parsedXmlData?.criminalCharges ?? [];
 
-const hasStructuredNoVerdict =
-  !record.verdict &&
-  verdictNodes.length === 0 &&
-  criminalCharges.length > 0 &&
-  criminalCharges.every(
-    (charge) =>
-      charge.verdictReference == null ||
-      charge.verdictReference === "NOVERDICTR"
-  );
+    const hasStructuredNoVerdict =
+      !record.verdict &&
+      verdictNodes.length === 0 &&
+      criminalCharges.length > 0 &&
+      criminalCharges.every(
+        (charge) =>
+          charge.verdictReference == null ||
+          charge.verdictReference === "NOVERDICTR"
+      );
 
     const missingFields = [];
 
