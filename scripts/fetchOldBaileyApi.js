@@ -8,8 +8,8 @@ import { transformOldBaileyRecord } from
   "../src/import/transformOldBaileyRecord.js";
 
 import { validateOldBaileyApiRecord } from
-  "../src/import/validateOldBaileyApiRecord.js"; 
-  
+  "../src/import/validateOldBaileyApiRecord.js";
+
 import { summariseTransformation } from
   "../src/import/summariseTransformation.js";
 
@@ -20,10 +20,10 @@ import { createApiReviewRecords } from
   "../src/import/createApiReviewRecords.js";
 
 import { writeApiReviewReport } from
-  "../src/import/writeApiReviewReport.js";  
+  "../src/import/writeApiReviewReport.js";
 
 import { fetchOldBaileyRecordById } from
-  "../src/import/fetchOldBaileyRecordById.js";  
+  "../src/import/fetchOldBaileyRecordById.js";
 
 import { detectDuplicates } from "../src/import/duplicateChecker.js";
 
@@ -45,7 +45,9 @@ import {
   validateImportCheckpointBatch,
   validateImportCheckpointStructure,
   recordImportTrialResult,
+  validateImportSourceCaseIds,
   completeImportCheckpoint,
+  archiveImportCheckpoint,
 } from "../src/import/importCheckpoint.js";
 
 import { summariseLocationEnrichment, } from "../src/import/summariseLocationEnrichment.js";
@@ -112,12 +114,12 @@ validateImportRecoveryArgs({
 });
 
 const backfillTrialText =
-  process.argv.includes("--backfill-trial-text"); 
-  
+  process.argv.includes("--backfill-trial-text");
+
 const backfillTrialOffences =
   process.argv.includes(
     "--backfill-trial-offences"
-  );  
+  );
 
 const backfillTrialGender =
   process.argv.includes(
@@ -125,17 +127,17 @@ const backfillTrialGender =
   );
 
 const backfillRelationships =
-  process.argv.includes("--backfill-relationships"); 
-  
+  process.argv.includes("--backfill-relationships");
+
 const backfillNakedRelationships =
-  process.argv.includes("--backfill-naked-relationships");  
-  
+  process.argv.includes("--backfill-naked-relationships");
+
 const allTrialsMode =
-  process.argv.includes("--all-trials");  
+  process.argv.includes("--all-trials");
 
 
 const geocodeExistingTrials =
-  process.argv.includes("--geocode-existing");  
+  process.argv.includes("--geocode-existing");
 
 const query = getArgumentValue("query", DEFAULT_QUERY);
 
@@ -147,8 +149,8 @@ const requestedBatchSize = Number.parseInt(
 const batchSize =
   Number.isInteger(requestedBatchSize) && requestedBatchSize > 0
     ? requestedBatchSize
-    : DEFAULT_BATCH_SIZE; 
-    
+    : DEFAULT_BATCH_SIZE;
+
 const requestedStartOffset = Number.parseInt(
   getArgumentValue("from", String(DEFAULT_START_OFFSET)),
   10
@@ -157,7 +159,7 @@ const requestedStartOffset = Number.parseInt(
 const startOffset =
   Number.isInteger(requestedStartOffset) && requestedStartOffset >= 0
     ? requestedStartOffset
-    : DEFAULT_START_OFFSET;    
+    : DEFAULT_START_OFFSET;
 
 const pageSize = 10;
 
@@ -179,7 +181,7 @@ async function fetchOldBaileyRecords() {
     const checkpointPath =
       "data/import-checkpoints/old-bailey-import.json";
     const checkpointArchiveDirectory =
-      "data/import-checkpoints/archive";  
+      "data/import-checkpoints/archive";
     const checkpointIdentity = createImportCheckpointIdentity({
       mode: allTrialsMode
         ? "all-trials"
@@ -679,7 +681,7 @@ const nakedRelationshipExpectedTotalRows =
     (sum, count) => sum + count,
     0
   );
-  
+
 console.log("\n========== NAKED TRIAL RELATIONSHIP EXPECTED ROWS ==========\n");
 
 console.log(
@@ -722,7 +724,7 @@ console.log(
   nakedRelationshipExpectedTotalRows
 );
 
-console.log("\nDatabase changes: 0");  
+console.log("\nDatabase changes: 0");
 
 let nakedRelationshipBackfillResults = {
   trialsProcessed: 0,
@@ -835,7 +837,7 @@ console.log(
   nakedRelationshipUnresolved.length
 );
 
-console.log("\nDatabase changes: 0");   
+console.log("\nDatabase changes: 0");
 
 const relationshipBackfillReadiness = [];
 
@@ -878,7 +880,7 @@ const relationshipPartial =
 const relationshipUnresolved =
   relationshipBackfillReadiness.filter(
     (record) => record.status === "unresolved"
-  );  
+  );
 
     if (
     backfillRelationships &&
@@ -1036,7 +1038,7 @@ console.log(
   relationshipBackfillExpectedTotalRows
 );
 
-console.log("\nDatabase changes: 0");  
+console.log("\nDatabase changes: 0");
 
 let relationshipBackfillResults = {
   trialsProcessed: 0,
@@ -1173,14 +1175,14 @@ const locationPrecisionCounts =
   countValues(
     mappedLocationRecords,
     "location_precision"
-  );  
+  );
 
 const locationPrecisionSummary = {
   mappedRecords: mappedLocationRecords.length,
   counts: locationPrecisionCounts,
-};  
+};
 
-//TEMPORARY!!! 
+//TEMPORARY!!!
 console.log("\n========== UNRESOLVED TRIAL TRANSFORMATION REVIEW ==========\n");
 
 for (const unresolved of relationshipUnresolved) {
@@ -1248,7 +1250,7 @@ for (const [precision, count] of Object.entries(
   );
 }
 
-console.log("\n===============================================\n");  
+console.log("\n===============================================\n");
 
 const provenanceCompleteness = {
   mappedRecords: mappedLocationRecords.length,
@@ -1270,7 +1272,7 @@ const provenanceCompleteness = {
 
   distinctGeocodeSources:
     Object.keys(geocodeSourceCounts).length,
-};  
+};
 
 const qualitySummary =
   summariseTransformation(transformedRecords);
@@ -1363,7 +1365,7 @@ warningRecords.forEach(
   }
 );
 
-console.log("===========================================\n");   
+console.log("===========================================\n");
 
 const databaseDuplicateRecords = [];
 const databaseNewCandidates = [];
@@ -1390,7 +1392,7 @@ for (const result of insertionReadyRecords) {
   } else {
     databaseNewCandidates.push(result);
   }
-} 
+}
 
 console.log("\n========== DATABASE DUPLICATE READINESS ==========\n");
 
@@ -1406,7 +1408,7 @@ console.log(
   `New database candidates: ${databaseNewCandidates.length}`
 );
 
-console.log("\n=================================================\n");  
+console.log("\n=================================================\n");
 
 console.log("\n========== INSERTION READINESS SUMMARY ==========\n");
 
@@ -1455,8 +1457,8 @@ const duplicateCheck =
 const databaseDuplicateCheck =
   await detectDatabaseDuplicates(
     duplicateCheck.uniqueRecords
-  ); 
-  
+  );
+
 const relationshipResults = [];
 
 for (const item of databaseDuplicateCheck.readyRecords) {
@@ -1487,7 +1489,7 @@ const unresolvedRelationshipRecords =
   relationshipResults.filter(
     (result) =>
       result.missingReferences.length > 0
-  );    
+  );
 
   let backfillResults = {
   checked: 0,
@@ -1603,11 +1605,11 @@ const expectedSourceCaseIds = resolvedRelationshipRecords
     (sourceCaseId) =>
       typeof sourceCaseId === "string" &&
       sourceCaseId.trim() !== ""
-  ); 
-  
+  );
+
 const uniqueExpectedSourceCaseIds = [
   ...new Set(expectedSourceCaseIds),
-];  
+];
 
 if (
   insertTrials &&
@@ -1867,7 +1869,7 @@ console.log(
   }`
 );
 
-console.log("\n=======================================================\n");  
+console.log("\n=======================================================\n");
 
 
   console.log("\n========== XML MISSING FIELD REVIEW ==========\n");
@@ -2000,7 +2002,7 @@ console.log(
   `Punishment: ${formatCoverage(
     xmlInspectionSummary.punishmentPresent,
     xmlInspectionSummary.recordsInspected
-  )}`  
+  )}`
 );
 
 console.log(
@@ -2075,8 +2077,8 @@ console.log(
   `Unique category/subcategory combinations: ${offenceRows.length}`
 );
 
-console.log("\n==================================================\n");  
-  
+console.log("\n==================================================\n");
+
 function createCoverageEntry(present, total) {
   return {
     present,
@@ -2088,7 +2090,7 @@ function createCoverageEntry(present, total) {
   };
 }
 
-  const sourceMissingVerdictRecords = 
+  const sourceMissingVerdictRecords =
   missingFieldRecords.filter((record) =>
     record.missingFields.includes("verdict_category")
   ).length;
@@ -2145,7 +2147,7 @@ function createCoverageEntry(present, total) {
     xmlInspectionSummary.locationTextPresent,
     xmlInspectionSummary.recordsInspected
   ),
-  
+
 
   qualityAssessment: {
   nonTrialRecordsExcluded: nonTrialRecords.length,
@@ -2499,7 +2501,7 @@ const geocodeCandidates =
 
 const controlledGeocodeCandidates =
   geocodeCandidates.slice(0, 7);
-  
+
 const geocodeUpdateResults = [];
 
 if (geocodeExistingTrials) {
@@ -2511,8 +2513,8 @@ if (geocodeExistingTrials) {
     crimeLocation:
       record.crime_location,
 
-    locationSource: 
-      record.location_source,  
+    locationSource:
+      record.location_source,
 
     locationPrecision:
       record.location_precision,
@@ -2537,7 +2539,7 @@ if (geocodeExistingTrials) {
       ...result,
     });
   }
-}  
+}
 
 console.log(
   "\n========== GEOCODE UPDATE RESULTS ==========\n"

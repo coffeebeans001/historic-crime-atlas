@@ -54,14 +54,14 @@ export function parseOldBaileyXml(xml = "") {
  const locationMatches =
   xml.match(
     /<placeName\b[^>]*>[\s\S]*?<\/placeName>/gi
-  ) ?? []; 
+  ) ?? [];
 
  const crimeLocationMatch = xml.match(
   /<interp\b[^>]*type="crimeLocation"[^>]*value="([^"]+)"/i
 );
 
 const locationName =
-  crimeLocationMatch?.[1]?.trim() ?? null; 
+  crimeLocationMatch?.[1]?.trim() ?? null;
 
 const locationTextMatch = xml.match(
   /<placeName\b[^>]*>\s*([^<]+?)\s*</i
@@ -71,10 +71,10 @@ const locationText =
   locationTextMatch?.[1]?.trim() ?? null;
 
 const crimeLocation =
-  locationName ?? locationText ?? null; 
+  locationName ?? locationText ?? null;
 
 const locationPrecision =
-  classifyLocationPrecision(crimeLocation);  
+  classifyLocationPrecision(crimeLocation);
 
   const defendants = defendantMatches.map((defendantNode) => {
   const idMatch = defendantNode.match(
@@ -266,6 +266,42 @@ const verdictId =
   };
 });
 
+const uniqueCriminalCharges = [];
+const criminalChargeIds = new Map();
+
+for (const charge of criminalCharges) {
+  if (!charge.id) {
+    throw new Error(
+      "Criminal charge is missing its source ID."
+    );
+  }
+
+  const existing = criminalChargeIds.get(charge.id);
+
+  if (!existing) {
+    criminalChargeIds.set(charge.id, charge);
+    uniqueCriminalCharges.push(charge);
+    continue;
+  }
+
+  const fields = [
+    "defendantId",
+    "offenceId",
+    "verdictId",
+    "verdictReference",
+  ];
+
+  const identical = fields.every(
+    (field) => existing[field] === charge[field]
+  );
+
+  if (!identical) {
+    throw new Error(
+      `Conflicting criminal-charge relationships: ${charge.id}`
+    );
+  }
+}
+
 const defendantPunishmentMatches = [
   ...xml.matchAll(
     /<join\b[^>]*result=["']defendantPunishment["'][^>]*\/>/gi
@@ -348,7 +384,7 @@ const offences = offenceMatches.map((node) => {
     subcategory: subcategoryMatch?.[1] ?? null,
     text: text || null,
   };
-});  
+});
 
   return {
     defendantMatches,
@@ -367,7 +403,7 @@ const offences = offenceMatches.map((node) => {
     verdicts,
     punishment,
     punishments,
-    criminalCharges,
+    criminalCharges: uniqueCriminalCharges,
     defendantPunishments,
     offenceCategory,
     offenceSubcategory,
@@ -379,4 +415,3 @@ const offences = offenceMatches.map((node) => {
     locationPrecision,
   };
 }
-  
