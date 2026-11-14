@@ -104,14 +104,10 @@ test("handles a missing detailed record", async () => {
     };
   };
 
-  const expectedParsedXmlData = {
-    defendantName: null,
-  };
-
-  const parseXml = (xml) => {
-    assert.equal(xml, "");
-
-    return expectedParsedXmlData;
+  const parseXml = () => {
+    throw new Error(
+      "Parser should not be called when detailed XML is missing"
+    );
   };
 
   const result = await enrichOldBaileyRecord(
@@ -123,7 +119,7 @@ test("handles a missing detailed record", async () => {
   assert.deepEqual(result, {
     originalRecord,
     detailedRecord: null,
-    parsedXmlData: expectedParsedXmlData,
+    parsedXmlData: null,
   });
 });
 

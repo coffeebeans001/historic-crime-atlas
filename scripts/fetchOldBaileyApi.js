@@ -1449,6 +1449,7 @@ const apiReadyRecords = reviewedRecords
     isValid: true,
     rowNumber: reviewRecord.recordNumber,
     record: reviewRecord.transformedRecord,
+    parsedXmlData: reviewRecord.parsedXmlData,
   }));
 
 const duplicateCheck =
@@ -1476,6 +1477,7 @@ for (const item of databaseDuplicateCheck.readyRecords) {
     rowNumber: item.rowNumber,
     record: item.record,
     ...relations,
+    parsedXmlData: item.parsedXmlData,
   });
 }
 
@@ -1706,6 +1708,7 @@ if (insertTrials) {
       allowMissingDefendant: true,
       allowMissingJudge: true,
       allowMissingOffence: true,
+      insertXmlRelationships: true,
 
       onTrialResult: async (result) => {
         const updatedCheckpoint = recordImportTrialResult(

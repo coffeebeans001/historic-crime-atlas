@@ -17,7 +17,7 @@ export async function enrichOldBaileyRecord(
 
   const detailedRecord =
     result.records?.[0] ?? null;
-    
+
   if (
     detailedRecord &&
     detailedRecord._source?.idkey !== idkey
@@ -31,12 +31,13 @@ export async function enrichOldBaileyRecord(
     detailedRecord?._source?.xml ?? "";
 
   const parsedXmlData =
-    parseOldBaileyXml(xml);
+    typeof xml === "string" && xml.trim()
+      ? parseOldBaileyXml(xml)
+      : null;
 
-
- return {
-  originalRecord: record,
-  detailedRecord,
-  parsedXmlData
-};
+  return {
+    originalRecord: record,
+    detailedRecord,
+    parsedXmlData,
+  };
 }

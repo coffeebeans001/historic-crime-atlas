@@ -4,6 +4,7 @@ export default async function writeTrialRelationships({
   trialId,
   parsedXmlData,
   insert = false,
+  connection: externalConnection = null,
 }) {
   if (!trialId) {
     throw new Error(
@@ -137,10 +138,15 @@ export default async function writeTrialRelationships({
   };
 }
 
-const connection = await pool.getConnection();
+const ownsConnection = !externalConnection;
+
+const connection =
+  externalConnection ?? (await pool.getConnection());
 
 try {
-  await connection.beginTransaction();
+  if (ownsConnection) {
+    await connection.beginTransaction();
+  }
 
   for (const row of preparedRows.defendantNodes) {
     await connection.execute(
@@ -280,7 +286,9 @@ try {
     );
   }
 
-  await connection.commit();
+  if (ownsConnection) {
+    await connection.commit();
+  }
 
   return {
     preparedRows,
@@ -290,10 +298,15 @@ try {
     },
   };
 } catch (error) {
-  await connection.rollback();
+  if (ownsConnection) {
+    await connection.rollback();
+  }
+
   throw error;
 } finally {
-  connection.release();
+  if (ownsConnection) {
+    connection.release();
+  }
 }
 }
 

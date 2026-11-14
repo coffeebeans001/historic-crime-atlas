@@ -5,6 +5,8 @@ import {
   toMysqlCompatibleDate,
 } from "./historicalCalendar.js";
 
+import writeTrialRelationships from "./writeTrialRelationships.js";
+
 /**
  * Checks for an existing trial using its source case ID.
  *
@@ -178,27 +180,39 @@ async function insertTrial(
  */
 export async function importTrialWithTransaction(
   item,
- {
-  importId = null,
-  allowMissingDefendant = false,
-  allowMissingJudge = false,
-  allowMissingOffence = false,
-  connectionPool = pool,
-} = {}
+  {
+    importId = null,
+    allowMissingDefendant = false,
+    allowMissingJudge = false,
+    allowMissingOffence = false,
+    insertXmlRelationships = false,
+    connectionPool = pool,
+  } = {}
 ) {
- if (
-  (!item.defendant && !allowMissingDefendant) ||
-  (!item.judge && !allowMissingJudge) ||
-  (!item.offence && !allowMissingOffence) ||
-  item.missingReferences.length > 0
-) {
-  return {
-    rowNumber: item.rowNumber,
-    record: item.record,
-    status: "UNRESOLVED",
-    errors: item.missingReferences,
-  };
-}
+  if (
+    (!item.defendant && !allowMissingDefendant) ||
+    (!item.judge && !allowMissingJudge) ||
+    (!item.offence && !allowMissingOffence) ||
+    item.missingReferences.length > 0
+  ) {
+    return {
+      rowNumber: item.rowNumber,
+      record: item.record,
+      status: "UNRESOLVED",
+      errors: item.missingReferences,
+    };
+  }
+
+  if (insertXmlRelationships && !item.parsedXmlData) {
+    return {
+      rowNumber: item.rowNumber,
+      record: item.record,
+      status: "FAILED",
+      errors: [
+        "Atomic XML import requires parsedXmlData.",
+      ],
+    };
+  }
 
   const connection =
     await connectionPool.getConnection();
@@ -233,6 +247,15 @@ export async function importTrialWithTransaction(
       },
       importId
     );
+
+    if (insertXmlRelationships) {
+      await writeTrialRelationships({
+        trialId,
+        parsedXmlData: item.parsedXmlData,
+        insert: true,
+        connection,
+      });
+    }
 
     await connection.commit();
 
@@ -335,6 +358,7 @@ export async function importResolvedTrials(
     allowMissingDefendant = false,
     allowMissingJudge = false,
     allowMissingOffence = false,
+    insertXmlRelationships = false,
     onTrialResult = null,
     connectionPool = pool,
   } = {}
@@ -350,6 +374,7 @@ export async function importResolvedTrials(
       allowMissingDefendant,
       allowMissingJudge,
       allowMissingOffence,
+      insertXmlRelationships,
       connectionPool,
     }
   );

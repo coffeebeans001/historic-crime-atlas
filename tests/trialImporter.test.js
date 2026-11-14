@@ -804,3 +804,260 @@ test("preserves Julian leap date in historical trial column", async () => {
   assert.equal(capturedParams[2], "1700-02-29");
   assert.equal(capturedParams[3], null);
 });
+
+test("atomic XML import rejects missing parsed XML before connecting", async () => {
+  let connectionRequested = false;
+
+  const connectionPool = {
+    async getConnection() {
+      connectionRequested = true;
+      throw new Error(
+        "Database connection must not be requested"
+      );
+    },
+  };
+
+  const item = {
+    rowNumber: 1,
+    record: {
+      source_case_id: "TEST-ATOMIC-NO-XML-001",
+      trial_date: "1674-04-29",
+    },
+    defendant: null,
+    judge: null,
+    offence: null,
+    missingReferences: [],
+    parsedXmlData: null,
+  };
+
+  const result = await importTrialWithTransaction(item, {
+    allowMissingDefendant: true,
+    allowMissingJudge: true,
+    allowMissingOffence: true,
+    insertXmlRelationships: true,
+    connectionPool,
+  });
+
+  assert.equal(result.status, "FAILED");
+
+  assert.deepEqual(result.errors, [
+    "Atomic XML import requires parsedXmlData.",
+  ]);
+
+  assert.equal(connectionRequested, false);
+});
+
+test("atomic XML import commits trial and defendant relationship together", async () => {
+  const calls = [];
+
+  const connection = {
+    async beginTransaction() {
+      calls.push("begin");
+    },
+
+    async execute(sql, params) {
+      if (/SELECT\s+id,\s+source_case_id\s+FROM\s+trials/i.test(sql)) {
+        calls.push("select");
+        return [[]];
+      }
+
+      if (/INSERT\s+INTO\s+trials/i.test(sql)) {
+        calls.push("insertTrial");
+        return [{ insertId: 1001 }];
+      }
+
+      if (/INSERT\s+INTO\s+trial_defendant_nodes/i.test(sql)) {
+        calls.push("insertDefendant");
+
+        assert.deepEqual(params, [
+          1001,
+          "TEST-DEF-001",
+          "Test Defendant",
+          "male",
+          null,
+          null,
+          null,
+        ]);
+
+        return [{ affectedRows: 1 }];
+      }
+
+      throw new Error("Unexpected SQL query");
+    },
+
+    async commit() {
+      calls.push("commit");
+    },
+
+    async rollback() {
+      calls.push("rollback");
+    },
+
+    release() {
+      calls.push("release");
+    },
+  };
+
+  const connectionPool = {
+    async getConnection() {
+      calls.push("getConnection");
+      return connection;
+    },
+  };
+
+  const item = {
+    rowNumber: 1,
+    record: {
+      source_case_id: "TEST-ATOMIC-001",
+      trial_date: "1674-04-29",
+    },
+    defendant: null,
+    judge: null,
+    offence: null,
+    missingReferences: [],
+    parsedXmlData: {
+      defendants: [
+        {
+          id: "TEST-DEF-001",
+          label: "Test Defendant",
+          gender: "male",
+          age: null,
+          labelType: null,
+          labelValue: null,
+        },
+      ],
+      offences: [],
+      verdicts: [],
+      punishments: [],
+      criminalCharges: [],
+      defendantPunishments: [],
+    },
+  };
+
+  const result = await importTrialWithTransaction(item, {
+    allowMissingDefendant: true,
+    allowMissingJudge: true,
+    allowMissingOffence: true,
+    insertXmlRelationships: true,
+    connectionPool,
+  });
+
+  assert.equal(result.status, "INSERTED");
+  assert.equal(result.trialId, 1001);
+
+  assert.deepEqual(calls, [
+    "getConnection",
+    "begin",
+    "select",
+    "insertTrial",
+    "insertDefendant",
+    "commit",
+    "release",
+  ]);
+});
+
+test("atomic XML import rolls back when relationship insertion fails", async () => {
+  const calls = [];
+
+  const connection = {
+    async beginTransaction() {
+      calls.push("begin");
+    },
+
+    async execute(sql) {
+      if (/SELECT\s+id,\s+source_case_id\s+FROM\s+trials/i.test(sql)) {
+        calls.push("select");
+        return [[]];
+      }
+
+      if (/INSERT\s+INTO\s+trials/i.test(sql)) {
+        calls.push("insertTrial");
+        return [{ insertId: 1002 }];
+      }
+
+      if (/INSERT\s+INTO\s+trial_defendant_nodes/i.test(sql)) {
+        calls.push("insertDefendant");
+
+        throw new Error(
+          "Simulated XML relationship insertion failure"
+        );
+      }
+
+      throw new Error("Unexpected SQL query");
+    },
+
+    async commit() {
+      calls.push("commit");
+    },
+
+    async rollback() {
+      calls.push("rollback");
+    },
+
+    release() {
+      calls.push("release");
+    },
+  };
+
+  const connectionPool = {
+    async getConnection() {
+      calls.push("getConnection");
+      return connection;
+    },
+  };
+
+  const item = {
+    rowNumber: 1,
+    record: {
+      source_case_id: "TEST-ATOMIC-ROLLBACK-001",
+      trial_date: "1674-04-29",
+    },
+    defendant: null,
+    judge: null,
+    offence: null,
+    missingReferences: [],
+    parsedXmlData: {
+      defendants: [
+        {
+          id: "TEST-DEF-ROLLBACK-001",
+          label: "Test Defendant",
+          gender: "male",
+          age: null,
+          labelType: null,
+          labelValue: null,
+        },
+      ],
+      offences: [],
+      verdicts: [],
+      punishments: [],
+      criminalCharges: [],
+      defendantPunishments: [],
+    },
+  };
+
+  const result = await importTrialWithTransaction(item, {
+    allowMissingDefendant: true,
+    allowMissingJudge: true,
+    allowMissingOffence: true,
+    insertXmlRelationships: true,
+    connectionPool,
+  });
+
+  assert.equal(result.status, "FAILED");
+
+  assert.deepEqual(result.errors, [
+    "Simulated XML relationship insertion failure",
+  ]);
+
+  assert.deepEqual(calls, [
+    "getConnection",
+    "begin",
+    "select",
+    "insertTrial",
+    "insertDefendant",
+    "rollback",
+    "release",
+  ]);
+
+  assert.equal(calls.includes("commit"), false);
+});

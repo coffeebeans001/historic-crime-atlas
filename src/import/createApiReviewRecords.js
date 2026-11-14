@@ -77,7 +77,7 @@ export function createApiReviewRecords({
           : "REVIEW_REQUIRED",
       missingFields,
       structuredNoVerdict:
-      hasStructuredNoVerdict,
+        hasStructuredNoVerdict,
       validation: {
         status: validation.status,
         isValid: validation.isValid,
@@ -88,6 +88,7 @@ export function createApiReviewRecords({
       transcriptPossiblyTruncated:
         transcriptLength === 500,
       transformedRecord: record,
+      parsedXmlData,
       originalSource: {
         idkey: source.idkey ?? null,
         title: source.title ?? null,

@@ -40,6 +40,7 @@ export function detectDuplicates(validationResults) {
         uniqueRecords.push({
           rowNumber: result.rowNumber,
           record: result.record,
+          parsedXmlData: result.parsedXmlData,
         });
 
         return;
