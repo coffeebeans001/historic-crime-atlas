@@ -183,7 +183,7 @@ const geocodeResult =
     defendantName,
 
   defendants:
-  parsedXmlData?.defendants ?? [],  
+  parsedXmlData?.defendants ?? [],
 
   offence:
     parsedXmlData?.offenceText ??
@@ -233,7 +233,7 @@ const geocodeResult =
 
   location_precision:
     locationPrecision,
-    
+
   latitude:
       geocodeResult?.latitude ?? null,
 
@@ -244,10 +244,19 @@ const geocodeResult =
     geocodeResult?.geocodeSource ?? null,
 
   geocode_confidence:
-    geocodeResult?.geocodeConfidence ?? null,  
+    geocodeResult?.geocodeConfidence ?? null,
 
   trial_date: trialDate,
-  source_url: source.images?.[0] || null,
+
+  source_url:
+    source.images?.[0] ||
+    (
+      typeof source.idkey === "string" &&
+      /^t\d{8}[a-z]?-\d+$/i.test(source.idkey.trim())
+        ? `https://www.dhi.ac.uk/api/data/oldbailey_record_single?idkey=${encodeURIComponent(source.idkey.trim())}`
+        : null
+    ),
+
   transcript_text: source.text || null,
   case_summary: null,
   source_title: source.title || null,

@@ -104,3 +104,69 @@ test("preserves Julian leap-day dates in historical titles", () => {
 
   assert.equal(result.trial_date, "1700-02-29");
 });
+
+test("preserves existing Old Bailey image URLs", () => {
+  const imageUrl =
+    "https://www.dhi.ac.uk/san/ob/1670s/16740429002.gif";
+
+  const record = {
+    _source: {
+      idkey: "t16740429-1",
+      title: "Historical Trial. Robbery. 29th April 1674",
+      text: "Historical trial transcript.",
+      images: [imageUrl],
+    },
+  };
+
+  const result = transformOldBaileyRecord(record, {});
+
+  assert.equal(result.source_url, imageUrl);
+});
+
+test("uses an API record URL when no image is available", () => {
+  const record = {
+    _source: {
+      idkey: "t16781211e-1",
+      title:
+        "Susan Banster. Theft; grand larceny (to 1827). 11th December 1678.",
+      text: "Historical trial transcript.",
+      images: [],
+    },
+  };
+
+  const result = transformOldBaileyRecord(record, {});
+
+  assert.equal(
+    result.source_url,
+    "https://www.dhi.ac.uk/api/data/oldbailey_record_single?idkey=t16781211e-1"
+  );
+});
+
+test("does not generate fallback URLs for invalid or non-trial identifiers", () => {
+  const invalidIds = [
+    null,
+    "",
+    "invalid-record",
+    "s16781211e-1",
+  ];
+
+  for (const idkey of invalidIds) {
+    const record = {
+      _source: {
+        idkey,
+        title:
+          "Historical Trial. Robbery. 11th December 1678",
+        text: "Historical trial transcript.",
+        images: [],
+      },
+    };
+
+    const result = transformOldBaileyRecord(record, {});
+
+    assert.equal(
+      result.source_url,
+      null,
+      `Unexpected fallback URL for identifier: ${idkey}`
+    );
+  }
+});
