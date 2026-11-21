@@ -2303,19 +2303,56 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
       });
     }
 
+    if (!["year", "decade"].includes(bucket)) {
+      return res.status(400).json({
+        error: "Invalid bucket. Expected 'year' or 'decade'",
+      });
+    }
+
+    if (
+      !isValidHistoricalDate(from) ||
+      !isValidHistoricalDate(to)
+    ) {
+      return res.status(400).json({
+        error: "Invalid historical date. Expected YYYY-MM-DD",
+      });
+    }
+
+    if (from > to) {
+      return res.status(400).json({
+        error: "Start date must not be later than end date",
+      });
+    }
+
+    if (!Number.isFinite(z) || z <= 0 || z > 10) {
+      return res.status(400).json({
+        error: "Invalid z value",
+      });
+    }
+
+    const historicalDateExpr = `
+      COALESCE(
+        t.historical_trial_date,
+        DATE_FORMAT(t.trial_date, '%Y-%m-%d')
+      )
+    `;
+
+    const historicalYearExpr = `
+      CAST(LEFT(${historicalDateExpr}, 4) AS UNSIGNED)
+    `;
+
     const bucketExpr =
       bucket === "decade"
-        ? "FLOOR(YEAR(t.trial_date) / 10) * 10"
-        : "YEAR(t.trial_date)";
+        ? `FLOOR(${historicalYearExpr} / 10) * 10`
+        : historicalYearExpr;
+
+    const cleanFrom = from;
+    const cleanTo = to;
 
     const where = [
-      "t.defendant_gender IS NOT NULL",
-      "d.party_type IS NOT NULL",
-      "t.trial_date BETWEEN ? AND ?",
+      `${historicalDateExpr} BETWEEN ? AND ?`,
     ];
 
-    const cleanFrom = from.slice(0, 10);
-    const cleanTo = to.slice(0, 10);
     const params = [cleanFrom, cleanTo];
 
     const genderFilter =
@@ -2326,28 +2363,18 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
         : "all";
 
     if (genderFilter !== "all") {
-      where.push("t.defendant_gender = ?");
+      where.push(
+        "LOWER(TRIM(d.gender)) = ?"
+      );
       params.push(genderFilter);
     }
 
     if (composition === "single") {
-      where.push(`
-    (
-      SELECT COUNT(*)
-      FROM trial_defendant_nodes tdn
-      WHERE tdn.trial_id = t.id
-    ) = 1
-  `);
+      where.push("p.party_type = 'Single defendant'");
     }
 
     if (composition === "multiple") {
-      where.push(`
-    (
-      SELECT COUNT(*)
-      FROM trial_defendant_nodes tdn
-      WHERE tdn.trial_id = t.id
-    ) > 1
-  `);
+      where.push("p.party_type = 'Multiple defendants'");
     }
 
     if (group) {
@@ -2358,26 +2385,152 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
     const whereSql = `WHERE ${where.join(" AND ")}`;
 
     const [rows] = await pool.query(
-  `SELECT
-     ${bucketExpr} AS period,
-     t.defendant_gender AS gender,
-     d.party_type AS party_type,
-     COUNT(*) AS total_trials,
+      `
+      WITH trial_parties AS (
+        SELECT
+          trial_id,
+          CASE
+            WHEN COUNT(*) = 1 THEN 'Single defendant'
+            ELSE 'Multiple defendants'
+          END AS party_type
+        FROM trial_defendant_nodes
+        GROUP BY trial_id
+      ),
 
-         SUM(CASE WHEN t.verdict IN ('Guilty','Not Guilty') THEN 1 ELSE 0 END) AS known_verdicts,
-         SUM(CASE WHEN t.verdict = 'Guilty' THEN 1 ELSE 0 END) AS guilty_trials,
-         SUM(CASE WHEN t.verdict = 'Not Guilty' THEN 1 ELSE 0 END) AS not_guilty_trials,
+      defendant_outcomes AS (
+        SELECT
+          ${bucketExpr} AS period,
+          d.id AS defendant_id,
+          d.trial_id,
 
-         ROUND(
-           100 * SUM(CASE WHEN t.verdict = 'Guilty' THEN 1 ELSE 0 END)
-           / NULLIF(SUM(CASE WHEN t.verdict IN ('Guilty','Not Guilty') THEN 1 ELSE 0 END), 0),
-           2
-         ) AS guilty_rate
-       FROM trials t
-       JOIN defendants d ON d.defendant_id = t.defendant_id
-       ${whereSql}
-       GROUP BY period, t.defendant_gender, d.party_type
-       ORDER BY period ASC, t.defendant_gender ASC, d.party_type ASC`,
+          COALESCE(
+            NULLIF(LOWER(TRIM(d.gender)), ''),
+            'unknown'
+          ) AS gender,
+
+          p.party_type,
+
+          COUNT(c.id) AS charge_count,
+
+          SUM(CASE WHEN v.category = 'guilty'
+            THEN 1 ELSE 0 END) AS guilty_count,
+
+          SUM(CASE WHEN v.category = 'notGuilty'
+            THEN 1 ELSE 0 END) AS not_guilty_count,
+
+          SUM(CASE WHEN v.category = 'specialVerdict'
+            THEN 1 ELSE 0 END) AS special_count
+
+        FROM trial_defendant_nodes d
+
+        JOIN trials t
+          ON t.id = d.trial_id
+
+        JOIN trial_parties p
+          ON p.trial_id = d.trial_id
+
+        LEFT JOIN criminal_charges c
+          ON c.trial_id = d.trial_id
+          AND c.defendant_source_node_id = d.source_node_id
+
+        LEFT JOIN trial_verdict_nodes v
+          ON v.trial_id = c.trial_id
+          AND v.source_node_id = c.verdict_source_node_id
+
+        ${whereSql}
+
+        GROUP BY
+          period,
+          d.id,
+          d.trial_id,
+          d.gender,
+          p.party_type
+      ),
+
+      classified_defendants AS (
+        SELECT
+          period,
+          defendant_id,
+          trial_id,
+          gender,
+          party_type,
+
+          CASE
+            WHEN guilty_count > 0
+              AND not_guilty_count > 0
+              THEN 'Mixed verdict'
+
+            WHEN charge_count > 0
+              AND guilty_count = charge_count
+              THEN 'Guilty only'
+
+            WHEN charge_count > 0
+              AND not_guilty_count = charge_count
+              THEN 'Not guilty only'
+
+            WHEN charge_count > 0
+              AND special_count = charge_count
+              THEN 'Special verdict'
+
+            WHEN guilty_count + not_guilty_count
+              + special_count = 0
+              THEN 'Unknown verdict'
+
+            ELSE 'Incomplete outcome'
+          END AS outcome
+
+        FROM defendant_outcomes
+      )
+
+      SELECT
+        period,
+        gender,
+        party_type,
+
+        COUNT(DISTINCT trial_id) AS associated_trials,
+        COUNT(*) AS total_defendants,
+
+        SUM(outcome = 'Guilty only')
+          AS guilty_only_defendants,
+
+        SUM(outcome = 'Not guilty only')
+          AS not_guilty_only_defendants,
+
+        SUM(outcome = 'Mixed verdict')
+          AS mixed_verdict_defendants,
+
+        SUM(outcome = 'Special verdict')
+          AS special_verdict_defendants,
+
+        SUM(outcome = 'Incomplete outcome')
+          AS incomplete_outcome_defendants,
+
+        SUM(outcome = 'Unknown verdict')
+          AS unknown_verdict_defendants,
+
+        SUM(outcome IN (
+          'Guilty only',
+          'Not guilty only'
+        )) AS binary_outcome_defendants,
+
+        ROUND(
+          100.0 * SUM(outcome = 'Guilty only')
+          / NULLIF(
+              SUM(outcome IN (
+                'Guilty only',
+                'Not guilty only'
+              )),
+              0
+            ),
+          2
+        ) AS guilty_rate
+
+      FROM classified_defendants
+
+      GROUP BY period, gender, party_type
+
+      ORDER BY period ASC, gender ASC, party_type ASC
+      `,
       params,
     );
     const format = (req.query.format ?? "").toString().trim().toLowerCase();
@@ -2389,8 +2542,8 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
         const key = `${r.gender} - ${r.party_type}`;
         if (!seriesMap.has(key)) seriesMap.set(key, []);
 
-        const n = Number(r.known_verdicts);
-        const g = Number(r.guilty_trials);
+        const n = Number(r.binary_outcome_defendants);
+        const g = Number(r.guilty_only_defendants);
         const ci = wilsonInterval(g, n, z);
 
         seriesMap.get(key).push({
@@ -2402,9 +2555,9 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
         });
       }
 
-      const groupNames = [
-        ...new Set(rows.map((r) => r.offence_group).filter(Boolean)),
-      ].sort();
+      const groupNames = group && rows.length > 0
+        ? [group]
+        : [];
 
       return res.json({
         bucket,
@@ -2417,13 +2570,63 @@ app.get("/api/stats/gender-party/over-time", async (req, res) => {
       });
     }
 
+    const data = rows.map((r) => {
+      const n = Number(r.binary_outcome_defendants);
+      const g = Number(r.guilty_only_defendants);
+      const ci = wilsonInterval(g, n, z);
+
+      return {
+        ...r,
+
+        period: Number(r.period),
+        associated_trials: Number(r.associated_trials),
+        total_defendants: Number(r.total_defendants),
+
+        guilty_only_defendants: g,
+        not_guilty_only_defendants:
+          Number(r.not_guilty_only_defendants),
+
+        mixed_verdict_defendants:
+          Number(r.mixed_verdict_defendants),
+
+        special_verdict_defendants:
+          Number(r.special_verdict_defendants),
+
+        incomplete_outcome_defendants:
+          Number(r.incomplete_outcome_defendants),
+
+        unknown_verdict_defendants:
+          Number(r.unknown_verdict_defendants),
+
+        binary_outcome_defendants: n,
+
+        guilty_rate:
+          r.guilty_rate === null
+            ? null
+            : Number(r.guilty_rate),
+
+        guilty_rate_wilson_low:
+          ci.low === null
+            ? null
+            : Number(ci.low.toFixed(2)),
+
+        guilty_rate_wilson_high:
+          ci.high === null
+            ? null
+            : Number(ci.high.toFixed(2)),
+      };
+    });
+
     res.json({
       bucket,
-      from,
-      to,
+      from: cleanFrom,
+      to: cleanTo,
       group: group || null,
-      total: rows.length,
-      data: rows,
+      z,
+      analysis_unit: "defendant",
+      confidence_interval_method: "wilson_unadjusted",
+      total: data.length,
+      data,
     });
   } catch (err) {
     console.error(err);
